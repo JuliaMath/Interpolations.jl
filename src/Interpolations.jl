@@ -1,0 +1,5 @@
+module Interpolations
+
+# package code goes here
+
+end # module
