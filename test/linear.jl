@@ -1,7 +1,5 @@
 using Base.Test
 
-methods(Interpolation)
-
 ## Construct ground-truth values for 1d interpolation
 A1 = float([1,2,3,4])
 xpos = [-1.5:0.1:6.5]
