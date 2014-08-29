@@ -44,6 +44,16 @@ function body_gen(::Type{Linear}, ::Type{ExtrapConstant}, N)
     end
 end
 
+function body_gen(::Type{Linear}, ::Type{ExtrapPeriodic}, N)
+    quote
+        @nexprs $N d->(ix_d = ifloor(x_d); fx_d = x_d - convert(typeof(x_d), ix_d))
+        @nexprs $N d->(ix_d = mod1(ix_d, size(itp,d)-1))
+        @nexprs $N d->(ixp_d = mod1(ix_d+1, size(itp,d)-1))
+        @inbounds ret = $(index_gen(Linear, N))
+        ret
+    end
+end
+
 body_gen{BC<:BoundaryCondition,EB<:ExtrapolationBehavior}(::Type{Linear}, ::Type{BC}, ::Type{EB}, N) = body_gen(Linear, EB, N)
 
 function index_gen(::Type{Linear}, N::Integer, offsets...)

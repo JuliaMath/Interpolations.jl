@@ -43,6 +43,10 @@ A1linear[1:l1] = f(1) + dydx1 * (xpos[1:l1]-1)
 dydx2 = f(xmax)-f(xmax-1)
 A1linear[l2:end] = f(xmax) + dydx2 * (xpos[l2:end]-xmax)
 
+A1periodic = copy(A1)
+
+A1periodic[1:l1] = A1inbounds[end-l1:end-1]
+A1periodic[l2+1:end] = A1inbounds[2:l1+1]
 
 # Plot the values, to make sure we've done it right
 if isdefined(Main, :Gadfly) && isdefined(Main, :DataFrame)
@@ -71,7 +75,7 @@ if isdefined(Main, :Gadfly) && isdefined(Main, :DataFrame)
     ))
 end
 
-# for (EB,correct) in ((Interpolations.ExtrapError,A1error), (Interpolations.ExtrapNaN,A1nan), (Interpolations.ExtrapConstant, A1constant))
+# for (EB,correct) in ((Interpolations.ExtrapError,A1error), (Interpolations.ExtrapNaN,A1nan), (Interpolations.ExtrapConstant, A1constant), (Interpolations.ExtrapPeriodic,A1periodic))
 #     G = Interpolations.Interpolation(f(1:xmax), Interpolations.Linear, EB)
 #     if isdefined(Main, :Gadfly) 
 #         if EB == Interpolations.ExtrapPeriodic

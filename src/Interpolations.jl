@@ -11,6 +11,7 @@ export BoundaryCondition,
     ExtrapError,
     ExtrapNaN,
     ExtrapConstant,
+    ExtrapPeriodic,
 
     InterpolationDegree,
     Linear,
@@ -25,6 +26,7 @@ abstract ExtrapolationBehavior
 immutable ExtrapError <: ExtrapolationBehavior end
 immutable ExtrapNaN <: ExtrapolationBehavior end
 immutable ExtrapConstant <: ExtrapolationBehavior end
+immutable ExtrapPeriodic <: ExtrapolationBehavior end
 
 abstract InterpolationDegree
 immutable Linear <: InterpolationDegree end
@@ -48,7 +50,7 @@ promote_type_grid(T, x...) = promote_type(T, typeof(x)...)
 for ID in (Linear,)
     # for BC in subtypes(BoundaryCondition)
     for BC in (BCnone,)
-        for EB in (ExtrapError,ExtrapNaN,ExtrapConstant)
+        for EB in (ExtrapError,ExtrapNaN,ExtrapConstant,ExtrapPeriodic)
             eval(ngenerate(:N, :(promote_type_grid(T, x...)), :(getindex{T,N}(itp::Interpolation{T,N,$ID,$BC,$EB}, x::NTuple{N,Real}...)),
                       N->body_gen(ID, BC, EB, N)))
         end
