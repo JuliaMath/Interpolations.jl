@@ -1,65 +1,103 @@
 ## Tests for linear interpolation with various extrapolation behaviors
 
 ## Construct ground-truth values for 1d interpolation
-A1 = float([1:4].^2) # test interpolation of x^2
-xpos = [-1.5:0.1:6.5]
-inbounds = 1 .<= xpos .<= length(A1)
-A1inbounds = vcat(1:.3:4, 4.5:.5:9, 9.7:.7:16)
-A1nil = fill(Inf, length(xpos)); A1nil[inbounds] = A1inbounds  # use Inf as a sentinel for BoundsError
-A1nan = fill(NaN, length(xpos)); A1nan[inbounds] = A1inbounds
-#A1na = fill(NaN, length(xpos)); A1na[inbounds] = A1inbounds; A1na[0 .< xpos .< 1] = 1; A1na[4 .< xpos .< 5] = 4
-A1reflect = zeros(length(xpos))
-A1reflect[inbounds] = A1inbounds
-l1 = last(find(xpos .< 1))
-A1reflect[1:l1] = A1inbounds[l1:-1:1]
-l2 = findfirst(xpos .> length(A1))-1
-A1reflect[l2:end] = A1inbounds[end:-1:l2-2l1]
+## To verify these data sets, do something like this:
+# using Gadfly, DataFrames, Base.Test, Interpolations
+# include(joinpath(Pkg.dir("Interpolations"), "test/linear.jl"))
 
-xirange = ifloor(minimum(xpos))-1:iceil(maximum(xpos))+1
-#Aiper = A1[Int[mod(x-1,length(A1))+1 for x in xirange]]
-#A1periodic = similar(A1na)
-# for i = 1:length(xpos)
-#     x = xpos[i]
-#     ix = ifloor(x)
-#     j = find(xirange .== ix)[1]
-#     fx = x - ix
-#     A1periodic[i] = (1-fx)*Aiper[j]+fx*Aiper[j+1]
-# end
-A1nearest = zeros(length(xpos)); A1nearest[inbounds] = A1inbounds; A1nearest[xpos .< 1] = A1inbounds[1]; A1nearest[4 .< xpos] = A1inbounds[end]
-A1fill = 5*ones(length(xpos)); A1fill[inbounds] = A1inbounds
+f(x) = sin((x-3)*2pi/9 - 1)
+xmax = 10
+
+function A1linstep(step)
+    ixs = step .<= xpos .< step+1
+    dydx = f(step+1)-f(step)
+    Astep = f(step) + (xpos[ixs]-step)*dydx
+end
+
+xpos = [-1.5xmax:0.1:xmax+2.5]
+inbounds = 1 .<= xpos .<= xmax
+A1inbounds = vcat([A1linstep(s) for s in 1:xmax-1]..., f(xmax))
+
+A1 = similar(xpos)
+A1[inbounds] = A1inbounds
+
+A1error = fill(Inf, length(xpos))
+A1error[inbounds] = A1inbounds  # use Inf as a sentinel for BoundsError
+
+A1nan = fill(NaN, length(xpos))
+A1nan[inbounds] = A1inbounds
+
+# A1specified = copy(A1)
+# A1specified[xpos .< 1] = A1specified[xpos .> xmax] = -1
+
+A1constant = copy(A1)
+A1constant[xpos .< 1] = A1inbounds[1]
+A1constant[xpos .> xmax] = A1inbounds[end]
+
+l1 = last(find(xpos .< 1)); 
+l2 = findfirst(xpos .> xmax)-1
+
+A1linear = copy(A1)
+dydx1 = f(2)-f(1)
+A1linear[1:l1] = f(1) + dydx1 * (xpos[1:l1]-1)
+dydx2 = f(xmax)-f(xmax-1)
+A1linear[l2:end] = f(xmax) + dydx2 * (xpos[l2:end]-xmax)
+
 
 # Plot the values, to make sure we've done it right
-if isdefined(Main, :Gadfly)
-    println("Plotting")
+if isdefined(Main, :Gadfly) && isdefined(Main, :DataFrame)
     Aall = vcat(
-        DataFrame(x = xpos[inbounds], y = A1nil[inbounds], t = "BCnil"), # plot only inbounds values
-        DataFrame(x = xpos, y = A1nan, t = "BCnan"),
-        # DataFrame(x = xpos, y = A1na,  t = "BCna"),
-        DataFrame(x = xpos, y = A1reflect, t = "BCreflect"),
-        # DataFrame(x = xpos, y = A1periodic, t = "BCperiodic"),
-        DataFrame(x = xpos, y = A1nearest, t = "BCnearest"),
-        DataFrame(x = xpos, y = A1fill, t = "BCfill"))
-    set_default_plot_size(30cm, 7.5cm)
-    display(plot(Aall, x = :x, y = :y, xgroup = :t, Geom.subplot_grid(Geom.line),
-        Scale.y_continuous(minvalue=-2,maxvalue=7)))
+        # DataFrame(x = xpos, y = A1na,  eb = "BCna"),
+        DataFrame(x = xpos[inbounds], y = A1error[inbounds], eb = "Function values"), # plot only inbounds values
+
+        DataFrame(x = xpos[!inbounds], y = A1constant[!inbounds], eb = "ExtrapConstant"),
+        DataFrame(x = xpos[!inbounds], y = A1linear[!inbounds], eb = "ExtrapLinear"),
+        # DataFrame(x = xpos[!inbounds], y = A1reflect[!inbounds], eb = "ExtrapReflect"),
+        # DataFrame(x = xpos[!inbounds], y = A1reflect2[!inbounds], eb = "ExtrapReflect2"),
+        DataFrame(x = xpos[!inbounds], y = A1periodic[!inbounds], eb = "ExtrapPeriodic"),
+        #DataFrame(x = xpos[!inbounds], y = A1specified[!inbounds], eb = "ExtrapSpecified"),
+    )
+    set_default_plot_size(20cm, 10cm)
+    display(plot(Aall,
+        layer(x = :x,
+        y = :y,
+        color = :eb,
+        Geom.point, 
+        #Guide.xticks(ticks=1:4)
+        ),
+        layer(x=xpos[inbounds],y=f(xpos[inbounds]),Geom.path),
+        Guide.colorkey("Extrap behavior"),
+        Scale.y_continuous(minvalue=-2,maxvalue=2)
+    ))
 end
 
-
-for (EB,correct) in ((ExtrapError,A1nil), (ExtrapNaN,A1nan)) #, (BCna,A1na), (BCreflect, A1reflect), (BCperiodic, A1periodic), (BCnearest, A1nearest), (BCfill,A1fill))
-    println(EB)
-    G = Interpolation(A1, LinearInterpolation, EB);
-    for i = 1:length(xpos)
-        x = xpos[i]
-        y = correct[i]
-        if !isinf(y)
-            try
-                @test_approx_eq y G[x]
-            catch err
-                @show x, y, G[x]
-                rethrow(err)
-            end
-        else
-            @test_throws BoundsError G[x]
-        end
-    end
-end
+# for (EB,correct) in ((Interpolations.ExtrapError,A1error), (Interpolations.ExtrapNaN,A1nan), (Interpolations.ExtrapConstant, A1constant))
+#     G = Interpolations.Interpolation(f(1:xmax), Interpolations.Linear, EB)
+#     if isdefined(Main, :Gadfly) 
+#         if EB == Interpolations.ExtrapPeriodic
+#             display(plot(
+#                 layer(x=xpos[inbounds],y=f(xpos[inbounds]), Geom.path),
+#                 layer(x=xpos,y=correct,Geom.point,Theme(default_color=color("green"))),
+#                 layer(x=xpos,y=[G[x] for x in xpos],Geom.point, Theme(default_color=color("red"))),
+#                 Guide.xticks(ticks=[-1:xmax+2]),
+#                 Guide.title("$EB")
+#             ))
+#         end
+#     else
+#         println(EB)
+#     end
+#     for i = 1:length(xpos)
+#         x = xpos[i]
+#         y = correct[i]
+#         if !isinf(y)
+#             try
+#                 @test_approx_eq y G[x]
+#             catch err
+#                 @show x, y, G[x]
+#                 rethrow(err)
+#             end
+#         else
+#             @test_throws BoundsError G[x]
+#         end
+#     end
+# end
