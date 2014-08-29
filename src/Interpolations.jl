@@ -10,6 +10,7 @@ export BoundaryCondition,
     ExtrapolationBehavior,
     ExtrapError,
     ExtrapNaN,
+    ExtrapConstant,
 
     InterpolationDegree,
     Linear,
