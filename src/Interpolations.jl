@@ -29,7 +29,10 @@ immutable ExtrapConstant <: ExtrapolationBehavior end
 immutable ExtrapPeriodic <: ExtrapolationBehavior end
 
 abstract InterpolationDegree
+# Should we call these TwoPoint, ThreePoint, FourPoint?
 immutable Linear <: InterpolationDegree end
+immutable Quadratic <: InterpolationDegree end
+immutable Cubic <: InterpolationDegree end
 
 abstract AbstractInterpolation{T,N,D,BC<:BoundaryCondition,EB<:ExtrapolationBehavior} <: AbstractArray{T,N}
 

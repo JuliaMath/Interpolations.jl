@@ -56,13 +56,47 @@ end
 
 body_gen{BC<:BoundaryCondition,EB<:ExtrapolationBehavior}(::Type{Linear}, ::Type{BC}, ::Type{EB}, N) = body_gen(Linear, EB, N)
 
+offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
+                    off ==  0 ? symbol(string("ix_", d)) :
+                    off ==  1 ? symbol(string("ixp_", d)) :
+                    off ==  2 ? symbol(string("ixpp_", d)) : error("offset $off not recognized")
+
+# This assumes fractional values 0 <= fx_d <= 1, integral values ix_d and ixp_d (typically ixp_d = ix_d+1,
+#except at boundaries), and an array itp.coefs
 function index_gen(::Type{Linear}, N::Integer, offsets...)
     if length(offsets) < N
         sym = symbol("fx_"*string(length(offsets)+1))
         return :((one($sym)-$sym) * $(index_gen(Linear, N, offsets..., 0)) + $sym * $(index_gen(Linear, N, offsets..., 1)))
     else
-        indices = [offsets[d] == 0 ? symbol("ix_"*string(d)) : symbol("ixp_"*string(d)) for d = 1:N]
+        indices = [offsetsym(offsets[d], d) for d = 1:N]
         return :(itp.coefs[$(indices...)])
     end
 end
 
+# This assumes integral values ixm_d, ix_d, and ixp_d (typically ixm_d = ix_d-1, ixp_d = ix_d+1, except at boundaries),
+# coefficients cm_d, c_d, and cp_d, and an array itp.coefs
+function index_gen(::Type{Quadratic}, N::Integer, offsets...)
+    if length(offsets) < N
+        d = length(offsets)+1
+        symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
+        return :($symm * $(index_gen(Quadratic, N, offsets...,-1)) + $sym * $(index_gen(Quadratic, N, offsets..., 0)) +
+                 $symp * $(index_gen(Quadratic, N, offsets..., 1)))
+    else
+        indices = [offsetsym(offsets[d], d) for d = 1:N]
+        return :(itp.coefs[$(indices...)])
+    end
+end
+
+# This assumes integral values ixm_d, ix_d, ixp_d, and ixpp_d (typically ixm_d = ix_d-1, ixp_d = ix_d+1, except at boundaries),
+# coefficients cm_d, c_d, cp_d, and cpp_d, and an array itp.coefs
+function index_gen(::Type{Cubic}, N::Integer, offsets...)
+    if length(offsets) < N
+        d = length(offsets)+1
+        symm, sym, symp, sympp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("cpp_",d))
+        return :($symm * $(index_gen(Cubic, N, offsets...,-1)) + $sym * $(index_gen(Cubic, N, offsets..., 0)) +
+                 $symp * $(index_gen(Cubic, N, offsets..., 1)) + $sympp * $(index_gen(Cubic, N, offsets..., 2)))
+    else
+        indices = [offsetsym(offsets[d], d) for d = 1:N]
+        return :(itp.coefs[$(indices...)])
+    end
+end
