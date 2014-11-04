@@ -35,7 +35,7 @@ All the above concepts fundamentally affect the behavior of an interpolating fun
 
 Different types of interpolations are separated by *type parameters*, and each type of interpolation is a concrete type descending from
 
-    abstract Interpolation{D<:Degree,BC<:BoundaryCondition,G<:GridRepresentation}
+    abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,G<:GridRepresentation}
 
 For example, a quadratic on-grid implementation with flat boundary conditions, is represented by an `Interpolation{Quadratic,Flat,OnGrid}`, where `Quadratic`, `Flat` and `OnGrid` are in turn concrete types implementing the abstract types indicated above.
 
@@ -48,6 +48,10 @@ Somewhat orthogonal<sup>2</sup> to the concepts outlined above, is the concept o
 ## Supporting an `Interpolation` type in `Interpolations.jl`
 
 Not all combinations of the above four concepts are supported in the library; for example, neither constant nor linear on-grid interpolations need andy boundary conditions, and therefore they don't support any.
+
+An interpolation is represented by an object of a concrete type descending from
+
+    abstract Interpolation{IT<:InterpolationType,EB<:ExtrapolationBehavior}
 
 ----
 
