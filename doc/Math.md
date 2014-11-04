@@ -43,6 +43,8 @@ For example, a quadratic on-grid implementation with flat boundary conditions, i
 
 Somewhat orthogonal<sup>2</sup> to the concepts outlined above, is the concept of *extrapolation*, i.e. evaluation of the interpolant outside the domain defined by the data set. For some types of extrapolation, this behavior is defined by a translation of the interpolation coordinate to somewhere inside the domain (e.g. periodic or reflecting boundaries), while for other types it entails a separate calculation entirely (e.g. linear extrapolation).
 
+[Read more](/doc/Extrapolation.md)
+
 ## Supporting an `Interpolation` type in `Interpolations.jl`
 
 Not all combinations of the above four concepts are supported in the library; for example, neither constant nor linear on-grid interpolations need andy boundary conditions, and therefore they don't support any.
