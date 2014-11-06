@@ -4,61 +4,47 @@ using Base.Cartesian
 
 import Base: size, eltype, getindex
 
-export BoundaryCondition,
-    BCnone,
+export 
+    Interpolation, 
+    Linear, 
+    ExtrapError
 
-    ExtrapolationBehavior,
-    ExtrapError,
-    ExtrapNaN,
-    ExtrapConstant,
-    ExtrapPeriodic,
-
-    InterpolationDegree,
-    Linear,
-
-    AbstractInterpolation,
-    Interpolation
+abstract Degree{N}
 
 abstract BoundaryCondition
-immutable BCnone <: BoundaryCondition end
+type BCnone <: BoundaryCondition end
 
-abstract ExtrapolationBehavior
-immutable ExtrapError <: ExtrapolationBehavior end
-immutable ExtrapNaN <: ExtrapolationBehavior end
-immutable ExtrapConstant <: ExtrapolationBehavior end
-immutable ExtrapPeriodic <: ExtrapolationBehavior end
+abstract GridRepresentation
+type OnGrid <: GridRepresentation end
 
-abstract InterpolationDegree
-# Should we call these TwoPoint, ThreePoint, FourPoint?
-immutable Linear <: InterpolationDegree end
-immutable Quadratic <: InterpolationDegree end
-immutable Cubic <: InterpolationDegree end
+abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
 
-abstract AbstractInterpolation{T,N,D,BC<:BoundaryCondition,EB<:ExtrapolationBehavior} <: AbstractArray{T,N}
+include("extrapolation.jl")
 
-type Interpolation{T,N,ID<:InterpolationDegree,BC<:BoundaryCondition,EB<:ExtrapolationBehavior} <: AbstractInterpolation{T,N,ID,BC,EB}
-	coefs::Array{T,N}
+abstract AbstractInterpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractArray{T,N}
+type Interpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractInterpolation{T,N,IT,EB}
+    coefs::Array{T,N}
 end
-Interpolation{T,N,ID<:InterpolationDegree,BC<:BoundaryCondition,EB<:ExtrapolationBehavior}(A::Array{T,N}, ::Type{ID}, ::Type{BC}, ::Type{EB}) = Interpolation{T,N,ID,BC,EB}(A)
-
-include("linear.jl")
+Interpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior}(A::Array{T,N}, ::Type{IT}, ::Type{EB}) = Interpolation{T,N,IT,EB}(A)
 
 size(itp::Interpolation, d::Integer) = size(itp.coefs, d)
 size(itp::Interpolation) = size(itp.coefs)
 eltype(itp::Interpolation) = eltype(itp.coefs)
 
+include("linear.jl")
+
 promote_type_grid(T, x...) = promote_type(T, typeof(x)...)
 
 # This creates getindex methods for all supported combinations
-for ID in (Linear,)
-    # for BC in subtypes(BoundaryCondition)
-    for BC in (BCnone,)
-        for EB in (ExtrapError,ExtrapNaN,ExtrapConstant,ExtrapPeriodic)
-            eval(ngenerate(:N, :(promote_type_grid(T, x...)), :(getindex{T,N}(itp::Interpolation{T,N,$ID,$BC,$EB}, x::NTuple{N,Real}...)),
-                      N->body_gen(ID, BC, EB, N)))
-        end
+for IT in (LinearOnGrid,)
+    for EB in (ExtrapError,)
+        eval(ngenerate(
+            :N,
+            :(promote_type_grid(T, x...)),
+            :(getindex{T,N}(itp::Interpolation{T,N,$IT,$EB}, x::NTuple{N,Real}...)), 
+            N->:($(extrap_gen(EB,N)); $(interp_gen(IT, N)))
+        ))
     end
 end
-
 
 end # module
