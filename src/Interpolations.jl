@@ -68,6 +68,10 @@ include("quadratic.jl")
 
 promote_type_grid(T, x...) = promote_type(T, typeof(x)...)
 
+# This function gets specialized versions for interpolation types that need prefiltering
+prefilter!(A::Array, it::InterpolationType) = A
+prefilter(A::Array, it::InterpolationType) = prefilter!(copy(A), it)
+
 function interp_gen(q::InterpolationType, N)
     quote
         # If the boundary condition mandates separate treatment, this is done
@@ -103,6 +107,24 @@ for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{BC.ExtendInner,OnCell})
             N->:($(extrap_gen(gr,eb,N)); $(interp_gen(it, N)))
         ))
     end
+end
+
+# This creates prefilter! specializations for all interpolation types that need them
+for IT in (Quadratic{BC.ExtendInner,OnCell},)
+    eval(ngenerate(
+        :N,
+        :(promote_type_grid(T, x...)),
+        :(prefilter!{T,N}(A::Array{T,N},::$IT)),
+        N -> quote
+            for dim in 1:$N
+                n = size(A,dim)
+                $(prefiltering_system_matrix(IT()))
+                s = stride(A,dim)
+                A_ldiv_B!(M, vec(A[1:s:n*s]))
+            end
+            A
+        end
+    ))
 end
 
 end # module

@@ -49,26 +49,21 @@ function index_gen(degree::QuadraticDegree, N::Integer, offsets...)
     end
 end
 
-function prefilter{BC<:BoundaryCondition, GR<:GridRepresentation}(A::Array, quadratic::Quadratic{BC,GR})
-    prefilter!(copy(A), quadratic)
-end
+function prefiltering_system_matrix(::Quadratic{BC.ExtendInner,OnCell})
+    quote
+        du = fill(convert(T,1/8), n-1)
+        d = fill(convert(T,3/4),n)
+        dl = copy(du)
 
-function prefilter!{T}(A::Array{T,1}, quadratic::Quadratic{BC.ExtendInner,OnCell})
-    n = size(A,1)
-    du = fill(convert(T, 1/8), n-1)
-    d = fill(convert(T, 3/4), n)
-    dl = copy(du)
+        MT = lufact!(Tridiagonal(dl,d,du))
+        U = zeros(T,n,2)
+        V = zeros(T,2,n)
+        C = zeros(T,2,2)
 
-    MT = lufact!(Tridiagonal(dl, d, du))
-    U = zeros(T,n,2)
-    V = zeros(T,2,n)
-    C = zeros(T,2,2)
-    C[1,1] = C[2,2] = 1/8
-    U[1,1] = U[n,2] = 1
-    V[1,3] = V[2,n-2] = 1
-    M = Woodbury(MT, U, C, V)
+        C[1,1] = C[2,2] = 1/8
+        U[1,1] = U[n,2] = 1.
+        V[1,3] = V[2,n-2] = 1.
 
-    A_ldiv_B!(M, A)
-
-    A
+        M = Woodbury(MT, U, C, V)
+    end
 end
