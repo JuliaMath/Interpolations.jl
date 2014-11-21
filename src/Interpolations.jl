@@ -69,30 +69,17 @@ include("quadratic.jl")
 promote_type_grid(T, x...) = promote_type(T, typeof(x)...)
 
 # This function gets specialized versions for interpolation types that need prefiltering
-prefilter!(A::Array, it::InterpolationType) = A
-prefilter(A::Array, it::InterpolationType) = prefilter!(copy(A), it)
+prefilter(A::Array, it::InterpolationType) = copy(A)
 
-function interp_gen(q::InterpolationType, N)
-    quote
-        # If the boundary condition mandates separate treatment, this is done
-        # by bc_gen.
-        # Given an interpolation object itp, with N dimensions, and a coordinate
-        # x_d, it should define ix_d such that all the coefficients required by
-        # the interpolation will be inbounds.
-        $(bc_gen(q, N))
-
-        # indices calculates the indices required for this interpolation degree,
-        # based on ix_d defined by bc_gen(), as well as the distance fx_d from 
-        # the cell index ix_d to the interpolation coordinate x_d
-        $(indices(degree(q), N))
-
-        # These coefficients determine the interpolation basis expansion
-        $(coefficients(degree(q), N))
-
-        @inbounds ret = $(index_gen(degree(q), N))
-        ret
+# Converting coordinates to linear indices
+function coords2lin(c, strides)
+    ind = 1
+    for i = 1:length(c)
+        ind += (c[i]-1)*strides[i]
     end
+    ind
 end
+
 
 # This creates getindex methods for all supported combinations
 for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{BC.ExtendInner,OnCell})
@@ -104,27 +91,54 @@ for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{BC.ExtendInner,OnCell})
             :N,
             :(promote_type_grid(T, x...)),
             :(getindex{T,N}(itp::Interpolation{T,N,$IT,$EB}, x::NTuple{N,Real}...)), 
-            N->:($(extrap_gen(gr,eb,N)); $(interp_gen(it, N)))
+            N->quote
+                $(extrap_gen(gr,eb,N))
+
+                # If the boundary condition mandates separate treatment, this is done
+                # by bc_gen.
+                # Given an interpolation object itp, with N dimensions, and a coordinate
+                # x_d, it should define ix_d such that all the coefficients required by
+                # the interpolation will be inbounds.
+                $(bc_gen(it, N))
+
+                # indices calculates the indices required for this interpolation degree,
+                # based on ix_d defined by bc_gen(), as well as the distance fx_d from 
+                # the cell index ix_d to the interpolation coordinate x_d
+                $(indices(degree(it), N))
+
+                # These coefficients determine the interpolation basis expansion
+                $(coefficients(degree(it), N))
+
+                @inbounds ret = $(index_gen(degree(it), N))
+                ret
+            end
         ))
     end
 end
 
 # This creates prefilter! specializations for all interpolation types that need them
 for IT in (Quadratic{BC.ExtendInner,OnCell},)
-    eval(ngenerate(
-        :N,
-        :(promote_type_grid(T, x...)),
-        :(prefilter!{T,N}(A::Array{T,N},::$IT)),
-        N -> quote
-            for dim in 1:$N
-                n = size(A,dim)
-                $(prefiltering_system_matrix(IT()))
-                s = stride(A,dim)
-                A_ldiv_B!(M, vec(A[1:s:n*s]))
-            end
-            A
+    @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
+        ret = similar(A)
+        szs = collect(size(A))
+        strds = collect(strides(A))
+
+        for dim in 1:N
+            n = szs[dim]
+            szs[dim] = 1
+
+            M = prefiltering_system_matrix(eltype(A), n, it)
+
+            @nloops N i d->1:szs[d] begin
+                cc = @ntuple N i
+                strt = coords2lin(cc, strds)
+                rng = range(coords2lin(cc, strds), strds[dim], n)
+                ret[rng] = M \ vec(A[rng])
+            end            
+            szs[dim] = n
         end
-    ))
+        ret
+    end
 end
 
 end # module
