@@ -41,7 +41,7 @@ end
 function Interpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior}(A::Array{T,N}, it::IT, ::EB)
     isleaftype(IT) || error("The interpolation type must be a leaf type (was $IT)")
     
-    isleaftype(T) || warn("For performance reasons, consider using an array of a concrete type T")
+    isleaftype(T) || warn("For performance reasons, consider using an array of a concrete type T (eltype(A) == $(eltype(A)))")
 
     Interpolation{T,N,IT,EB}(prefilter(A,it))
 end
