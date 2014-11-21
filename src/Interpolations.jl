@@ -71,16 +71,6 @@ promote_type_grid(T, x...) = promote_type(T, typeof(x)...)
 # This function gets specialized versions for interpolation types that need prefiltering
 prefilter(A::Array, it::InterpolationType) = copy(A)
 
-# Converting coordinates to linear indices
-function coords2lin(c, strides)
-    ind = 1
-    for i = 1:length(c)
-        ind += (c[i]-1)*strides[i]
-    end
-    ind
-end
-
-
 # This creates getindex methods for all supported combinations
 for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{BC.ExtendInner,OnCell})
     for EB in (ExtrapError,ExtrapNaN)
@@ -131,8 +121,8 @@ for IT in (Quadratic{BC.ExtendInner,OnCell},)
 
             @nloops N i d->1:szs[d] begin
                 cc = @ntuple N i
-                strt = coords2lin(cc, strds)
-                rng = range(coords2lin(cc, strds), strds[dim], n)
+                strt = 1 + sum([(cc[i]-1)*strds[i] for i in 1:length(cc)])
+                rng = range(strt, strds[dim], n)
                 ret[rng] = M \ vec(A[rng])
             end            
             szs[dim] = n
