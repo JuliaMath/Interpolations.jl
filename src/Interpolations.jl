@@ -4,61 +4,126 @@ using Base.Cartesian
 
 import Base: size, eltype, getindex
 
-export BoundaryCondition,
-    BCnone,
-
-    ExtrapolationBehavior,
+export 
+    Interpolation,
+    Constant,
+    Linear,
+    Quadratic,
     ExtrapError,
     ExtrapNaN,
-    ExtrapConstant,
-    ExtrapPeriodic,
+    OnCell,
+    OnGrid,
+    ExtendInner
 
-    InterpolationDegree,
-    Linear,
+abstract Degree{N}
 
-    AbstractInterpolation,
-    Interpolation
+abstract GridRepresentation
+type OnGrid <: GridRepresentation end
+type OnCell <: GridRepresentation end
 
 abstract BoundaryCondition
-immutable BCnone <: BoundaryCondition end
+type None <: BoundaryCondition end
+type ExtendInner <: BoundaryCondition end
 
-abstract ExtrapolationBehavior
-immutable ExtrapError <: ExtrapolationBehavior end
-immutable ExtrapNaN <: ExtrapolationBehavior end
-immutable ExtrapConstant <: ExtrapolationBehavior end
-immutable ExtrapPeriodic <: ExtrapolationBehavior end
+abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
 
-abstract InterpolationDegree
-# Should we call these TwoPoint, ThreePoint, FourPoint?
-immutable Linear <: InterpolationDegree end
-immutable Quadratic <: InterpolationDegree end
-immutable Cubic <: InterpolationDegree end
+include("extrapolation.jl")
 
-abstract AbstractInterpolation{T,N,D,BC<:BoundaryCondition,EB<:ExtrapolationBehavior} <: AbstractArray{T,N}
-
-type Interpolation{T,N,ID<:InterpolationDegree,BC<:BoundaryCondition,EB<:ExtrapolationBehavior} <: AbstractInterpolation{T,N,ID,BC,EB}
-	coefs::Array{T,N}
+abstract AbstractInterpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractArray{T,N}
+type Interpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractInterpolation{T,N,IT,EB}
+    coefs::Array{T,N}
 end
-Interpolation{T,N,ID<:InterpolationDegree,BC<:BoundaryCondition,EB<:ExtrapolationBehavior}(A::Array{T,N}, ::Type{ID}, ::Type{BC}, ::Type{EB}) = Interpolation{T,N,ID,BC,EB}(A)
+function Interpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior}(A::Array{T,N}, it::IT, ::EB)
+    isleaftype(IT) || error("The interpolation type must be a leaf type (was $IT)")
+    
+    isleaftype(T) || warn("For performance reasons, consider using an array of a concrete type T (eltype(A) == $(eltype(A)))")
 
-include("linear.jl")
+    Interpolation{T,N,IT,EB}(prefilter(A,it))
+end
+
+# Unless otherwise specified, use coefficients as they are, i.e. without prefiltering
+# However, all prefilters copy the array, so do that here as well
+prefilter{T,N,IT<:InterpolationType}(A::AbstractArray{T,N}, ::IT) = copy(A)
 
 size(itp::Interpolation, d::Integer) = size(itp.coefs, d)
 size(itp::Interpolation) = size(itp.coefs)
 eltype(itp::Interpolation) = eltype(itp.coefs)
 
+offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
+                    off ==  0 ? symbol(string("ix_", d)) :
+                    off ==  1 ? symbol(string("ixp_", d)) :
+                    off ==  2 ? symbol(string("ixpp_", d)) : error("offset $off not recognized")
+
+gridrepresentation{D,BC,GR<:GridRepresentation}(::InterpolationType{D,BC,GR}) = GR()
+degree{D<:Degree,BC,GR}(::InterpolationType{D,BC,GR}) = D()
+
+include("constant.jl")
+include("linear.jl")
+include("quadratic.jl")
+
 promote_type_grid(T, x...) = promote_type(T, typeof(x)...)
 
+# This function gets specialized versions for interpolation types that need prefiltering
+prefilter(A::Array, it::InterpolationType) = copy(A)
+
 # This creates getindex methods for all supported combinations
-for ID in (Linear,)
-    # for BC in subtypes(BoundaryCondition)
-    for BC in (BCnone,)
-        for EB in (ExtrapError,ExtrapNaN,ExtrapConstant,ExtrapPeriodic)
-            eval(ngenerate(:N, :(promote_type_grid(T, x...)), :(getindex{T,N}(itp::Interpolation{T,N,$ID,$BC,$EB}, x::NTuple{N,Real}...)),
-                      N->body_gen(ID, BC, EB, N)))
-        end
+for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell})
+    for EB in (ExtrapError,ExtrapNaN)
+        it = IT()
+        eb = EB()
+        gr = gridrepresentation(it)
+        eval(ngenerate(
+            :N,
+            :(promote_type_grid(T, x...)),
+            :(getindex{T,N}(itp::Interpolation{T,N,$IT,$EB}, x::NTuple{N,Real}...)), 
+            N->quote
+                $(extrap_gen(gr,eb,N))
+
+                # If the boundary condition mandates separate treatment, this is done
+                # by bc_gen.
+                # Given an interpolation object itp, with N dimensions, and a coordinate
+                # x_d, it should define ix_d such that all the coefficients required by
+                # the interpolation will be inbounds.
+                $(bc_gen(it, N))
+
+                # indices calculates the indices required for this interpolation degree,
+                # based on ix_d defined by bc_gen(), as well as the distance fx_d from 
+                # the cell index ix_d to the interpolation coordinate x_d
+                $(indices(degree(it), N))
+
+                # These coefficients determine the interpolation basis expansion
+                $(coefficients(degree(it), N))
+
+                @inbounds ret = $(index_gen(degree(it), N))
+                ret
+            end
+        ))
     end
 end
 
+# This creates prefilter specializations for all interpolation types that need them
+for IT in (Quadratic{ExtendInner,OnCell},)
+    @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
+        ret = similar(A)
+        szs = collect(size(A))
+        strds = collect(strides(A))
+
+        for dim in 1:N
+            n = szs[dim]
+            szs[dim] = 1
+
+            M = prefiltering_system_matrix(eltype(A), n, it)
+
+            @nloops N i d->1:szs[d] begin
+                cc = @ntuple N i
+                strt = 1 + sum([(cc[i]-1)*strds[i] for i in 1:length(cc)])
+                rng = range(strt, strds[dim], n)
+                ret[rng] = M \ vec(A[rng])
+            end            
+            szs[dim] = n
+        end
+        ret
+    end
+end
 
 end # module
