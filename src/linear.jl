@@ -1,5 +1,5 @@
 type LinearDegree <: Degree{1} end
-type Linear{GR<:GridRepresentation} <: InterpolationType{LinearDegree,BC.None,GR} end
+type Linear{GR<:GridRepresentation} <: InterpolationType{LinearDegree,None,GR} end
 Linear{GR<:GridRepresentation}(::GR) = Linear{GR}()
 
 Interpolation{T,N,EB<:ExtrapolationBehavior}(A::Array{T,N}, ::Linear, ::EB) = Interpolation{T,N,Linear{OnGrid},EB}(A)

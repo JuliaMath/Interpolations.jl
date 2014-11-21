@@ -3,7 +3,7 @@ type Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation} <: InterpolationTyp
 
 Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation}(::BC, ::GR) = Quadratic{BC,GR}()
 
-function bc_gen(::Quadratic{BC.ExtendInner,OnCell}, N)
+function bc_gen(::Quadratic{ExtendInner,OnCell}, N)
     quote
         # We've already done extrapolation, but BC.ExtendInner mandates that
         # the two outermost cells are treated specially. Therefore, we need to
@@ -49,7 +49,7 @@ function index_gen(degree::QuadraticDegree, N::Integer, offsets...)
     end
 end
 
-function prefiltering_system_matrix{T}(::Type{T}, n::Int, ::Quadratic{BC.ExtendInner,OnCell})
+function prefiltering_system_matrix{T}(::Type{T}, n::Int, ::Quadratic{ExtendInner,OnCell})
     du = fill(convert(T,1/8), n-1)
     d = fill(convert(T,3/4),n)
     dl = copy(du)

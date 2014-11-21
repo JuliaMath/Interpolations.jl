@@ -1,5 +1,5 @@
 type ConstantDegree <: Degree{0} end
-type Constant{GR<:GridRepresentation} <: InterpolationType{ConstantDegree,BC.None,GR} end
+type Constant{GR<:GridRepresentation} <: InterpolationType{ConstantDegree,None,GR} end
 
 Constant{GR<:GridRepresentation}(::GR) = Constant{GR}()
 

@@ -1,11 +1,3 @@
-module BC
-    export BoundaryCondition
-
-    abstract BoundaryCondition
-    type None <: BoundaryCondition end
-    type ExtendInner <: BoundaryCondition end
-end
-
 module Interpolations
 
 using Base.Cartesian
@@ -20,15 +12,18 @@ export
     ExtrapError,
     ExtrapNaN,
     OnCell,
-    OnGrid
+    OnGrid,
+    ExtendInner
 
 abstract Degree{N}
-
-using BC
 
 abstract GridRepresentation
 type OnGrid <: GridRepresentation end
 type OnCell <: GridRepresentation end
+
+abstract BoundaryCondition
+type None <: BoundaryCondition end
+type ExtendInner <: BoundaryCondition end
 
 abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
 
@@ -72,7 +67,7 @@ promote_type_grid(T, x...) = promote_type(T, typeof(x)...)
 prefilter(A::Array, it::InterpolationType) = copy(A)
 
 # This creates getindex methods for all supported combinations
-for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{BC.ExtendInner,OnCell})
+for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell})
     for EB in (ExtrapError,ExtrapNaN)
         it = IT()
         eb = EB()
@@ -106,8 +101,8 @@ for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{BC.ExtendInner,OnCell})
     end
 end
 
-# This creates prefilter! specializations for all interpolation types that need them
-for IT in (Quadratic{BC.ExtendInner,OnCell},)
+# This creates prefilter specializations for all interpolation types that need them
+for IT in (Quadratic{ExtendInner,OnCell},)
     @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
         ret = similar(A)
         szs = collect(size(A))
