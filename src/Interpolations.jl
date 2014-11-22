@@ -61,8 +61,6 @@ include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")
 
-promote_type_grid(T, x...) = promote_type(T, typeof(x)...)
-
 # This function gets specialized versions for interpolation types that need prefiltering
 prefilter(A::Array, it::InterpolationType) = copy(A)
 
@@ -74,7 +72,7 @@ for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell})
         gr = gridrepresentation(it)
         eval(ngenerate(
             :N,
-            :(promote_type_grid(T, x...)),
+            :(promote_type(T, x...)),
             :(getindex{T,N}(itp::Interpolation{T,N,$IT,$EB}, x::NTuple{N,Real}...)), 
             N->quote
                 $(extrap_gen(gr,eb,N))
