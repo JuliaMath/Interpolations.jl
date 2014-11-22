@@ -61,8 +61,6 @@ include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")
 
-# This function gets specialized versions for interpolation types that need prefiltering
-prefilter(A::Array, it::InterpolationType) = copy(A)
 
 # This creates getindex methods for all supported combinations
 for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell})
