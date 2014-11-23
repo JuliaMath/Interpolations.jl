@@ -31,4 +31,11 @@ xlo, xhi = itp2[.9], itp2[xmax+.2]
 @test isnan(xlo)
 @test isnan(xhi)
 
+# Values on all data points except edges for ExtendInner
+
+for x in 2:xmax-1
+    @test_approx_eq A[x] itp1[x]
+    @test_approx_eq A[x] itp2[x]
+end
+
 end

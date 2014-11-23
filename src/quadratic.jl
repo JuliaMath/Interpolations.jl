@@ -9,7 +9,7 @@ function bc_gen(::Quadratic{ExtendInner,OnCell}, N)
         # the two outermost cells are treated specially. Therefore, we need to
         # further clamp the indices of the spline coefficients by one cell in
         # each direction.
-        @nexprs $N d->(ix_d = clamp(iround(x_d), 2, size(itp,d)-2))
+        @nexprs $N d->(ix_d = clamp(iround(x_d), 2, size(itp,d)-1))
     end
 end
 
