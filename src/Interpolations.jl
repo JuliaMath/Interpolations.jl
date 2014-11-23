@@ -94,6 +94,13 @@ for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell})
                 ret
             end
         ))
+
+        # Define indexing in two dimensions for 1D interpolation objects
+        # Fixes display behavior
+        eval(:(function getindex{T}(itp::Interpolation{T,1,$IT,$EB}, x::Real, d)
+            d == 1 || throw(BoundsError())
+            itp[x]
+        end))
     end
 end
 
