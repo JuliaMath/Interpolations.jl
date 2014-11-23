@@ -65,12 +65,6 @@ include("quadratic.jl")
 # This creates getindex methods for all supported combinations
 for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell})
     for EB in (ExtrapError,ExtrapNaN)
-        @ngenerate N promote_type(T, typeof(x)...) function getindex{T,N}(itp::Interpolation{T,N,IT,EB}, x0::Real, x::NTuple{N,Real}...)
-            print("here")
-            x_N == 1 || throw(BoundsError())
-            getindex(itp, x0, x[1:end-1]...)
-        end
-
         it = IT()
         eb = EB()
         gr = gridrepresentation(it)
@@ -100,6 +94,13 @@ for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell})
                 ret
             end
         ))
+
+        # Define indexing in two dimensions for 1D interpolation objects
+        # Fixes display behavior
+        eval(:(function getindex{T}(itp::Interpolation{T,1,$IT,$EB}, x::Real, d)
+            d == 1 || throw(BoundsError())
+            itp[x]
+        end))
     end
 end
 
