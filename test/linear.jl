@@ -12,19 +12,19 @@ A = Float64[f(x) for x in 1:xmax]
 
 itp1 = Interpolation(A, Linear(OnGrid()), ExtrapError())
 
-for x in [3.1:.2:4.3]  
+for x in [1:.2:xmax]
     @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
 end
 
 @test_throws BoundsError itp1[-3]
-
+@test_throws BoundsError itp1[xmax+.1]
 
 ## ExtrapNaN
 
 itp2 = Interpolation(A, Linear(OnGrid()), ExtrapNaN())
 
-for x in [3.1:.2:4.3]  
-    @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
+for x in [1:.2:xmax]
+    @test_approx_eq_eps f(x) itp2[x] abs(.1*f(x))
 end
 
 xlo, xhi = itp2[.9], itp2[xmax+.2]
@@ -45,8 +45,8 @@ A = [f(x,y) for x in 1:xmax, y in 1:ymax]
 
 itp1 = Interpolation(A, Linear(OnGrid()), ExtrapError())
 
-for x in 1.1:.2:xmax-.1, y in 1.1:.2:ymax
-    @test_approx_eq_eps f(x,y) itp1[x,y] .1
+for x in 2.1:.2:xmax-1, y in 1.9:.2:ymax-.9
+    @test_approx_eq_eps f(x,y) itp1[x,y] .01
 end
 
 end
