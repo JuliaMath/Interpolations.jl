@@ -1,4 +1,3 @@
-
 abstract ExtrapolationBehavior
 type ExtrapError <: ExtrapolationBehavior end
 
@@ -81,3 +80,26 @@ function extrap_gen(::OnCell, ::ExtrapReflect, N)
         end
     end
 end
+
+
+type ExtrapLinear <: ExtrapolationBehavior end
+function extrap_gen(::OnGrid, ::ExtrapLinear, N)
+    quote
+        @nexprs $N d->begin
+            if x_d < 1
+                fx_d = x_d - convert(typeof(x_d), 1)
+
+                k = itp[1] - itp[2]
+                return itp[1] - k * fx_d
+            end
+            if x_d > size(itp, d)
+                s_d = size(itp,d)
+                fx_d = x_d - convert(typeof(x_d), s_d)
+
+                k = itp[s_d] - itp[s_d - 1]
+                return itp[s_d] + k * fx_d
+            end
+        end
+    end
+end
+#extrap_gen(::OnCell, e::ExtrapLinear, N) = extrap_gen(OnGrid(), e, N)

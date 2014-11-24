@@ -13,11 +13,13 @@ export
     ExtrapError,
     ExtrapNaN,
     ExtrapConstant,
+    ExtrapLinear,
     ExtrapReflect,
     OnCell,
     OnGrid,
     ExtendInner,
-    Flat
+    Flat,
+    LinearBC
 
 abstract Degree{N}
 
@@ -29,6 +31,7 @@ abstract BoundaryCondition
 type None <: BoundaryCondition end
 type ExtendInner <: BoundaryCondition end
 type Flat <: BoundaryCondition end
+type LinearBC <: BoundaryCondition end
 
 abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
 
@@ -79,14 +82,15 @@ for IT in (
         Quadratic{ExtendInner,OnGrid},
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
+        Quadratic{LinearBC,OnCell}
     )
     for EB in (
             ExtrapError,
             ExtrapNaN,
             ExtrapConstant,
+            ExtrapLinear,
             ExtrapReflect
         )
-
         eval(:(function getindex{T}(itp::Interpolation{T,1,$IT,$EB}, x::Real, d)
             d == 1 || throw(BoundsError())
             itp[x]
@@ -130,6 +134,7 @@ for IT in (
         Quadratic{ExtendInner,OnGrid},
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
+        Quadratic{LinearBC,OnCell}
     )
     @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
         ret = similar(A)
