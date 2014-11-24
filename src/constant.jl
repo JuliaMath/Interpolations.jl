@@ -9,13 +9,13 @@ function bc_gen{IT<:Constant}(::IT, N)
     end
 end
 
-function indices(::ConstantDegree, N)
+function indices(::Constant, N)
     quote
         # Constant interpolation doesn't need an fx_d
     end
 end
 
-function coefficients(::ConstantDegree, N)
+function coefficients(::Constant, N)
     quote
         @nexprs $N d->(c_d = one(typeof(x_d)))
     end
