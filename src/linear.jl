@@ -12,7 +12,7 @@ function bc_gen(::Linear{OnGrid}, N)
     end
 end
 
-function indices(::LinearDegree, N)
+function indices(::Linear{OnGrid}, N)
     quote
         # fx_d is a parameter in [0,1] such that x_d = ix_d + fx_d
         @nexprs $N d->(fx_d = x_d - convert(typeof(x_d), ix_d))
@@ -21,7 +21,7 @@ function indices(::LinearDegree, N)
     end
 end
 
-function coefficients(::LinearDegree, N)
+function coefficients(::Linear{OnGrid}, N)
     quote
         @nexprs $N d->begin
             c_d = one(typeof(fx_d)) - fx_d

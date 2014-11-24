@@ -17,3 +17,11 @@ function extrap_gen(::OnGrid, ::ExtrapNaN, N)
     end
 end
 extrap_gen(::OnCell, e::ExtrapNaN, N) = extrap_gen(OnGrid(), e, N)
+
+type ExtrapConstant <: ExtrapolationBehavior end
+function extrap_gen(::OnGrid, ::ExtrapConstant, N)
+    quote
+        @nexprs $N d->(x_d = clamp(x_d, 1, size(itp,d)))
+    end
+end
+extrap_gen(::OnCell, e::ExtrapConstant, N) = extrap_gen(OnGrid(), e, N)

@@ -5,15 +5,16 @@ Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation}(::BC, ::GR) = Quadratic{
 
 function bc_gen(::Quadratic{ExtendInner,OnCell}, N)
     quote
-        # We've already done extrapolation, but BC.ExtendInner mandates that
-        # the two outermost cells are treated specially. Therefore, we need to
+        # We've already done extrapolation, so if we're here, we know that
+        # 1 <= x_d <= size(itp,d), but ExtendInner mandates that the two
+        # outermost cells are treated specially. Therefore, we need to
         # further clamp the indices of the spline coefficients by one cell in
         # each direction.
         @nexprs $N d->(ix_d = clamp(iround(x_d), 2, size(itp,d)-1))
     end
 end
 
-function indices(::QuadraticDegree, N)
+function indices(::Quadratic{ExtendInner,OnCell}, N)
     quote
         @nexprs $N d->begin
             ixp_d = ix_d + 1
@@ -25,11 +26,49 @@ function indices(::QuadraticDegree, N)
     end
 end
 
-function coefficients(::QuadraticDegree, N)
+function coefficients(::Quadratic{ExtendInner,OnCell}, N)
     quote
         @nexprs $N d->begin
             cm_d = (fx_d-.5)^2 / 2
             c_d = 0.75 - fx_d^2
+            cp_d = (fx_d+.5)^2 / 2
+        end
+    end
+end
+
+function bc_gen(::Quadratic{Flat,OnCell}, N)
+    quote
+        # After extrapolation has been handled, 1 <= x_d <= size(itp,d)
+        # The index is simply the closest integer.
+         @nexprs $N d->(ix_d = iround(x_d))
+        # end
+    end
+end
+
+function indices(::Quadratic{Flat,OnCell}, N)
+    quote
+        @nexprs $N d->begin
+            ixp_d = ix_d + 1
+            ixm_d = ix_d - 1
+
+            fx_d = x_d - convert(typeof(x_d), ix_d)
+
+            if ix_d == size(itp,d)
+                ixp_d = ixm_d
+            end
+            if ix_d == 1
+                ixm_d = ixp_d
+            end
+        end
+    end
+end
+
+
+function coefficients(::Quadratic{Flat,OnCell}, N)
+    quote
+        @nexprs $N d->begin
+            cm_d = (fx_d-.5)^2 / 2
+            c_d = .75 - fx_d^2
             cp_d = (fx_d+.5)^2 / 2
         end
     end
@@ -49,12 +88,15 @@ function index_gen(degree::QuadraticDegree, N::Integer, offsets...)
     end
 end
 
-function prefiltering_system_matrix{T}(::Type{T}, n::Int, ::Quadratic{ExtendInner,OnCell})
+function unmodified_system_matrix{T}(::Type{T}, n::Int, ::Quadratic)
     du = fill(convert(T,1/8), n-1)
     d = fill(convert(T,3/4),n)
     dl = copy(du)
+    (dl,d,du)
+end
 
-    MT = lufact!(Tridiagonal(dl,d,du))
+function prefiltering_system_matrix{T}(::Type{T}, n::Int, q::Quadratic{ExtendInner,OnCell})
+    MT = lufact!(Tridiagonal(unmodified_system_matrix(T,n,q)...))
     U = zeros(T,n,2)
     V = zeros(T,2,n)
     C = zeros(T,2,2)
@@ -64,4 +106,11 @@ function prefiltering_system_matrix{T}(::Type{T}, n::Int, ::Quadratic{ExtendInne
     V[1,3] = V[2,n-2] = 1.
 
     Woodbury(MT, U, C, V)
+end
+
+function prefiltering_system_matrix{T}(::Type{T}, n::Int, q::Quadratic{Flat,OnCell})
+    dl,d,du = unmodified_system_matrix(T,n,q)
+    du[1] += 1/8
+    dl[end] += 1/8
+    lufact!(Tridiagonal(dl, d, du))
 end

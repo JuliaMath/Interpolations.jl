@@ -31,6 +31,17 @@ xlo, xhi = itp2[.9], itp2[xmax+.2]
 @test isnan(xlo)
 @test isnan(xhi)
 
+## ExtrapConstant
+
+itp3 = Interpolation(A, Linear(OnGrid()), ExtrapConstant())
+for x in [3.1:.2:4.3]
+    @test_approx_eq_eps f(x) itp3[x] abs(.1*f(x))
+end
+
+xlo, xhi = itp3[.9], itp3[xmax+.2]
+@test xlo == A[1]
+@test xhi == A[end]
+
 end
 
 module Linear2DTests

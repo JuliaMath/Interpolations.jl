@@ -11,9 +11,11 @@ export
     Quadratic,
     ExtrapError,
     ExtrapNaN,
+    ExtrapConstant,
     OnCell,
     OnGrid,
-    ExtendInner
+    ExtendInner,
+    Flat
 
 abstract Degree{N}
 
@@ -24,6 +26,7 @@ type OnCell <: GridRepresentation end
 abstract BoundaryCondition
 type None <: BoundaryCondition end
 type ExtendInner <: BoundaryCondition end
+type Flat <: BoundaryCondition end
 
 abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
 
@@ -63,8 +66,9 @@ include("quadratic.jl")
 
 
 # This creates getindex methods for all supported combinations
-for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell})
-    for EB in (ExtrapError,ExtrapNaN)
+for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell},Quadratic{Flat,OnCell})
+    for EB in (ExtrapError,ExtrapNaN,ExtrapConstant)
+
         eval(:(function getindex{T}(itp::Interpolation{T,1,$IT,$EB}, x::Real, d)
             d == 1 || throw(BoundsError())
             itp[x]
@@ -90,10 +94,10 @@ for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell})
                 # indices calculates the indices required for this interpolation degree,
                 # based on ix_d defined by bc_gen(), as well as the distance fx_d from 
                 # the cell index ix_d to the interpolation coordinate x_d
-                $(indices(degree(it), N))
+                $(indices(it, N))
 
                 # These coefficients determine the interpolation basis expansion
-                $(coefficients(degree(it), N))
+                $(coefficients(it, N))
 
                 @inbounds ret = $(index_gen(degree(it), N))
                 ret
@@ -103,7 +107,7 @@ for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell})
 end
 
 # This creates prefilter specializations for all interpolation types that need them
-for IT in (Quadratic{ExtendInner,OnCell},)
+for IT in (Quadratic{ExtendInner,OnCell},Quadratic{Flat,OnCell})
     @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
         ret = similar(A)
         szs = collect(size(A))
