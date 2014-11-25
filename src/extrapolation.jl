@@ -7,7 +7,11 @@ function extrap_gen(::OnGrid, ::ExtrapError, N)
         @nexprs $N d->(1 <= x_d <= size(itp,d) || throw(BoundsError()))
     end
 end
-extrap_gen(::OnCell, e::ExtrapError, N) = extrap_gen(OnGrid(), e, N)
+function extrap_gen(::OnCell, ::ExtrapError, N)
+    quote
+        @nexprs $N d->(.5 <= x_d <= size(itp,d)+.5 || throw(BoundsError()))
+    end
+end
 
 type ExtrapNaN <: ExtrapolationBehavior end
 
@@ -16,7 +20,11 @@ function extrap_gen(::OnGrid, ::ExtrapNaN, N)
         @nexprs $N d->(1 <= x_d <= size(itp,d) || return convert(T, NaN))
     end
 end
-extrap_gen(::OnCell, e::ExtrapNaN, N) = extrap_gen(OnGrid(), e, N)
+function extrap_gen(::OnCell, ::ExtrapNaN, N)
+    quote
+        @nexprs $N d->(.5 <= x_d <: size(itp,d)+.5 || return convert(T, NaN))
+    end
+end
 
 type ExtrapConstant <: ExtrapolationBehavior end
 function extrap_gen(::OnGrid, ::ExtrapConstant, N)
@@ -24,4 +32,9 @@ function extrap_gen(::OnGrid, ::ExtrapConstant, N)
         @nexprs $N d->(x_d = clamp(x_d, 1, size(itp,d)))
     end
 end
-extrap_gen(::OnCell, e::ExtrapConstant, N) = extrap_gen(OnGrid(), e, N)
+function extrap_gen(::OnCell, ::ExtrapConstant, N)
+    quote
+        @nexprs $N d->(x_d = clamp(x_d, .5, size(itp,d)+.5))
+    end
+end
+

@@ -36,7 +36,7 @@ function coefficients(::Quadratic{ExtendInner,OnCell}, N)
     end
 end
 
-function bc_gen(::Quadratic{Flat,OnCell}, N)
+function bc_gen(::Quadratic{Flat,OnGrid}, N)
     quote
         # After extrapolation has been handled, 1 <= x_d <= size(itp,d)
         # The index is simply the closest integer.
@@ -45,7 +45,24 @@ function bc_gen(::Quadratic{Flat,OnCell}, N)
     end
 end
 
-function indices(::Quadratic{Flat,OnCell}, N)
+function bc_gen(::Quadratic{Flat,OnCell}, N)
+    quote
+        # After extrapolation has been handled, 0.5 <= x_d <= size(itp,d)+.5
+        @nexprs $N d->begin
+            # The index is the closest integer...
+            ix_d = iround(x_d)
+
+            #...except in the case where x_d is actually at the upper edge;
+            # since size(itp,d)+.5 is rounded toward size(itp,d)+1,
+            # it needs special treatment*.
+            if x_d == size(itp,d)+.5
+                ix_d -= 1
+            end
+        end
+    end
+end
+
+function indices(::Quadratic{Flat,OnGrid}, N)
     quote
         @nexprs $N d->begin
             ixp_d = ix_d + 1
@@ -62,9 +79,26 @@ function indices(::Quadratic{Flat,OnCell}, N)
         end
     end
 end
+function indices(::Quadratic{Flat,OnCell}, N)
+    quote
+        @nexprs $N d->begin
+            ixp_d = ix_d + 1
+            ixm_d = ix_d - 1
+
+            fx_d = x_d - convert(typeof(x_d), ix_d)
+
+            if ix_d == size(itp,d)
+                ixp_d = ix_d
+            end
+            if ix_d == 1
+                ixm_d = ix_d
+            end
+        end
+    end
+end
 
 
-function coefficients(::Quadratic{Flat,OnCell}, N)
+function coefficients(::Quadratic{Flat}, N)
     quote
         @nexprs $N d->begin
             cm_d = (fx_d-.5)^2 / 2
@@ -109,6 +143,13 @@ function prefiltering_system_matrix{T}(::Type{T}, n::Int, q::Quadratic{ExtendInn
 end
 
 function prefiltering_system_matrix{T}(::Type{T}, n::Int, q::Quadratic{Flat,OnCell})
+    dl,d,du = unmodified_system_matrix(T,n,q)
+    d[1] += 1/8
+    d[end] += 1/8
+    lufact!(Tridiagonal(dl, d, du))
+end
+
+function prefiltering_system_matrix{T}(::Type{T}, n::Int, q::Quadratic{Flat,OnGrid})
     dl,d,du = unmodified_system_matrix(T,n,q)
     du[1] += 1/8
     dl[end] += 1/8
