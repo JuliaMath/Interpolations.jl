@@ -13,6 +13,7 @@ export
     ExtrapError,
     ExtrapNaN,
     ExtrapConstant,
+    ExtrapReflect,
     OnCell,
     OnGrid,
     ExtendInner,
@@ -59,7 +60,9 @@ offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
                     off ==  2 ? symbol(string("ixpp_", d)) : error("offset $off not recognized")
 
 gridrepresentation{D,BC,GR<:GridRepresentation}(::InterpolationType{D,BC,GR}) = GR()
+gridrepresentation{T,N,IT}(::Interpolation{T,N,IT}) = gridrepresentation(IT())
 degree{D<:Degree,BC,GR}(::InterpolationType{D,BC,GR}) = D()
+degree{T,N,IT}(::Interpolation{T,N,IT}) = degree(IT())
 
 include("constant.jl")
 include("linear.jl")
@@ -68,13 +71,21 @@ include("quadratic.jl")
 
 # This creates getindex methods for all supported combinations
 for IT in (
+        Constant{OnGrid},
         Constant{OnCell},
         Linear{OnGrid},
+        Linear{OnCell},
         Quadratic{ExtendInner,OnCell},
+        Quadratic{ExtendInner,OnGrid},
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
     )
-    for EB in (ExtrapError,ExtrapNaN,ExtrapConstant,ExtrapReflect)
+    for EB in (
+            ExtrapError,
+            ExtrapNaN,
+            ExtrapConstant,
+            ExtrapReflect
+        )
 
         eval(:(function getindex{T}(itp::Interpolation{T,1,$IT,$EB}, x::Real, d)
             d == 1 || throw(BoundsError())
@@ -115,9 +126,10 @@ end
 
 # This creates prefilter specializations for all interpolation types that need them
 for IT in (
-    Quadratic{ExtendInner,OnCell},
-    Quadratic{Flat,OnCell},
-    Quadratic{Flat,OnGrid},
+        Quadratic{ExtendInner,OnCell},
+        Quadratic{ExtendInner,OnGrid},
+        Quadratic{Flat,OnCell},
+        Quadratic{Flat,OnGrid},
     )
     @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
         ret = similar(A)

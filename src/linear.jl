@@ -2,8 +2,6 @@ type LinearDegree <: Degree{1} end
 type Linear{GR<:GridRepresentation} <: InterpolationType{LinearDegree,None,GR} end
 Linear{GR<:GridRepresentation}(::GR) = Linear{GR}()
 
-Interpolation{T,N,EB<:ExtrapolationBehavior}(A::Array{T,N}, ::Linear, ::EB) = Interpolation{T,N,Linear{OnGrid},EB}(A)
-
 function bc_gen(::Linear{OnGrid}, N)
     quote
         # LinearOnGrid's boundary condition doesn't require any action;
@@ -11,8 +9,15 @@ function bc_gen(::Linear{OnGrid}, N)
         @nexprs $N d->(ix_d = @compat floor(Integer, x_d))
     end
 end
+function bc_gen(::Linear{OnCell}, N)
+    quote
+        @nexprs $N d->begin
+            ix_d = clamp(@compat floor(x_d), 1, size(itp,d))
+        end
+    end
+end
 
-function indices(::Linear{OnGrid}, N)
+function indices(::Linear, N)
     quote
         # fx_d is a parameter in [0,1] such that x_d = ix_d + fx_d
         @nexprs $N d->(fx_d = x_d - convert(typeof(x_d), ix_d))
@@ -21,7 +26,7 @@ function indices(::Linear{OnGrid}, N)
     end
 end
 
-function coefficients(::Linear{OnGrid}, N)
+function coefficients(::Linear, N)
     quote
         @nexprs $N d->begin
             c_d = one(typeof(fx_d)) - fx_d

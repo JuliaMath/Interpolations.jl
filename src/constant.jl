@@ -1,11 +1,20 @@
 type ConstantDegree <: Degree{0} end
 type Constant{GR<:GridRepresentation} <: InterpolationType{ConstantDegree,None,GR} end
-
 Constant{GR<:GridRepresentation}(::GR) = Constant{GR}()
 
-function bc_gen{IT<:Constant}(::IT, N)
+function bc_gen(::Constant{OnGrid}, N)
     quote
         @nexprs $N d->(ix_d = iround(x_d))
+    end
+end
+function bc_gen(::Constant{OnCell}, N)
+    quote
+        @nexprs $N d->begin
+            ix_d = iround(x_d)
+            if size(itp,d) < x_d <= size(itp, d) + .5
+                ix_d = size(itp,d)
+            end
+        end
     end
 end
 

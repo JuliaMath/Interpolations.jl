@@ -3,7 +3,7 @@ type Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation} <: InterpolationTyp
 
 Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation}(::BC, ::GR) = Quadratic{BC,GR}()
 
-function bc_gen(::Quadratic{ExtendInner,OnCell}, N)
+function bc_gen(::Quadratic{ExtendInner}, N)
     quote
         # We've already done extrapolation, so if we're here, we know that
         # 1 <= x_d <= size(itp,d), but ExtendInner mandates that the two
@@ -14,7 +14,7 @@ function bc_gen(::Quadratic{ExtendInner,OnCell}, N)
     end
 end
 
-function indices(::Quadratic{ExtendInner,OnCell}, N)
+function indices(::Quadratic{ExtendInner}, N)
     quote
         @nexprs $N d->begin
             ixp_d = ix_d + 1
@@ -22,16 +22,6 @@ function indices(::Quadratic{ExtendInner,OnCell}, N)
 
             # fx_d is the distance from the middle point to the interpolation point
             fx_d = x_d - convert(typeof(x_d), ix_d)
-        end
-    end
-end
-
-function coefficients(::Quadratic{ExtendInner,OnCell}, N)
-    quote
-        @nexprs $N d->begin
-            cm_d = (fx_d-.5)^2 / 2
-            c_d = 0.75 - fx_d^2
-            cp_d = (fx_d+.5)^2 / 2
         end
     end
 end
@@ -98,7 +88,7 @@ function indices(::Quadratic{Flat,OnCell}, N)
 end
 
 
-function coefficients(::Quadratic{Flat}, N)
+function coefficients(::Quadratic, N)
     quote
         @nexprs $N d->begin
             cm_d = (fx_d-.5)^2 / 2
@@ -129,8 +119,11 @@ function unmodified_system_matrix{T}(::Type{T}, n::Int, ::Quadratic)
     (dl,d,du)
 end
 
-function prefiltering_system_matrix{T}(::Type{T}, n::Int, q::Quadratic{ExtendInner,OnCell})
-    MT = lufact!(Tridiagonal(unmodified_system_matrix(T,n,q)...))
+function prefiltering_system_matrix{T}(::Type{T}, n::Int, q::Quadratic{ExtendInner})
+    dl,d,du = unmodified_system_matrix(T,n,q)
+    d[1] = d[end] = 9/8
+    du[1] = dl[end] = -1/4
+    MT = lufact!(Tridiagonal(dl, d, du))
     U = zeros(T,n,2)
     V = zeros(T,2,n)
     C = zeros(T,2,2)
