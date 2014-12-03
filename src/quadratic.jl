@@ -10,7 +10,7 @@ function bc_gen(::Quadratic{ExtendInner,OnCell}, N)
         # outermost cells are treated specially. Therefore, we need to
         # further clamp the indices of the spline coefficients by one cell in
         # each direction.
-        @nexprs $N d->(ix_d = clamp(iround(x_d), 2, size(itp,d)-1))
+        @nexprs $N d->(ix_d = clamp(@compat(round(Integer, x_d)), 2, size(itp,d)-1))
     end
 end
 
@@ -40,7 +40,7 @@ function bc_gen(::Quadratic{Flat,OnCell}, N)
     quote
         # After extrapolation has been handled, 1 <= x_d <= size(itp,d)
         # The index is simply the closest integer.
-         @nexprs $N d->(ix_d = iround(x_d))
+        @nexprs $N d->(ix_d = @compat round(Integer, x_d))
         # end
     end
 end

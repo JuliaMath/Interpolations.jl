@@ -8,7 +8,7 @@ function bc_gen(::Linear{OnGrid}, N)
     quote
         # LinearOnGrid's boundary condition doesn't require any action;
         # just return the cell index of the interpolation coordinate
-        @nexprs $N d->(ix_d = ifloor(x_d))
+        @nexprs $N d->(ix_d = @compat floor(Integer, x_d))
     end
 end
 

@@ -1,6 +1,7 @@
 module Interpolations
 
 using Base.Cartesian
+using Compat
 
 import Base: size, eltype, getindex
 
