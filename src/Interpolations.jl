@@ -3,7 +3,7 @@ module Interpolations
 using Base.Cartesian
 using Compat
 
-import Base: size, eltype, getindex
+import Base: size, eltype, getindex, ndims
 
 export 
     Interpolation,
@@ -51,8 +51,10 @@ end
 # However, all prefilters copy the array, so do that here as well
 prefilter{T,N,IT<:InterpolationType}(A::AbstractArray{T,N}, ::IT) = copy(A)
 
-size(itp::Interpolation, d::Integer) = size(itp.coefs, d)
-size(itp::Interpolation) = size(itp.coefs)
+size{T,N,IT<:InterpolationType}(itp::Interpolation{T,N,IT}, d::Integer) =
+    size(itp.coefs, d) - 2*padding(IT())
+size(itp::Interpolation) = tuple(collect([size(itp,i) for i in 1:ndims(itp)]))
+ndims(itp::Interpolation) = ndims(itp.coefs)
 eltype(itp::Interpolation) = eltype(itp.coefs)
 
 offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
@@ -69,6 +71,14 @@ include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")
 
+# If nothing else is specified, don't pad at all
+padding(::InterpolationType) = 0
+padding{T,N,IT<:InterpolationType}(::Interpolation{T,N,IT}) = padding(IT())
+function similar_with_padding(A, it::InterpolationType)
+    pad = padding(it)
+    coefs = Array(eltype(A), [size(A,i)+2pad for i in 1:ndims(A)]...)
+    coefs, pad
+end
 
 # This creates getindex methods for all supported combinations
 for IT in (
@@ -131,22 +141,28 @@ for IT in (
         Quadratic{LinearBC,OnCell}
     )
     @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
-        ret = similar(A)
+        ret, pad = similar_with_padding(A,it)
         szs = collect(size(A))
         strds = collect(strides(A))
+        strdsR = collect(strides(ret))
 
         for dim in 1:N
             n = szs[dim]
             szs[dim] = 1
 
-            M = prefiltering_system_matrix(eltype(A), n, it)
+            M, b = prefiltering_system(eltype(A), n+2pad, it)
 
             @nloops N i d->1:szs[d] begin
                 cc = @ntuple N i
                 strt = 1 + sum([(cc[i]-1)*strds[i] for i in 1:length(cc)])
+                strtR = 1 + sum([(cc[i]-1)*strdsR[i] for i in 1:length(cc)])
                 rng = range(strt, strds[dim], n)
-                ret[rng] = M \ vec(A[rng])
-            end            
+                rngR = range(strtR, strdsR[dim], size(ret,dim))
+
+                b[1+pad:end-pad] += A[rng]
+                ret[rngR] = M \ b
+                b[1+pad:end-pad], A[rng]
+            end
             szs[dim] = n
         end
         ret
