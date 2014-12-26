@@ -6,13 +6,13 @@ function bc_gen(::Linear{OnGrid}, N)
     quote
         # LinearOnGrid's boundary condition doesn't require any action;
         # just return the cell index of the interpolation coordinate
-        @nexprs $N d->(ix_d = @compat floor(Integer, x_d))
+        @nexprs $N d->(ix_d = (floor(Int,x_d)))
     end
 end
 function bc_gen(::Linear{OnCell}, N)
     quote
         @nexprs $N d->begin
-            ix_d = clamp(@compat floor(x_d), 1, size(itp,d))
+            ix_d = clamp(floor(Int,x_d), 1, size(itp,d))
         end
     end
 end
