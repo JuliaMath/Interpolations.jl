@@ -62,7 +62,7 @@ A quadratic polynomial requires three coefficients, and thus quadratic B-splines
 Assuming a symmetric spline basis, one finds that 
 \begin{align}
 \label{bspline-quadratic-yi}
-y_i(\delta x) &= c_i-1\left(\tfrac{1}{2} - \delta x\right)^{2} + c_{i}\left(\tfrac{3}{4} - \delta x^{2}\right) + c_{i+1}\left(\tfrac{1}{2} + \delta x\right)^{2}
+y_i(\delta x) &= c_{i-1}\left(\tfrac{1}{2} - \delta x\right)^{2} + c_{i}\left(\tfrac{3}{4} - \delta x^{2}\right) + c_{i+1}\left(\tfrac{1}{2} + \delta x\right)^{2}
 \end{align}
 Furthermore, we require that on cell boundaries, the function values and first derivatives are continuous, which yields $y_{i}(\frac{1}{2}) = y_{i+1}(-\frac{1}{2})$ and $y'_{i}(\frac{1}{2}) = y'_{i+1}(-\frac{1}{2})$. Inserting these in each-other, we find the following equation for each data point:
 \begin{align*}\frac{1}{8} c_{i-1} + \frac{3}{4} c_{i} + \frac{1}{8} c_{i+1} = v_i\end{align*}
