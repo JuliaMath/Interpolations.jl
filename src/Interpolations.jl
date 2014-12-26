@@ -21,7 +21,11 @@ export
     Flat,
     LinearBC,
     Free,
-    Periodic
+    Periodic,
+
+    degree,
+    boundarycondition,
+    gridrepresentation
 
 abstract Degree{N}
 
@@ -67,6 +71,8 @@ offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
                     off ==  1 ? symbol(string("ixp_", d)) :
                     off ==  2 ? symbol(string("ixpp_", d)) : error("offset $off not recognized")
 
+boundarycondition{D,BC<:BoundaryCondition}(::InterpolationType{D,BC}) = BC()
+boundarycondition{T,N,IT}(::Interpolation{T,N,IT}) = boundarycondition(IT())
 gridrepresentation{D,BC,GR<:GridRepresentation}(::InterpolationType{D,BC,GR}) = GR()
 gridrepresentation{T,N,IT}(::Interpolation{T,N,IT}) = gridrepresentation(IT())
 degree{D<:Degree,BC,GR}(::InterpolationType{D,BC,GR}) = D()
