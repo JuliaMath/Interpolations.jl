@@ -21,7 +21,9 @@ for (IT, EB) in (
         (Quadratic{LinearBC,OnCell}, ExtrapLinear),
         (Quadratic{LinearBC,OnGrid}, ExtrapLinear),
         (Quadratic{LinearBC,OnGrid}, ExtrapReflect),
-        (Quadratic{Flat,OnCell}, ExtrapReflect)
+        (Quadratic{Flat,OnCell}, ExtrapReflect),
+        (Quadratic{Free,OnCell}, ExtrapReflect),
+        (Quadratic{Free,OnGrid}, ExtrapReflect),
     )
     itp = Interpolation(y1, IT(), EB())
 

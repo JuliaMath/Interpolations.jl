@@ -18,7 +18,8 @@ export
     OnCell,
     OnGrid,
     Flat,
-    LinearBC
+    LinearBC,
+    Free
 
 abstract Degree{N}
 
@@ -30,6 +31,7 @@ abstract BoundaryCondition
 type None <: BoundaryCondition end
 type Flat <: BoundaryCondition end
 type LinearBC <: BoundaryCondition end
+type Free <: BoundaryCondition end
 
 abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
 
@@ -89,7 +91,9 @@ for IT in (
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
         Quadratic{LinearBC,OnGrid},
-        Quadratic{LinearBC,OnCell}
+        Quadratic{LinearBC,OnCell},
+        Quadratic{Free,OnGrid},
+        Quadratic{Free,OnCell},
     )
     for EB in (
             ExtrapError,
@@ -141,6 +145,8 @@ for IT in (
         Quadratic{Flat,OnGrid},
         Quadratic{LinearBC,OnGrid},
         Quadratic{LinearBC,OnCell},
+        Quadratic{Free,OnGrid},
+        Quadratic{Free,OnCell},
     )
     @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
         ret, pad = similar_with_padding(A,it)

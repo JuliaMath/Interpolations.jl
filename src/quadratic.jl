@@ -101,3 +101,19 @@ function prefiltering_system{T}(::Type{T}, n::Int, q::Quadratic{LinearBC})
 
     Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(T, n)
 end
+
+function prefiltering_system{T}(::Type{T}, n::Int, q::Quadratic{Free})
+    dl,d,du = inner_system_diags(T,n,q)
+    d[1] = d[end] = convert(T, 1)
+    du[1] = dl[end] = convert(T, -3)
+
+    rowspec = zeros(T,n,4)
+    rowspec[1,1] = rowspec[1,2] = rowspec[n,3] = rowspec[n,4] = convert(T,1)
+    colspec = zeros(T,4,n)
+    colspec[1,3] = colspec[2,4] = colspec[3,n-2] = colspec[4,n-3] = convert(T,1)
+    valspec = zeros(T,4,4)
+    valspec[1,1] = valspec[3,3] = convert(T, 3)
+    valspec[2,2] = valspec[4,4] = convert(T, -1)
+
+    Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(T, n)
+end
