@@ -121,23 +121,60 @@ y'(x_{\text{edge}}) = y'_1\left(-\frac{1}{2}\right) &= \frac{1}{2}\left[-2c_0 + 
 
 \subsubsection{Linear, or natural, boundary conditions}
 
-For linear boundary conditions (in many contexts referred to as ``natural''), we want the second-order derivative at the boundary to equal zero, i.e. $y''(x_{\text{edge}}) = 0$.
+For linear boundary conditions (in many contexts referred to as ``natural''), we want the second-order derivative at the boundary to equal zero, i.e. $y''(x_{\text{edge}}) = 0$, in order for the interpolant to become a linear function at the edge. Since $y_i''(\delta x)$ is independent of $\delta x$, the specification is the same regardless of grid representation.
 
-\paragraph{\texttt{Quadratic\{Linear,OnGrid\}}}
+\paragraph{\texttt{Quadratic\{Linear\}}}
 \begin{align*}
-y''(x_{\text{edge}}) = y''_1(0) &= c_0 - 2 c_1 + c_2 \Rightarrow c_0 = 2 c_1 - c_2 \\
+y''(x_{\text{edge}}) = \begin{cases}y''_1(0) & \texttt{OnGrid} \\y''_1(-\frac{1}{2}) & \texttt{OnCell}\end{cases} &= c_0 - 2 c_1 + c_2 = 0 \\
 \\
-\frac{1}{8}c_0 + \frac{3}{4} c_1 + \frac{1}{8} c_2 &= \\
-\left(\frac{2}{8}+\frac{3}{4}\right)c_1 + \left(\frac{1}{8}-\frac{1}{8}\right) = c_1 &= v_1
+\begin{bmatrix}
+1 & -2 & 1 \\
+\frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
+ & \frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
+ & & \ddots & \ddots & \ddots
+\end{bmatrix}
+\begin{bmatrix}c_0\\ c_1\\ c_2\\\vdots\end{bmatrix}
+&=
+\begin{bmatrix}0\\ v_1 \\ v_2 \\\vdots\end{bmatrix}
 \end{align*}
 
-\paragraph{\texttt{Quadratic\{Linear,OnCell\}}}
+\subsubsection{Free boundary conditions}
+
+The ``free'' boundary conditions imposes no restrictions on the interpolating function or its derivatives at the edges; instead, we require a second continuous derivative at the second-to-outermost cell boundary, i.e. $y_1''(\frac{1}{2}) = y_2''(-\frac{1}{2})$ and $y_{N-1}''(\frac{1}{2}) = y_N''(-\frac{1}{2})$.
+
+\paragraph{\texttt{Quadratic\{Free\}}}
 \begin{align*}
-y''(x_{\text{edge}}) = y''_1\left(-\tfrac{1}{2}\right) &= c_0 - 2 c_1 + c_2 \Rightarrow c_0 = 2 c_1 - c_2 \\
+y''_1(\frac{1}{2}) = y''_2(-\frac{1}{2}) & \Leftrightarrow c_0 - 2c_1 + c_2 = c_1 - 2c_2 + c_3 \\
+&\Rightarrow c_0 - 3c_1 + 3c_2 - c_3 = 0\\
 \\
-\frac{1}{8}c_0 + \frac{3}{4} c_1 + \frac{1}{8} c_2 &= \\
-\left(\frac{2}{8}+\frac{3}{4}\right)c_1 + \left(\frac{1}{8}-\frac{1}{8}\right) = c_1 &= v_1
+\begin{bmatrix}
+1 & -3 & 3 & -1 \\
+\frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
+ & \frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
+ & & \ddots & \ddots & \ddots
+\end{bmatrix}
+\begin{bmatrix}c_0\\ c_1\\ c_2\\\vdots\end{bmatrix}
+&=
+\begin{bmatrix}0\\ v_1 \\ v_2 \\\vdots\end{bmatrix}
 \end{align*}
+
+\subsubsection{Periodic boundary conditions}
+
+For periodic boundary conditions, we do not introduce ghost cells $0$ and $N+1$ - instead, we wrap the equation coefficients. Thus, we need no extra conditions, except that when evaluating the polynomial at $i=1$ we need to adjust the indexing to pretend that $i-1 = N$.
+
+\paragraph{\texttt{Quadratic\{Periodic\}}}
+\begin{align*}
+\begin{bmatrix}
+\frac{3}{4} & \frac{1}{8} & \cdots & & \frac{1}{8}\\
+\frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
+ & \frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
+ & & \ddots & \ddots & \ddots
+\end{bmatrix}
+\begin{bmatrix}c_1\\ c_2\\ c_3\\\vdots\end{bmatrix}
+&=
+\begin{bmatrix}v_1 \\ v_2 \\ c_3\\\vdots\end{bmatrix}
+\end{align*}
+
 
 \nocite{*}
 \printbibliography
