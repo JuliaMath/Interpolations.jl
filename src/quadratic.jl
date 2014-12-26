@@ -9,6 +9,12 @@ function bc_gen(q::Quadratic, N)
         @nexprs $N d->(ix_d = clamp(round(Integer, x_d), 1, size(itp,d)) + pad)
     end
 end
+function bc_gen(q::Quadratic{Periodic,OnGrid}, N)
+    quote
+        pad = padding($q)
+        @nexprs $N d->(ix_d = clamp(@compat(round(Integer,x_d)), 1, size(itp,d)) + pad)
+    end
+end
 
 function indices(q::Quadratic, N)
     quote
@@ -16,6 +22,17 @@ function indices(q::Quadratic, N)
         @nexprs $N d->begin
             ixp_d = ix_d + 1
             ixm_d = ix_d - 1
+
+            fx_d = x_d - convert(typeof(x_d), ix_d - pad)
+        end
+    end
+end
+function indices(q::Quadratic{Periodic}, N)
+    quote
+        pad = padding($q)
+        @nexprs $N d->begin
+            ixp_d = mod1(ix_d + 1, size(itp,d))
+            ixm_d = mod1(ix_d - 1, size(itp,d))
 
             fx_d = x_d - convert(typeof(x_d), ix_d - pad)
         end
@@ -50,12 +67,14 @@ end
 # Therefore, make the coefficient array 1 larger in each direction,
 # in each dimension.
 padding(::Quadratic) = 1
+# For periodic boundary conditions, we don't pad - instead, we wrap the
+# the coefficients
+padding(::Quadratic{Periodic}) = 0
 
 function inner_system_diags{T}(::Type{T}, n::Int, ::Quadratic)
     du = fill(convert(T,1/8), n-1)
     d = fill(convert(T,3/4),n)
     dl = copy(du)
-    d[1] = d[end] = du[1] = dl[end] = convert(T,0)
     (dl,d,du)
 end
 
@@ -114,6 +133,20 @@ function prefiltering_system{T}(::Type{T}, n::Int, q::Quadratic{Free})
     valspec = zeros(T,4,4)
     valspec[1,1] = valspec[3,3] = convert(T, 3)
     valspec[2,2] = valspec[4,4] = convert(T, -1)
+
+    Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(T, n)
+end
+
+function prefiltering_system{T}(::Type{T}, n::Int, q::Quadratic{Periodic})
+    dl,d,du = inner_system_diags(T,n,q)
+
+    rowspec = zeros(T,n,2)
+    rowspec[1,1] = rowspec[n,2] = convert(T,1)
+    colspec = zeros(T,2,n)
+    colspec[1,n] = colspec[2,1] = convert(T,1)
+    valspec = zeros(T,2,2)
+    valspec[1,1] = convert(T, 1/8)
+    valspec[2,2] = convert(T, 1/8)
 
     Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(T, n)
 end

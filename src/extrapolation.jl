@@ -80,6 +80,21 @@ function extrap_gen(::OnCell, ::ExtrapReflect, N)
     end
 end
 
+type ExtrapPeriodic <: ExtrapolationBehavior end
+function extrap_gen(::GridRepresentation, ::ExtrapPeriodic, N)
+    quote
+        @nexprs $N d->begin
+            # translate x_d to inside the domain
+            n = convert(typeof(x_d), size(itp,d))
+            while x_d < .5
+                x_d += n
+            end
+            while x_d >= n + .5
+                x_d -= n
+            end
+        end
+    end
+end
 
 type ExtrapLinear <: ExtrapolationBehavior end
 function extrap_gen(::OnGrid, ::ExtrapLinear, N)
