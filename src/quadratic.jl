@@ -3,26 +3,10 @@ type Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation} <: InterpolationTyp
 
 Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation}(::BC, ::GR) = Quadratic{BC,GR}()
 
-function bc_gen(::Quadratic{ExtendInner}, N)
+function bc_gen(q::Quadratic, N)
     quote
-        # We've already done extrapolation, so if we're here, we know that
-        # 1 <= x_d <= size(itp,d), but ExtendInner mandates that the two
-        # outermost cells are treated specially. Therefore, we need to
-        # further clamp the indices of the spline coefficients by one cell in
-        # each direction.
-        @nexprs $N d->(ix_d = clamp(@compat(round(Integer, x_d)), 2, size(itp,d)-1))
-    end
-end
-
-function indices(::Quadratic{ExtendInner}, N)
-    quote
-        @nexprs $N d->begin
-            ixp_d = ix_d + 1
-            ixm_d = ix_d - 1
-
-            # fx_d is the distance from the middle point to the interpolation point
-            fx_d = x_d - convert(typeof(x_d), ix_d)
-        end
+        pad = padding($q)
+        @nexprs $N d->(ix_d = clamp(@compat(round(Integer, x_d)), 1, size(itp,d)) + pad)
     end
 end
 
@@ -30,7 +14,8 @@ function bc_gen(::Quadratic{Flat,OnGrid}, N)
     quote
         # After extrapolation has been handled, 1 <= x_d <= size(itp,d)
         # The index is simply the closest integer.
-        @nexprs $N d->(ix_d = @compat round(Integer, x_d))
+        pad = padding($q)
+        @nexprs $N d->(ix_d = @compat round(Integer, x_d)) + pad
         # end
     end
 end

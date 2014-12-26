@@ -17,7 +17,6 @@ export
     ExtrapReflect,
     OnCell,
     OnGrid,
-    ExtendInner,
     Flat,
     LinearBC
 
@@ -29,7 +28,6 @@ type OnCell <: GridRepresentation end
 
 abstract BoundaryCondition
 type None <: BoundaryCondition end
-type ExtendInner <: BoundaryCondition end
 type Flat <: BoundaryCondition end
 type LinearBC <: BoundaryCondition end
 
@@ -78,8 +76,6 @@ for IT in (
         Constant{OnCell},
         Linear{OnGrid},
         Linear{OnCell},
-        Quadratic{ExtendInner,OnCell},
-        Quadratic{ExtendInner,OnGrid},
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
         Quadratic{LinearBC,OnCell}
@@ -130,8 +126,6 @@ end
 
 # This creates prefilter specializations for all interpolation types that need them
 for IT in (
-        Quadratic{ExtendInner,OnCell},
-        Quadratic{ExtendInner,OnGrid},
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
         Quadratic{LinearBC,OnCell}
