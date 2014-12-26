@@ -52,7 +52,7 @@ f(x,y) = sin(x/10)*cos(y/6)
 
 xmax, ymax = 30,10
 
-A = [f(x,y) for x in 1:xmax, y in 1:ymax]
+A = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
 
 itp1 = Interpolation(A, Linear(OnGrid()), ExtrapError())
 

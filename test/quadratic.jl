@@ -10,7 +10,7 @@ A = Float64[f(x) for x in 1:xmax]
 
 ## ExtrapError
 
-itp1 = Interpolation(A, Quadratic(ExtendInner(),OnCell()), ExtrapError())
+itp1 = Interpolation(A, Quadratic(Flat(),OnCell()), ExtrapError())
 
 for x in [3.1:.2:4.3]  
     @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
@@ -21,19 +21,22 @@ end
 
 ## ExtrapNaN
 
-itp2 = Interpolation(A, Quadratic(ExtendInner(),OnCell()), ExtrapNaN())
+itp2 = Interpolation(A, Quadratic(Flat(),OnCell()), ExtrapNaN())
 
-for x in [3.1:.2:4.3]  
-    @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
+for x in [3.1:.2:4.3]
+    @test_approx_eq_eps f(x) itp2[x] abs(.1*f(x))
 end
 
-xlo, xhi = itp2[.9], itp2[xmax+.2]
-@test isnan(xlo)
-@test isnan(xhi)
+@test isnan(itp2[.4])
+@test !isnan(itp2[.5])
+@test !isnan(itp2[.6])
+@test !isnan(itp2[xmax+.4])
+@test !isnan(itp2[xmax+.5])
+@test isnan(itp2[xmax+.6])
 
 # Flat/ExtrapConstant
 
-itp3 = Interpolation(A, Quadratic(Flat(),OnCell()), ExtrapConstant())
+itp3 = Interpolation(A, Quadratic(Flat(),OnGrid()), ExtrapConstant())
 
 # Check inbounds and extrap values
 
@@ -42,8 +45,8 @@ for x in [3.1:.2:4.3]
 end
 
 xlo, xhi = itp3[.9], itp3[xmax+.2]
-@test xlo == A[1]
-@test xhi == A[end]
+@test_approx_eq xlo A[1]
+@test_approx_eq xhi A[end]
 
 # Check continuity
 xs = [0:.1:length(A)+1]

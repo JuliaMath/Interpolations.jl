@@ -25,9 +25,9 @@ end
 function coefficients(::Quadratic, N)
     quote
         @nexprs $N d->begin
-            cm_d = (fx_d-.5)^2 / 2
+            cm_d = .5 * (fx_d-.5)^2
             c_d = .75 - fx_d^2
-            cp_d = (fx_d+.5)^2 / 2
+            cp_d = .5 * (fx_d+.5)^2
         end
     end
 end

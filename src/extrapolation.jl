@@ -1,6 +1,6 @@
 abstract ExtrapolationBehavior
-type ExtrapError <: ExtrapolationBehavior end
 
+type ExtrapError <: ExtrapolationBehavior end
 function extrap_gen(::OnGrid, ::ExtrapError, N)
     quote
         @nexprs $N d->(1 <= x_d <= size(itp,d) || throw(BoundsError()))
@@ -8,12 +8,11 @@ function extrap_gen(::OnGrid, ::ExtrapError, N)
 end
 function extrap_gen(::OnCell, ::ExtrapError, N)
     quote
-        @nexprs $N d->(.5 <= x_d <= size(itp,d)+.5 || throw(BoundsError()))
+        @nexprs $N d->(.5 <= x_d <= size(itp,d) + .5 || throw(BoundsError()))
     end
 end
 
 type ExtrapNaN <: ExtrapolationBehavior end
-
 function extrap_gen(::OnGrid, ::ExtrapNaN, N)
     quote
         @nexprs $N d->(1 <= x_d <= size(itp,d) || return convert(T, NaN))
@@ -21,7 +20,7 @@ function extrap_gen(::OnGrid, ::ExtrapNaN, N)
 end
 function extrap_gen(::OnCell, ::ExtrapNaN, N)
     quote
-        @nexprs $N d->(.5 <= x_d <= size(itp,d)+.5 || return convert(T, NaN))
+        @nexprs $N d->(.5 <= x_d <= size(itp,d) + .5 || return convert(T, NaN))
     end
 end
 
@@ -89,7 +88,7 @@ function extrap_gen(::OnGrid, ::ExtrapLinear, N)
             if x_d < 1
                 fx_d = x_d - convert(typeof(x_d), 1)
 
-                k = itp[1] - itp[2]
+                k = -4*itp.coefs[1]
                 return itp[1] - k * fx_d
             end
             if x_d > size(itp, d)
@@ -102,4 +101,4 @@ function extrap_gen(::OnGrid, ::ExtrapLinear, N)
         end
     end
 end
-#extrap_gen(::OnCell, e::ExtrapLinear, N) = extrap_gen(OnGrid(), e, N)
+extrap_gen(::OnCell, e::ExtrapLinear, N) = extrap_gen(OnGrid(), e, N)

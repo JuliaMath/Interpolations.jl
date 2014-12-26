@@ -88,6 +88,7 @@ for IT in (
         Linear{OnCell},
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
+        Quadratic{LinearBC,OnGrid},
         Quadratic{LinearBC,OnCell}
     )
     for EB in (
@@ -138,7 +139,8 @@ end
 for IT in (
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
-        Quadratic{LinearBC,OnCell}
+        Quadratic{LinearBC,OnGrid},
+        Quadratic{LinearBC,OnCell},
     )
     @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
         ret, pad = similar_with_padding(A,it)
