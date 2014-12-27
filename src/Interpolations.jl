@@ -62,7 +62,7 @@ prefilter{T,N,IT<:InterpolationType}(A::AbstractArray{T,N}, ::IT) = copy(A)
 
 size{T,N,IT<:InterpolationType}(itp::Interpolation{T,N,IT}, d::Integer) =
     size(itp.coefs, d) - 2*padding(IT())
-size(itp::Interpolation) = tuple(collect([size(itp,i) for i in 1:ndims(itp)]))
+size(itp::Interpolation) = tuple([size(itp,i) for i in 1:ndims(itp)]...)
 ndims(itp::Interpolation) = ndims(itp.coefs)
 eltype(itp::Interpolation) = eltype(itp.coefs)
 
