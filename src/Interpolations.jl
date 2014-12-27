@@ -183,7 +183,7 @@ for IT in (
 
                 b[1+pad:end-pad] += A[rng]
                 ret[rngR] = M \ b
-                b[1+pad:end-pad], A[rng]
+                b[1+pad:end-pad] -= A[rng]
             end
             szs[dim] = n
         end
