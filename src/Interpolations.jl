@@ -85,9 +85,21 @@ include("quadratic.jl")
 # If nothing else is specified, don't pad at all
 padding(::InterpolationType) = 0
 padding{T,N,IT<:InterpolationType}(::Interpolation{T,N,IT}) = padding(IT())
-function similar_with_padding(A, it::InterpolationType)
+
+function pad_size_and_index(sz::Tuple, pad)
+    sz = Int[s+2pad for s in sz]
+    N = length(sz)
+    ind = cell(N)
+    for i in 1:N
+        ind[i] = 1+pad:sz[i]-pad
+    end
+    sz, ind
+end
+function copy_with_padding(A, it::InterpolationType)
     pad = padding(it)
-    coefs = Array(eltype(A), [size(A,i)+2pad for i in 1:ndims(A)]...)
+    sz,ind = pad_size_and_index(size(A), pad)
+    coefs = fill(convert(eltype(A), 0), sz...)
+    coefs[ind...] = A
     coefs, pad
 end
 
@@ -163,27 +175,28 @@ for IT in (
         Quadratic{Periodic,OnCell},
     )
     @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
-        ret, pad = similar_with_padding(A,it)
-        szs = collect(size(A))
-        strds = collect(strides(A))
-        strdsR = collect(strides(ret))
+        ret, pad = copy_with_padding(A,it)
+
+        szs = collect(size(ret))
+        strds = collect(strides(ret))
 
         for dim in 1:N
             n = szs[dim]
             szs[dim] = 1
 
-            M, b = prefiltering_system(eltype(A), n+2pad, it)
+            M, b = prefiltering_system(eltype(A), n, it)
 
             @nloops N i d->1:szs[d] begin
                 cc = @ntuple N i
-                strt = 1 + sum([(cc[i]-1)*strds[i] for i in 1:length(cc)])
-                strtR = 1 + sum([(cc[i]-1)*strdsR[i] for i in 1:length(cc)])
-                rng = range(strt, strds[dim], n)
-                rngR = range(strtR, strdsR[dim], size(ret,dim))
 
-                b[1+pad:end-pad] += A[rng]
-                ret[rngR] = M \ b
-                b[1+pad:end-pad] -= A[rng]
+                strt_diff = sum([(cc[i]-1)*strds[i] for i in 1:length(cc)])
+                strt = 1 + strt_diff
+                rng = range(strt, strds[dim], n)
+
+                bdiff = ret[rng]
+                b += bdiff
+                ret[rng] = M \ b
+                b -= bdiff
             end
             szs[dim] = n
         end
