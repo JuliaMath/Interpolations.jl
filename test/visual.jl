@@ -44,6 +44,23 @@ for (IT, EB) in (
     display(plot(stuff...))
 end
 
+nx = 10
+xg = 1:nx
+ny = 6
+yg = 1:ny
+
+f2(x,y) = sin(2pi/nx * (x-1)) * cos(2pi/ny * (y-1))
+zg = Float64[f2(x,y) for x in xg, y in yg]
+
+xf = 1:.1:nx
+yf = 1:.1:ny
+
+itp2 = Interpolation(zg, Quadratic(Flat(),OnCell()),ExtrapConstant())
+
+display(plot(
+    layer(x=xf,y=yf,z=[itp2[x,y] for x in xf, y in yf], Geom.contour),
+))
+
 end
 
 end
