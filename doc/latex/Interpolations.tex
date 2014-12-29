@@ -1,6 +1,7 @@
 \documentclass{article}
 
 \usepackage{amsmath}
+\usepackage{graphicx}
 \usepackage{titlesec}
 \usepackage[hidelinks]{hyperref}
 \usepackage[backend=biber,natbib=true]{biblatex}
@@ -123,7 +124,10 @@ y'(x_{\text{edge}}) = y'_1\left(-\frac{1}{2}\right) &= \frac{1}{2}\left[-2c_0 + 
 
 For linear boundary conditions (in many contexts referred to as ``natural''), we want the second-order derivative at the boundary to equal zero, i.e. $y''(x_{\text{edge}}) = 0$, in order for the interpolant to become a linear function at the edge. Since $y_i''(\delta x)$ is independent of $\delta x$, the specification is the same regardless of grid representation.
 
-\paragraph{\texttt{Quadratic\{Linear\}}}
+\paragraph{\texttt{Quadratic\{Line,OnCell\}}}
+\paragraph{\texttt{Quadratic\{Line,OnGrid\}}}
+\paragraph{\texttt{Quadratic\{Natural,OnCell\}}}
+\paragraph{\texttt{Quadratic\{Natural,OnGrid\}}}
 \begin{align*}
 y''(x_{\text{edge}}) = \begin{cases}y''_1(0) & \texttt{OnGrid} \\y''_1(-\frac{1}{2}) & \texttt{OnCell}\end{cases} &= c_0 - 2 c_1 + c_2 = 0 \\
 \\
@@ -142,7 +146,8 @@ y''(x_{\text{edge}}) = \begin{cases}y''_1(0) & \texttt{OnGrid} \\y''_1(-\frac{1}
 
 The ``free'' boundary conditions imposes no restrictions on the interpolating function or its derivatives at the edges; instead, we require a second continuous derivative at the second-to-outermost cell boundary, i.e. $y_1''(\frac{1}{2}) = y_2''(-\frac{1}{2})$ and $y_{N-1}''(\frac{1}{2}) = y_N''(-\frac{1}{2})$.
 
-\paragraph{\texttt{Quadratic\{Free\}}}
+\paragraph{\texttt{Quadratic\{Free,OnCell\}}}
+\paragraph{\texttt{Quadratic\{Free,OnGrid\}}}
 \begin{align*}
 y''_1(\frac{1}{2}) = y''_2(-\frac{1}{2}) & \Leftrightarrow c_0 - 2c_1 + c_2 = c_1 - 2c_2 + c_3 \\
 &\Rightarrow c_0 - 3c_1 + 3c_2 - c_3 = 0\\
@@ -162,7 +167,16 @@ y''_1(\frac{1}{2}) = y''_2(-\frac{1}{2}) & \Leftrightarrow c_0 - 2c_1 + c_2 = c_
 
 For periodic boundary conditions, we do not introduce ghost cells $0$ and $N+1$ - instead, we wrap the equation coefficients. Thus, we need no extra conditions, except that when evaluating the polynomial at $i=1$ we need to adjust the indexing to pretend that $i-1 = N$.
 
-\paragraph{\texttt{Quadratic\{Periodic\}}}
+For \texttt{OnCell}, periodic boundary conditions seemlessly links the lower and upper domain boundaries. For \texttt{OnGrid}, an extra grid cell is inserted ``between'' the upper and lower boundaries, outside of the ordinary domain, linking the last and first data points together. Thus, in order to interpolate e.g. $\sin(x)$ over one period, you should specify the data \emph{excluding} the wrapping data point, as shown in figure \ref{fig:periodic-data-spec}.
+\begin{figure}
+\centering
+\includegraphics{figures/periodic-data}
+\caption{When specifying periodic boundary conditions with \texttt{OnGrid}, the data point on the edge should only be included \emph{once}; the red point should \emph{not} be included in the data.}
+\label{fig:periodic-data-spec}
+\end{figure}
+
+\paragraph{\texttt{Quadratic\{Periodic,OnCell\}}}
+\paragraph{\texttt{Quadratic\{Periodic,OnGrid\}}}
 \begin{align*}
 \begin{bmatrix}
 \frac{3}{4} & \frac{1}{8} & \cdots & & \frac{1}{8}\\
@@ -175,6 +189,7 @@ For periodic boundary conditions, we do not introduce ghost cells $0$ and $N+1$ 
 \begin{bmatrix}v_1 \\ v_2 \\ c_3\\\vdots\end{bmatrix}
 \end{align*}
 
+Also: $y_1(\delta x) = c_N (\frac{1}{2} - \delta x)^2 + c_1 (\frac{3}{4} - \delta x^2) + c_2(\frac{1}{2} + \delta x)^2$ (note the index on the first coefficient) with a similar wrapping applied at the upper boundary.
 
 \nocite{*}
 \printbibliography
