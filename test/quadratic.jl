@@ -64,3 +64,20 @@ for x in 2:xmax-1
 end
 
 end
+
+module Quadratic2DTests
+    println("Testing Quadratic interpolation in 2D...")
+    using Interpolations, Base.Test
+
+    f(x,y) = sin(x/10)*cos(y/6)
+
+    xmax, ymax = 30,10
+
+    A = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
+
+    itp1 = Interpolation(A, Quadratic(Line(), OnGrid()), ExtrapError())
+
+    for x in 2.1:.2:xmax-1, y in 1.9:.2:ymax-.9
+        @test_approx_eq_eps f(x,y) itp1[x,y] .05
+    end
+end
