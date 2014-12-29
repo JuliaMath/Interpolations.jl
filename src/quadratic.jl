@@ -103,7 +103,7 @@ function prefiltering_system{T}(::Type{T}, n::Int, q::Quadratic{Flat,OnGrid})
     Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(T, n)
 end
 
-function prefiltering_system{T}(::Type{T}, n::Int, q::Quadratic{LinearBC})
+function prefiltering_system{T}(::Type{T}, n::Int, q::Quadratic{Line})
     dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = convert(T, 1)
     du[1] = dl[end] = convert(T, -2)

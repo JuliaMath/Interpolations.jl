@@ -19,7 +19,7 @@ export
     OnCell,
     OnGrid,
     Flat,
-    LinearBC,
+    Line,
     Free,
     Periodic,
 
@@ -36,7 +36,8 @@ type OnCell <: GridRepresentation end
 abstract BoundaryCondition
 type None <: BoundaryCondition end
 type Flat <: BoundaryCondition end
-type LinearBC <: BoundaryCondition end
+type Line <: BoundaryCondition end
+typealias Natural Line
 type Free <: BoundaryCondition end
 type Periodic <: BoundaryCondition end
 
@@ -111,8 +112,8 @@ for IT in (
         Linear{OnCell},
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
-        Quadratic{LinearBC,OnGrid},
-        Quadratic{LinearBC,OnCell},
+        Quadratic{Line,OnGrid},
+        Quadratic{Line,OnCell},
         Quadratic{Free,OnGrid},
         Quadratic{Free,OnCell},
         Quadratic{Periodic,OnGrid},
@@ -167,8 +168,8 @@ end
 for IT in (
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
-        Quadratic{LinearBC,OnGrid},
-        Quadratic{LinearBC,OnCell},
+        Quadratic{Line,OnGrid},
+        Quadratic{Line,OnCell},
         Quadratic{Free,OnGrid},
         Quadratic{Free,OnCell},
         Quadratic{Periodic,OnGrid},
