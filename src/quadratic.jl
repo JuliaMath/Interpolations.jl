@@ -9,12 +9,6 @@ function bc_gen(q::Quadratic, N)
         @nexprs $N d->(ix_d = clamp(round(Integer, x_d), 1, size(itp,d)) + pad)
     end
 end
-function bc_gen(q::Quadratic{Periodic,OnGrid}, N)
-    quote
-        pad = padding($q)
-        @nexprs $N d->(ix_d = clamp(@compat(round(Integer,x_d)), 1, size(itp,d)) + pad)
-    end
-end
 
 function indices(q::Quadratic, N)
     quote
