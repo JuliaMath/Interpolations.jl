@@ -3,31 +3,20 @@ type Constant{GR<:GridRepresentation} <: InterpolationType{ConstantDegree,None,G
 Constant{GR<:GridRepresentation}(::GR) = Constant{GR}()
 
 function bc_gen(::Constant{OnGrid}, N)
-    quote
-        @nexprs $N d->(ix_d = iround(x_d))
-    end
+    :(@nexprs $N d->(ix_d = round(Int, x_d)))
 end
 function bc_gen(::Constant{OnCell}, N)
-    quote
-        @nexprs $N d->begin
-            ix_d = iround(x_d)
-            if size(itp,d) < x_d <= size(itp, d) + .5
-                ix_d = size(itp,d)
-            end
-        end
-    end
+    :(@nexprs $N d->(ix_d = clamp(round(Int,x_d), 1, size(itp,d))))
 end
 
 function indices(::Constant, N)
-    quote
-        # Constant interpolation doesn't need an fx_d
-    end
+    # Constant interpolation doesn't need an fx_d
+    # but we still need to return a quote
+    :()
 end
 
 function coefficients(::Constant, N)
-    quote
-        @nexprs $N d->(c_d = one(typeof(x_d)))
-    end
+    :(@nexprs $N d->(c_d = one(typeof(x_d))))
 end
 
 function index_gen(degree::ConstantDegree, N::Integer, offsets...)
