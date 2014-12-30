@@ -53,6 +53,18 @@ For higher interpolation degrees (specifically, from quadratic interpolation and
 
 Somewhat orthogonal\footnote{Although the implementational separation of extrapolation behavior is computationally sound, it does allow for some interesting, yet probably nonsensical, combinations of interpolation degrees, boundary conditions and extrapolation behavior. In cases where the extrapolation behavior is defined as constant or reflecting, it will make sense to specify matching boundary conditions, but other combinations are entirely supported by \texttt{Interpolations.jl}. No guarantees are left that the results make sense, though...} to the concepts outlined above, is the concept of \emph{extrapolation}, i.e. evaluation of the interpolant outside the domain defined by the data set. For some types of extrapolation, this behavior is defined by a translation of the interpolation coordinate to somewhere inside the domain (e.g. periodic or reflecting boundaries), while for other types it entails a separate calculation entirely (e.g. linear extrapolation).
 
+\section{Constant B-splines}
+
+A constant ``polynomial'' has the form $p(x) = k$ for some constant $k$, and so requires only one parameter. A constant B-spline, therefore, has support 1. The intuitive way of understanding a constant B-spline is as a \emph{nearest neighbor} interpolation.
+
+Constant B-splines are \emph{interpolating}, using the terminology of \citet{875199}, so there is no need to set up and solve an equation system for the interpolation coefficients; \texttt{Interpolations.jl} simply returns \texttt{A[round(Int,x)]} for constant interpolation of the vector \texttt{A}\footnote{Mathematically, there are a few different ways that points that are exactly between two data points are treated, depending on the source; in the case of \texttt{Interpolations.jl}, since we are dealing with floating point operations anyway, we use the result of \texttt{round(Int, x)} as the nearest neighbor index without worrying about the details.}.
+
+\section{Linear B-splines}
+
+Linear functions require two coefficients - the slope and the elevation; thus, linear B-splines have support 2. Linear B-splines are interpolating just like constant B-splines, so the data points can be used as interpolation coefficients without any pre-filtering. Linear B-splines are implemented in \texttt{Interpolations.jl} simply as a piecewise linear interpolation between the two nearest data points.
+
+When \texttt{OnCell} behavior is specified, the outermost linear pieces are extended by a half-cell, effectively using linear extrapolation based on the two outermost data points, up to $\frac{1}{2}$ outside the provided data.
+
 \section{Quadratic B-splines}
 
 \subsection{Cell definition}
