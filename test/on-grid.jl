@@ -16,7 +16,7 @@ gridbehvs = (OnCell,OnGrid)
 bcs = (Flat,Line,Free,Periodic)
 
 function OneD()
-    println("Testing on-grid evaluation in 1D...")
+    println("Testing evaluation on grid and boundary in 1D...")
     for deg in simpledegs, gb in gridbehvs
         fg = Float64[f1(x) for x in xg]
         
@@ -25,6 +25,12 @@ function OneD()
         for i in xg
             @test_approx_eq_eps itp[i] fg[i] sqrt(eps())
         end
+
+        if gb == OnCell
+            for xb in [.5, nx+.5]
+                itp[xb] # if we're out of bounds, this throws
+            end
+        end
     end
 
     for deg in bcdegs, gb in gridbehvs, bc in bcs
@@ -35,17 +41,29 @@ function OneD()
         for i in xg
             @test_approx_eq_eps itp[i] fg[i] sqrt(eps())
         end
+
+        if gb == OnCell
+            for xb in [.5, nx+.5]
+                itp[xb]
+            end
+        end
     end
 end
 
 function TwoD()
-    println("Testing on-grid evaluation in 2D...")
+    println("Testing evaluation on grid and boundary in 2D...")
     for deg in simpledegs, gb in gridbehvs
         fg = Float64[f2(x,y) for x in xg, y in yg]
         itp = Interpolation(fg, deg(gb()), ExtrapError())
 
         for i in xg, j in yg
             @test_approx_eq_eps itp[i,j] fg[i,j] sqrt(eps())
+        end
+
+        if gb == OnCell
+            for xb in [.5, nx+.5], yb in [.5,ny+.5]
+                itp[xb,yb]
+            end
         end
     end
 
@@ -55,18 +73,30 @@ function TwoD()
 
         for i in xg, j in yg
             @test_approx_eq_eps itp[i,j] fg[i,j] sqrt(eps())
+        end
+
+        if gb == OnCell
+            for xb in [.5, nx+.5], yb in [.5,ny+.5]
+                itp[xb,yb]
+            end
         end
     end
 end
 
 function ThreeD()
-    println("Testing on-grid evaluation in 3D...")
+    println("Testing evaluation on grid and boundary in 3D...")
     for deg in simpledegs, gb in gridbehvs
         fg = Float64[f3(x,y,z) for x in xg, y in yg, z in zg]
         itp = Interpolation(fg, deg(gb()), ExtrapError())
 
         for i in xg, j in yg, k in zg
             @test_approx_eq_eps itp[i,j,k] fg[i,j,k] sqrt(eps())
+        end
+
+        if gb == OnCell
+            for xb in [.5, nx+.5], yb in [.5,ny+.5], zb in [.5, nz+.5]
+                itp[xb,yb,zb]
+            end
         end
     end
 
@@ -76,6 +106,12 @@ function ThreeD()
 
         for i in xg, j in yg, k in zg
             @test_approx_eq_eps itp[i,j,k] fg[i,j,k] sqrt(eps())
+        end
+
+        if gb == OnCell
+            for xb in [.5, nx+.5], yb in [.5,ny+.5], zb in [.5, nz+.5]
+                itp[xb,yb,zb]
+            end
         end
     end
 end
