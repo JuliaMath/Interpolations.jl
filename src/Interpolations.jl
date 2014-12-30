@@ -69,12 +69,6 @@ include("quadratic.jl")
 # This creates getindex methods for all supported combinations
 for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell},Quadratic{Flat,OnCell})
     for EB in (ExtrapError,ExtrapNaN,ExtrapConstant)
-
-        eval(:(function getindex{T}(itp::Interpolation{T,1,$IT,$EB}, x::Real, d)
-            d == 1 || throw(BoundsError())
-            itp[x]
-        end))
-
         it = IT()
         eb = EB()
         gr = gridrepresentation(it)
