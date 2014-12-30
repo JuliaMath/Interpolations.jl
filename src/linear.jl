@@ -2,16 +2,13 @@ type LinearDegree <: Degree{1} end
 type Linear{GR<:GridRepresentation} <: InterpolationType{LinearDegree,None,GR} end
 Linear{GR<:GridRepresentation}(::GR) = Linear{GR}()
 
-function bc_gen(::Linear, N)
-    :(@nexprs $N d->(ix_d = clamp(floor(Int,x_d), 1, size(itp,d)-1)))
-end
-
-function indices(::Linear, N)
+function define_indices(::Linear, N)
     quote
-        # fx_d is a parameter in [0,1] such that x_d = ix_d + fx_d
-        @nexprs $N d->(fx_d = x_d - convert(typeof(x_d), ix_d))
-        # ixp_d is the index in dimension d of the nearest node *after* the interpolation point
-        @nexprs $N d->(ixp_d = ix_d + 1)
+        @nexprs $N d->begin
+            ix_d = clamp(floor(Int,x_d), 1, size(itp,d)-1)
+            ixp_d = ix_d + 1
+            fx_d = x_d - convert(typeof(x_d), ix_d)
+        end
     end
 end
 

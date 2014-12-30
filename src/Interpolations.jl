@@ -135,23 +135,19 @@ for IT in (
             :(promote_type(T, x...)),
             :(getindex{T,N}(itp::Interpolation{T,N,$IT,$EB}, x::NTuple{N,Real}...)), 
             N->quote
-                $(extrap_gen(gr,eb,N))
+                # Handle extrapolation, by either throwing an error,
+                # returning a value, or shifting x to somewhere inside
+                # the domain
+                $(extrap_transform_x(gr,eb,N))
 
-                # If the boundary condition mandates separate treatment, this is done
-                # by bc_gen.
-                # Given an interpolation object itp, with N dimensions, and a coordinate
-                # x_d, it should define ix_d such that all the coefficients required by
-                # the interpolation will be inbounds.
-                $(bc_gen(it, N))
+                # Calculate the indices of all coefficients that will be used
+                # and define fx = x - xi in each dimension
+                $(define_indices(it, N))
 
-                # indices calculates the indices required for this interpolation degree,
-                # based on ix_d defined by bc_gen(), as well as the distance fx_d from 
-                # the cell index ix_d to the interpolation coordinate x_d
-                $(indices(it, N))
-
-                # These coefficients determine the interpolation basis expansion
+                # Calculate coefficient weights based on fx
                 $(coefficients(it, N))
 
+                # Generate the indexing expression
                 @inbounds ret = $(index_gen(degree(it), N))
                 ret
             end

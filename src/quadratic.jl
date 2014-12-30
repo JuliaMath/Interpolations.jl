@@ -3,17 +3,11 @@ type Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation} <: InterpolationTyp
 
 Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation}(::BC, ::GR) = Quadratic{BC,GR}()
 
-function bc_gen(q::Quadratic, N)
-    quote
-        pad = padding($q)
-        @nexprs $N d->(ix_d = clamp(round(Integer, x_d), 1, size(itp,d)) + pad)
-    end
-end
-
-function indices(q::Quadratic, N)
+function define_indices(q::Quadratic, N)
     quote
         pad = padding($q)
         @nexprs $N d->begin
+            ix_d = clamp(round(Integer, x_d), 1, size(itp,d)) + pad
             ixp_d = ix_d + 1
             ixm_d = ix_d - 1
 
@@ -21,10 +15,11 @@ function indices(q::Quadratic, N)
         end
     end
 end
-function indices(q::Quadratic{Periodic}, N)
+function define_indices(q::Quadratic{Periodic}, N)
     quote
         pad = padding($q)
         @nexprs $N d->begin
+            ix_d = clamp(round(Integer, x_d), 1, size(itp,d)) + pad
             ixp_d = mod1(ix_d + 1, size(itp,d))
             ixm_d = mod1(ix_d - 1, size(itp,d))
 
