@@ -3,7 +3,7 @@ module Interpolations
 using Base.Cartesian
 using Compat
 
-import Base: size, eltype, getindex
+import Base: size, eltype, getindex, ndims
 
 export 
     Interpolation,
@@ -13,10 +13,19 @@ export
     ExtrapError,
     ExtrapNaN,
     ExtrapConstant,
+    ExtrapLinear,
+    ExtrapReflect,
+    ExtrapPeriodic,
     OnCell,
     OnGrid,
-    ExtendInner,
-    Flat
+    Flat,
+    Line,
+    Free,
+    Periodic,
+
+    degree,
+    boundarycondition,
+    gridrepresentation
 
 abstract Degree{N}
 
@@ -26,8 +35,11 @@ type OnCell <: GridRepresentation end
 
 abstract BoundaryCondition
 type None <: BoundaryCondition end
-type ExtendInner <: BoundaryCondition end
 type Flat <: BoundaryCondition end
+type Line <: BoundaryCondition end
+typealias Natural Line
+type Free <: BoundaryCondition end
+type Periodic <: BoundaryCondition end
 
 abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
 
@@ -49,8 +61,10 @@ end
 # However, all prefilters copy the array, so do that here as well
 prefilter{T,N,IT<:InterpolationType}(A::AbstractArray{T,N}, ::IT) = copy(A)
 
-size(itp::Interpolation, d::Integer) = size(itp.coefs, d)
-size(itp::Interpolation) = size(itp.coefs)
+size{T,N,IT<:InterpolationType}(itp::Interpolation{T,N,IT}, d::Integer) =
+    size(itp.coefs, d) - 2*padding(IT())
+size(itp::Interpolation) = tuple([size(itp,i) for i in 1:ndims(itp)]...)
+ndims(itp::Interpolation) = ndims(itp.coefs)
 eltype(itp::Interpolation) = eltype(itp.coefs)
 
 offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
@@ -58,18 +72,61 @@ offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
                     off ==  1 ? symbol(string("ixp_", d)) :
                     off ==  2 ? symbol(string("ixpp_", d)) : error("offset $off not recognized")
 
+boundarycondition{D,BC<:BoundaryCondition}(::InterpolationType{D,BC}) = BC()
+boundarycondition{T,N,IT}(::Interpolation{T,N,IT}) = boundarycondition(IT())
 gridrepresentation{D,BC,GR<:GridRepresentation}(::InterpolationType{D,BC,GR}) = GR()
+gridrepresentation{T,N,IT}(::Interpolation{T,N,IT}) = gridrepresentation(IT())
 degree{D<:Degree,BC,GR}(::InterpolationType{D,BC,GR}) = D()
+degree{T,N,IT}(::Interpolation{T,N,IT}) = degree(IT())
 
 include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")
 
+# If nothing else is specified, don't pad at all
+padding(::InterpolationType) = 0
+padding{T,N,IT<:InterpolationType}(::Interpolation{T,N,IT}) = padding(IT())
+
+function pad_size_and_index(sz::Tuple, pad)
+    sz = Int[s+2pad for s in sz]
+    N = length(sz)
+    ind = cell(N)
+    for i in 1:N
+        ind[i] = 1+pad:sz[i]-pad
+    end
+    sz, ind
+end
+function copy_with_padding(A, it::InterpolationType)
+    pad = padding(it)
+    sz,ind = pad_size_and_index(size(A), pad)
+    coefs = fill(convert(eltype(A), 0), sz...)
+    coefs[ind...] = A
+    coefs, pad
+end
 
 # This creates getindex methods for all supported combinations
-for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell},Quadratic{Flat,OnCell})
-    for EB in (ExtrapError,ExtrapNaN,ExtrapConstant)
-
+for IT in (
+        Constant{OnGrid},
+        Constant{OnCell},
+        Linear{OnGrid},
+        Linear{OnCell},
+        Quadratic{Flat,OnCell},
+        Quadratic{Flat,OnGrid},
+        Quadratic{Line,OnGrid},
+        Quadratic{Line,OnCell},
+        Quadratic{Free,OnGrid},
+        Quadratic{Free,OnCell},
+        Quadratic{Periodic,OnGrid},
+        Quadratic{Periodic,OnCell},
+    )
+    for EB in (
+            ExtrapError,
+            ExtrapNaN,
+            ExtrapConstant,
+            ExtrapLinear,
+            ExtrapReflect,
+            ExtrapPeriodic,
+        )
         eval(:(function getindex{T}(itp::Interpolation{T,1,$IT,$EB}, x::Real, d)
             d == 1 || throw(BoundsError())
             itp[x]
@@ -108,24 +165,40 @@ for IT in (Constant{OnCell},Linear{OnGrid},Quadratic{ExtendInner,OnCell},Quadrat
 end
 
 # This creates prefilter specializations for all interpolation types that need them
-for IT in (Quadratic{ExtendInner,OnCell},Quadratic{Flat,OnCell})
+for IT in (
+        Quadratic{Flat,OnCell},
+        Quadratic{Flat,OnGrid},
+        Quadratic{Line,OnGrid},
+        Quadratic{Line,OnCell},
+        Quadratic{Free,OnGrid},
+        Quadratic{Free,OnCell},
+        Quadratic{Periodic,OnGrid},
+        Quadratic{Periodic,OnCell},
+    )
     @ngenerate N promote_type_grid(T, x...) function prefilter{T,N}(A::Array{T,N},it::IT)
-        ret = similar(A)
-        szs = collect(size(A))
-        strds = collect(strides(A))
+        ret, pad = copy_with_padding(A,it)
+
+        szs = collect(size(ret))
+        strds = collect(strides(ret))
 
         for dim in 1:N
             n = szs[dim]
             szs[dim] = 1
 
-            M = prefiltering_system_matrix(eltype(A), n, it)
+            M, b = prefiltering_system(eltype(A), n, it)
 
             @nloops N i d->1:szs[d] begin
                 cc = @ntuple N i
-                strt = 1 + sum([(cc[i]-1)*strds[i] for i in 1:length(cc)])
+
+                strt_diff = sum([(cc[i]-1)*strds[i] for i in 1:length(cc)])
+                strt = 1 + strt_diff
                 rng = range(strt, strds[dim], n)
-                ret[rng] = M \ vec(A[rng])
-            end            
+
+                bdiff = ret[rng]
+                b += bdiff
+                ret[rng] = M \ b
+                b -= bdiff
+            end
             szs[dim] = n
         end
         ret
