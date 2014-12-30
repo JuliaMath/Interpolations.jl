@@ -127,11 +127,6 @@ for IT in (
             ExtrapReflect,
             ExtrapPeriodic,
         )
-        eval(:(function getindex{T}(itp::Interpolation{T,1,$IT,$EB}, x::Real, d)
-            d == 1 || throw(BoundsError())
-            itp[x]
-        end))
-
         it = IT()
         eb = EB()
         gr = gridrepresentation(it)
