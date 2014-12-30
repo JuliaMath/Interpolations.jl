@@ -7,6 +7,6 @@ include("linear.jl")
 include("quadratic.jl")
 
 # Tests copied from Grid.jl's old test suite
-include("grid.jl")
+#include("grid.jl")
 
 end
