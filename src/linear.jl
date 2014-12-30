@@ -2,19 +2,8 @@ type LinearDegree <: Degree{1} end
 type Linear{GR<:GridRepresentation} <: InterpolationType{LinearDegree,None,GR} end
 Linear{GR<:GridRepresentation}(::GR) = Linear{GR}()
 
-function bc_gen(::Linear{OnGrid}, N)
-    quote
-        # LinearOnGrid's boundary condition doesn't require any action;
-        # just return the cell index of the interpolation coordinate
-        @nexprs $N d->(ix_d = (floor(Int,x_d)))
-    end
-end
-function bc_gen(::Linear{OnCell}, N)
-    quote
-        @nexprs $N d->begin
-            ix_d = clamp(floor(Int,x_d), 1, size(itp,d))
-        end
-    end
+function bc_gen(::Linear, N)
+    :(@nexprs $N d->(ix_d = clamp(floor(Int,x_d), 1, size(itp,d)-1)))
 end
 
 function indices(::Linear, N)
