@@ -6,8 +6,18 @@ function define_indices(::Constant, N)
     :(@nexprs $N d->(ix_d = clamp(round(Int,x_d), 1, size(itp,d))))
 end
 
-function coefficients(::Constant, N)
-    :(@nexprs $N d->(c_d = one(typeof(x_d))))
+function coefficients(c::Constant, N)
+    :(@nexprs $N d->($(coefficients(c, N, :d))))
+end
+
+function coefficients(::Constant, N, d)
+    sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
+    :($sym = one(typeof($symx)))
+end
+
+function gradient_coefficients(::Constant, N, d)
+    sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
+    :($sym = zero(typeof($symx)))
 end
 
 function index_gen(degree::ConstantDegree, N::Integer, offsets...)
