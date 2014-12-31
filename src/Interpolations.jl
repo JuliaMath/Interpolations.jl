@@ -169,11 +169,11 @@ for IT in (
                 @nexprs $N dim->begin
                     @nexprs $N d->begin
                         (d==dim
-                            ? $(gradient_coefficients(it,N,:dim))
-                            : $(coefficients(it,N,:dim)))
-
-                        @inbounds ret[dim] = $(index_gen(degree(it),N))
+                            ? $(gradient_coefficients(it,N,:d))
+                            : $(coefficients(it,N,:d)))
                     end
+
+                    @inbounds ret[dim] = $(index_gen(degree(it),N))
                 end
                 ret
             end
