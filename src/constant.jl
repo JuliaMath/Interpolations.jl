@@ -1,5 +1,5 @@
-type ConstantDegree <: Degree{0} end
-type Constant{GR<:GridRepresentation} <: InterpolationType{ConstantDegree,None,GR} end
+immutable ConstantDegree <: Degree{0} end
+immutable Constant{GR<:GridRepresentation} <: InterpolationType{ConstantDegree,None,GR} end
 Constant{GR<:GridRepresentation}(::GR) = Constant{GR}()
 
 function define_indices(::Constant, N)

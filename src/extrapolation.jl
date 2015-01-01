@@ -1,6 +1,6 @@
 abstract ExtrapolationBehavior
 
-type ExtrapError <: ExtrapolationBehavior end
+immutable ExtrapError <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapError, N)
     quote
         @nexprs $N d->(1 <= x_d <= size(itp,d) || throw(BoundsError()))
@@ -12,7 +12,7 @@ function extrap_transform_x(::OnCell, ::ExtrapError, N)
     end
 end
 
-type ExtrapNaN <: ExtrapolationBehavior end
+immutable ExtrapNaN <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapNaN, N)
     quote
         @nexprs $N d->(1 <= x_d <= size(itp,d) || return convert(T, NaN))
@@ -24,7 +24,7 @@ function extrap_transform_x(::OnCell, ::ExtrapNaN, N)
     end
 end
 
-type ExtrapConstant <: ExtrapolationBehavior end
+immutable ExtrapConstant <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapConstant, N)
     quote
         @nexprs $N d->(x_d = clamp(x_d, 1, size(itp,d)))
@@ -36,7 +36,7 @@ function extrap_transform_x(::OnCell, ::ExtrapConstant, N)
     end
 end
 
-type ExtrapReflect <: ExtrapolationBehavior end
+immutable ExtrapReflect <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapReflect, N)
     quote
         @nexprs $N d->begin
@@ -80,7 +80,7 @@ function extrap_transform_x(::OnCell, ::ExtrapReflect, N)
     end
 end
 
-type ExtrapPeriodic <: ExtrapolationBehavior end
+immutable ExtrapPeriodic <: ExtrapolationBehavior end
 function extrap_transform_x(::GridRepresentation, ::ExtrapPeriodic, N)
     quote
         @nexprs $N d->begin
@@ -96,7 +96,7 @@ function extrap_transform_x(::GridRepresentation, ::ExtrapPeriodic, N)
     end
 end
 
-type ExtrapLinear <: ExtrapolationBehavior end
+immutable ExtrapLinear <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapLinear, N)
     quote
         @nexprs $N d->begin

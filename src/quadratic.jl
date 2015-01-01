@@ -1,5 +1,5 @@
-type QuadraticDegree <: Degree{2} end
-type Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation} <: InterpolationType{QuadraticDegree,BC,GR} end
+immutable QuadraticDegree <: Degree{2} end
+immutable Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation} <: InterpolationType{QuadraticDegree,BC,GR} end
 
 Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation}(::BC, ::GR) = Quadratic{BC,GR}()
 

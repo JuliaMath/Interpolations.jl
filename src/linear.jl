@@ -1,5 +1,5 @@
-type LinearDegree <: Degree{1} end
-type Linear{GR<:GridRepresentation} <: InterpolationType{LinearDegree,None,GR} end
+immutable LinearDegree <: Degree{1} end
+immutable Linear{GR<:GridRepresentation} <: InterpolationType{LinearDegree,None,GR} end
 Linear{GR<:GridRepresentation}(::GR) = Linear{GR}()
 
 function define_indices(::Linear, N)

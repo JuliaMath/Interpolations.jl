@@ -36,16 +36,16 @@ export
 abstract Degree{N}
 
 abstract GridRepresentation
-type OnGrid <: GridRepresentation end
-type OnCell <: GridRepresentation end
+immutable OnGrid <: GridRepresentation end
+immutable OnCell <: GridRepresentation end
 
 abstract BoundaryCondition
-type None <: BoundaryCondition end
-type Flat <: BoundaryCondition end
-type Line <: BoundaryCondition end
+immutable None <: BoundaryCondition end
+immutable Flat <: BoundaryCondition end
+immutable Line <: BoundaryCondition end
 typealias Natural Line
-type Free <: BoundaryCondition end
-type Periodic <: BoundaryCondition end
+immutable Free <: BoundaryCondition end
+immutable Periodic <: BoundaryCondition end
 immutable Reflect <: BoundaryCondition end
 
 abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
