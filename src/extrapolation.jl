@@ -82,18 +82,7 @@ end
 
 immutable ExtrapPeriodic <: ExtrapolationBehavior end
 function extrap_transform_x(::GridRepresentation, ::ExtrapPeriodic, N)
-    quote
-        @nexprs $N d->begin
-            # translate x_d to inside the domain
-            n = convert(typeof(x_d), size(itp,d))
-            while x_d < .5
-                x_d += n
-            end
-            while x_d >= n + .5
-                x_d -= n
-            end
-        end
-    end
+    :(@nexprs $N d->(x_d = mod1(x_d, size(itp,d))))
 end
 
 immutable ExtrapLinear <: ExtrapolationBehavior end

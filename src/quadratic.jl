@@ -5,25 +5,25 @@ Quadratic{BC<:BoundaryCondition,GR<:GridRepresentation}(::BC, ::GR) = Quadratic{
 
 function define_indices(q::Quadratic, N)
     quote
-        pad = padding($q)
+        pad = padding(TCoefs, $q)
         @nexprs $N d->begin
-            ix_d = clamp(round(Integer, x_d), 1, size(itp,d)) + pad
+            ix_d = clamp(round(x_d), 1, size(itp,d)) + pad
             ixp_d = ix_d + 1
             ixm_d = ix_d - 1
 
-            fx_d = x_d - convert(typeof(x_d), ix_d - pad)
+            fx_d = x_d - (ix_d - pad)
         end
     end
 end
 function define_indices(q::Quadratic{Periodic}, N)
     quote
-        pad = padding($q)
+        pad = padding(TCoefs, $q)
         @nexprs $N d->begin
-            ix_d = clamp(round(Integer, x_d), 1, size(itp,d)) + pad
-            ixp_d = mod1(ix_d + 1, size(itp,d))
-            ixm_d = mod1(ix_d - 1, size(itp,d))
+            ix_d = clamp(round(x_d), 1, size(itp,d)) + pad
+            ixp_d = mod1(ix_d + one(typeof(ix_d)), size(itp,d))
+            ixm_d = mod1(ix_d - one(typeof(ix_d)), size(itp,d))
 
-            fx_d = x_d - convert(typeof(x_d), ix_d - pad)
+            fx_d = x_d - (ix_d - pad)
         end
     end
 end
@@ -36,9 +36,9 @@ function coefficients(q::Quadratic, N, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote
-        $symm = .5 * ($symfx - .5)^2
-        $sym  = .75 - $symfx^2
-        $symp = .5 * ($symfx + .5)^2
+        $symm = convert(TCoefs, .5) * ($symfx - convert(TCoefs, .5))^2
+        $sym  = convert(TCoefs, .75) - $symfx^2
+        $symp = convert(TCoefs, .5) * ($symfx + convert(TCoefs, .5))^2
     end
 end
 
@@ -46,9 +46,9 @@ function gradient_coefficients(q::Quadratic, N, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote
-        $symm = $symfx-.5
-        $sym = -2*$symfx
-        $symp = $symfx+.5
+        $symm = $symfx - convert(TCoefs, .5)
+        $sym = -convert(TCoefs, 2) * $symfx
+        $symp = $symfx + convert(TCoefs, .5)
     end
 end
 
@@ -69,10 +69,10 @@ end
 # Quadratic interpolation has 1 extra coefficient at each boundary
 # Therefore, make the coefficient array 1 larger in each direction,
 # in each dimension.
-padding(::Quadratic) = 1
+padding{T}(::Type{T}, ::Quadratic) = one(T)
 # For periodic boundary conditions, we don't pad - instead, we wrap the
 # the coefficients
-padding(::Quadratic{Periodic}) = 0
+padding{T}(::Type{T}, ::Quadratic{Periodic}) = zero(T)
 
 function inner_system_diags{T}(::Type{T}, n::Int, ::Quadratic)
     du = fill(convert(T,1/8), n-1)

@@ -5,9 +5,9 @@ Linear{GR<:GridRepresentation}(::GR) = Linear{GR}()
 function define_indices(::Linear, N)
     quote
         @nexprs $N d->begin
-            ix_d = clamp(floor(Int,x_d), 1, size(itp,d)-1)
-            ixp_d = ix_d + 1
-            fx_d = x_d - convert(typeof(x_d), ix_d)
+            ix_d = clamp(floor(x_d), 1, size(itp,d)-1)
+            ixp_d = ix_d + one(typeof(ix_d))
+            fx_d = x_d - ix_d
         end
     end
 end
