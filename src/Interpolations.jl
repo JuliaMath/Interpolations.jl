@@ -161,11 +161,10 @@ for IT in (
         eval(ngenerate(
             :N,
             :(Array{promote_type(T,typeof(x)...),1}),
-            :(gradient{T,N}(itp::Interpolation{T,N,$IT,$EB}, x::NTuple{N,Real}...)),
+            :(gradient!{T,N}(g::Array{T,1}, itp::Interpolation{T,N,$IT,$EB}, x::NTuple{N,Real}...)),
             N->quote
                 $(extrap_transform_x(gr,eb,N))
                 $(define_indices(it,N))
-                ret = Array(T,$N)
                 @nexprs $N dim->begin
                     @nexprs $N d->begin
                         (d==dim
@@ -173,13 +172,15 @@ for IT in (
                             : $(coefficients(it,N,:d)))
                     end
 
-                    @inbounds ret[dim] = $(index_gen(degree(it),N))
+                    @inbounds g[dim] = $(index_gen(degree(it),N))
                 end
-                ret
+                g
             end
         ))
     end
 end
+
+gradient{T}(itp::Interpolation{T}, x...) = gradient!(Array(T,ndims(itp)), itp, x...)
 
 # This creates prefilter specializations for all interpolation types that need them
 for IT in (
