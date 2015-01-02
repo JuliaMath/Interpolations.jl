@@ -79,7 +79,7 @@ Interpolation{TIn,N,IT<:InterpolationType,EB<:ExtrapolationBehavior}(A::Abstract
 # We also ensure that the coefficient array is of the correct type
 prefilter{T,N,TCoefs,IT<:InterpolationType}(::Type{TCoefs}, A::AbstractArray{T,N}, ::IT) = copy!(Array(TCoefs,size(A)...), A)
 
-size{T,N,TCoefs,IT<:InterpolationType}(itp::Interpolation{T,N,TCoefs,IT}, d::Integer) = size(itp.coefs, d) - 2*padding(TCoefs,IT())
+size{T,N,TCoefs,IT<:InterpolationType}(itp::Interpolation{T,N,TCoefs,IT}, d::Integer) = size(itp.coefs, d) - 2*padding(Int,IT())
 size(itp::AbstractInterpolation) = tuple([size(itp,i) for i in 1:ndims(itp)]...)
 ndims(itp::Interpolation) = ndims(itp.coefs)
 eltype{T}(itp::Interpolation{T}) = T
@@ -115,7 +115,7 @@ function pad_size_and_index(sz::Tuple, pad)
     sz, ind
 end
 function copy_with_padding(TCoefs, A, it::InterpolationType)
-    pad = padding(it)
+    pad = padding(Int, it)
     sz,ind = pad_size_and_index(size(A), pad)
     coefs = fill!(Array(TCoefs, sz...), 0)
     coefs[ind...] = A
