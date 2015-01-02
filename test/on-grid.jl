@@ -13,7 +13,7 @@ f3(x,y,z) = f2(x,y) * log(z)
 simpledegs = (Linear,Constant)
 bcdegs = (Quadratic,)
 gridbehvs = (OnCell,OnGrid)
-bcs = (Flat,Line,Free,Periodic)
+bcs = (Flat,Line,Free,Periodic,Reflect)
 
 function OneD()
     println("Testing evaluation on grid and boundary in 1D...")
