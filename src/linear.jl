@@ -12,12 +12,23 @@ function define_indices(::Linear, N)
     end
 end
 
-function coefficients(::Linear, N)
+function coefficients(l::Linear, N)
+    :(@nexprs $N d->($(coefficients(l, N, :d))))
+end
+
+function coefficients(::Linear, N, d)
+    sym, symp, symfx = symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("fx_",d))
     quote
-        @nexprs $N d->begin
-            c_d = one(typeof(fx_d)) - fx_d
-            cp_d = fx_d
-        end
+        $sym = one(typeof($symfx)) - $symfx
+        $symp = $symfx
+    end
+end
+
+function gradient_coefficients(::Linear,N,d)
+    sym, symp, symfx = symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("fx_",d))
+    quote
+        $sym = -one(typeof($symfx))
+        $symp = one(typeof($symfx))
     end
 end
 

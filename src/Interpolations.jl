@@ -3,7 +3,12 @@ module Interpolations
 using Base.Cartesian
 using Compat
 
-import Base: size, eltype, getindex, ndims
+import Base:
+    eltype,
+    gradient,
+    getindex,
+    ndims,
+    size
 
 export 
     Interpolation,
@@ -152,8 +157,30 @@ for IT in (
                 ret
             end
         ))
+
+        eval(ngenerate(
+            :N,
+            :(Array{promote_type(T,typeof(x)...),1}),
+            :(gradient!{T,N}(g::Array{T,1}, itp::Interpolation{T,N,$IT,$EB}, x::NTuple{N,Real}...)),
+            N->quote
+                $(extrap_transform_x(gr,eb,N))
+                $(define_indices(it,N))
+                @nexprs $N dim->begin
+                    @nexprs $N d->begin
+                        (d==dim
+                            ? $(gradient_coefficients(it,N,:d))
+                            : $(coefficients(it,N,:d)))
+                    end
+
+                    @inbounds g[dim] = $(index_gen(degree(it),N))
+                end
+                g
+            end
+        ))
     end
 end
+
+gradient{T}(itp::Interpolation{T}, x...) = gradient!(Array(T,ndims(itp)), itp, x...)
 
 # This creates prefilter specializations for all interpolation types that need them
 for IT in (

@@ -28,13 +28,27 @@ function define_indices(q::Quadratic{Periodic}, N)
     end
 end
 
-function coefficients(::Quadratic, N)
+function coefficients(q::Quadratic, N)
+    :(@nexprs $N d->($(coefficients(q, N, :d))))
+end
+
+function coefficients(q::Quadratic, N, d)
+    symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
+    symfx = symbol(string("fx_",d))
     quote
-        @nexprs $N d->begin
-            cm_d = .5 * (fx_d-.5)^2
-            c_d = .75 - fx_d^2
-            cp_d = .5 * (fx_d+.5)^2
-        end
+        $symm = .5 * ($symfx - .5)^2
+        $sym  = .75 - $symfx^2
+        $symp = .5 * ($symfx + .5)^2
+    end
+end
+
+function gradient_coefficients(q::Quadratic, N, d)
+    symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
+    symfx = symbol(string("fx_",d))
+    quote
+        $symm = $symfx-.5
+        $sym = -2*$symfx
+        $symp = $symfx+.5
     end
 end
 
