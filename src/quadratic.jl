@@ -81,14 +81,14 @@ function inner_system_diags{T}(::Type{T}, n::Int, ::Quadratic)
     (dl,d,du)
 end
 
-function prefiltering_system{T}(::Type{T}, n::Int, q::Quadratic{Flat,OnCell})
+function prefiltering_system{T,BC<:Union(Flat,Reflect)}(::Type{T}, n::Int, q::Quadratic{BC,OnCell})
     dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
     lufact!(Tridiagonal(dl, d, du)), zeros(T, n)
 end
 
-function prefiltering_system{T}(::Type{T}, n::Int, q::Quadratic{Flat,OnGrid})
+function prefiltering_system{T,BC<:Union(Flat,Reflect)}(::Type{T}, n::Int, q::Quadratic{BC,OnGrid})
     dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = convert(T, -1)
     du[1] = dl[end] = convert(T, 0)

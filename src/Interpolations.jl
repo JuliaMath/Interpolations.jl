@@ -27,6 +27,7 @@ export
     Line,
     Free,
     Periodic,
+    Reflect,
 
     degree,
     boundarycondition,
@@ -45,6 +46,7 @@ type Line <: BoundaryCondition end
 typealias Natural Line
 type Free <: BoundaryCondition end
 type Periodic <: BoundaryCondition end
+immutable Reflect <: BoundaryCondition end
 
 abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
 
@@ -117,6 +119,8 @@ for IT in (
         Linear{OnCell},
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
+        Quadratic{Reflect,OnCell},
+        Quadratic{Reflect,OnGrid},
         Quadratic{Line,OnGrid},
         Quadratic{Line,OnCell},
         Quadratic{Free,OnGrid},
@@ -186,6 +190,8 @@ gradient{T}(itp::Interpolation{T}, x...) = gradient!(Array(T,ndims(itp)), itp, x
 for IT in (
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
+        Quadratic{Reflect,OnCell},
+        Quadratic{Reflect,OnGrid},
         Quadratic{Line,OnGrid},
         Quadratic{Line,OnCell},
         Quadratic{Free,OnGrid},
