@@ -31,7 +31,10 @@ export
 
     degree,
     boundarycondition,
-    gridrepresentation
+    gridrepresentation,
+
+    gradient,
+    gradient!
 
 abstract Degree{N}
 
@@ -169,14 +172,14 @@ for IT in (
                 ret
             end
         ))
-        @ngenerate N T function getindex{T,N,TCoefs<:Real}(itp::Interpolation{T,N,TCoefs,IT,EB}, xs::NTuple{N,Real}...)
-            getindex(itp, [convert(TCoefs, x) for x in xs]...)
-        end
+        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs<:Real}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, xs::Real...)),
+            N->:(getindex(itp, [convert(TCoefs, x) for x in xs]...))
+        ))
 
         eval(ngenerate(
             :N,
             :T,
-            :(gradient!{T,N,TCoefs}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,TCoefs}...)),
+            :(gradient!{T,N,TCoefs<:Real}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,TCoefs}...)),
             N->quote
                 $(extrap_transform_x(gr,eb,N))
                 $(define_indices(it,N))
@@ -192,9 +195,13 @@ for IT in (
                 g
             end
         ))
+        eval(ngenerate(:N, :T, :(gradient!{T,N,TCoefs<:Real}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, xs::Real...)),
+            N->:(gradient!(g, itp, [convert(TCoefs, x) for x in xs]...))
+        ))
     end
 end
 
+gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array(T,N),itp,x...)
 gradient1{T}(itp::Interpolation{T,1}, x) = gradient!(Array(T,1),itp,x)[1]
 
 # This creates prefilter specializations for all interpolation types that need them
@@ -210,7 +217,7 @@ for IT in (
         Quadratic{Periodic,OnGrid},
         Quadratic{Periodic,OnCell},
     )
-    @ngenerate N promote_type_grid(T, x...) function prefilter{T,N,TCoefs}(::Type{TCoefs}, A::Array{T,N},it::IT)
+    @ngenerate N Array{TCoefs,N} function prefilter{T,N,TCoefs}(::Type{TCoefs}, A::Array{T,N},it::IT)
         ret, pad = copy_with_padding(TCoefs, A,it)
 
         szs = collect(size(ret))
