@@ -12,7 +12,7 @@ A = Float64[f(x) for x in 1:xmax]
 
 itp1 = Interpolation(A, Quadratic(Flat(),OnCell()), ExtrapError())
 
-for x in [3.1:.2:4.3]  
+for x in [3.1:.2:4.3]
     @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
 end
 
@@ -62,6 +62,11 @@ for x in 2:xmax-1
     @test_approx_eq A[x] itp2[x]
     @test_approx_eq A[x] itp3[x]
 end
+
+# Rational element types
+A = Rational{Int}[x^2//10 for x in 1:10]
+itp = Interpolation(A, Quadratic(Free(),OnCell()), ExtrapNaN())
+@test itp[11//10] == (11//10)^2//10
 
 end
 
