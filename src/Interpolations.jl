@@ -131,6 +131,8 @@ for IT in (
         Linear{OnCell},
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
+        Quadratic{Reflect,OnCell},
+        Quadratic{Reflect,OnGrid},
         Quadratic{Line,OnGrid},
         Quadratic{Line,OnCell},
         Quadratic{Free,OnGrid},
