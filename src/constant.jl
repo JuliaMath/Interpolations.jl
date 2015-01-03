@@ -12,12 +12,12 @@ end
 
 function coefficients(::Constant, N, d)
     sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
-    :($sym = one(typeof($symx)))
+    :($sym = one(TIndex))
 end
 
 function gradient_coefficients(::Constant, N, d)
     sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
-    :($sym = zero(typeof($symx)))
+    :($sym = zero(TIndex))
 end
 
 function index_gen(degree::ConstantDegree, N::Integer, offsets...)

@@ -56,68 +56,69 @@ abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentatio
 include("extrapolation.jl")
 
 abstract AbstractInterpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractArray{T,N}
-type Interpolation{TEl,N,TCoefs<:Real,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractInterpolation{TEl,N,IT,EB}
+type Interpolation{T,N,TCoefs,TIndex<:Real,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractInterpolation{T,N,IT,EB}
     coefs::Array{TCoefs,N}
 end
-function Interpolation{TIn,N,TCoefs,IT<:InterpolationType,EB<:ExtrapolationBehavior}(::Type{TCoefs}, A::AbstractArray{TIn,N}, it::IT, ::EB)
+function Interpolation{N,TCoefs,TIndex<:Real,IT<:InterpolationType,EB<:ExtrapolationBehavior}(::Type{TIndex}, A::AbstractArray{TCoefs,N}, it::IT, ::EB)
     isleaftype(IT) || error("The interpolation type must be a leaf type (was $IT)")
-    
-    isleaftype(TIn) || warn("For performance reasons, consider using an array of a concrete type T (eltype(A) == $(eltype(A)))")
 
-    c = one(TCoefs)
+    isleaftype(TCoefs) || warn("For performance reasons, consider using an array of a concrete type T (eltype(A) == $(eltype(A)))")
+
+    c = one(TIndex)
     for _ in 2:N
         c *= c
     end
-    TEl = typeof(c)
+    T = typeof(c * one(TCoefs))
 
-    Interpolation{TEl,N,TCoefs,IT,EB}(prefilter(TCoefs,A,it))
+    Interpolation{T,N,TCoefs,TIndex,IT,EB}(prefilter(TIndex,A,it))
 end
-Interpolation{TIn,N,IT<:InterpolationType,EB<:ExtrapolationBehavior}(A::AbstractArray{TIn,N}, it::IT, eb::EB) = Interpolation(TIn, A, it, eb)
+Interpolation(A::AbstractArray, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Float64, A, it, eb)
+Interpolation(A::AbstractArray{Float32}, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Float32, A, it, eb)
+Interpolation(A::AbstractArray{Rational{Int}}, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Rational{Int}, A, it, eb)
 
 # Unless otherwise specified, use coefficients as they are, i.e. without prefiltering
 # However, all prefilters copy the array, so do that here as well
-# We also ensure that the coefficient array is of the correct type
-prefilter{T,N,TCoefs,IT<:InterpolationType}(::Type{TCoefs}, A::AbstractArray{T,N}, ::IT) = copy!(Array(TCoefs,size(A)...), A)
+prefilter{TIndex,T,N,IT<:InterpolationType}(::Type{TIndex}, A::AbstractArray{T,N}, ::IT) = copy(A)
 
-size{T,N,TCoefs,IT<:InterpolationType}(itp::Interpolation{T,N,TCoefs,IT}, d::Integer) = size(itp.coefs, d) - 2*padding(Int,IT())
+size{T,N}(itp::Interpolation{T,N}, d::Integer) = d > N ? 1 : size(itp.coefs, d) - 2*padding(interpolationtype(itp))
 size(itp::AbstractInterpolation) = tuple([size(itp,i) for i in 1:ndims(itp)]...)
 ndims(itp::Interpolation) = ndims(itp.coefs)
-eltype{T}(itp::Interpolation{T}) = T
-coeftype(itp::Interpolation) = eltype(itp.coefs)
 
 offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
                     off ==  0 ? symbol(string("ix_", d)) :
                     off ==  1 ? symbol(string("ixp_", d)) :
                     off ==  2 ? symbol(string("ixpp_", d)) : error("offset $off not recognized")
 
+interpolationtype{T,N,TCoefs,TIndex,IT<:InterpolationType}(itp::Interpolation{T,N,TCoefs,TIndex,IT}) = IT()
+
 boundarycondition{D,BC<:BoundaryCondition}(::InterpolationType{D,BC}) = BC()
-boundarycondition{T,N,IT}(::Interpolation{T,N,IT}) = boundarycondition(IT())
 gridrepresentation{D,BC,GR<:GridRepresentation}(::InterpolationType{D,BC,GR}) = GR()
-gridrepresentation{T,N,IT}(::Interpolation{T,N,IT}) = gridrepresentation(IT())
 degree{D<:Degree,BC,GR}(::InterpolationType{D,BC,GR}) = D()
-degree{T,N,IT}(::Interpolation{T,N,IT}) = degree(IT())
+
+# If nothing else is specified, don't pad at all
+padding(::InterpolationType) = 0
+
+for op in (:boundarycondition, :gridrepresentation, :degree, :padding)
+    eval(:($(op)(itp::Interpolation) = $(op)(interpolationtype(itp))))
+end
 
 include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")
 
-# If nothing else is specified, don't pad at all
-padding{T}(::Type{T}, ::InterpolationType) = zero(T)
-padding{T,N,IT<:InterpolationType}(::Interpolation{T,N,IT}) = padding(T,IT())
-
-function pad_size_and_index(sz::Tuple, pad)
+function padded_index(sz::Tuple, pad)
     sz = Int[s+2pad for s in sz]
     N = length(sz)
     ind = cell(N)
     for i in 1:N
         ind[i] = 1+pad:sz[i]-pad
     end
-    sz, ind
+    ind,sz
 end
-function copy_with_padding(TCoefs, A, it::InterpolationType)
-    pad = padding(Int, it)
-    sz,ind = pad_size_and_index(size(A), pad)
-    coefs = fill!(Array(TCoefs, sz...), 0)
+function copy_with_padding(A, it::InterpolationType)
+    pad = padding(it)
+    ind,sz = padded_index(size(A), pad)
+    coefs = zeros(eltype(A), sz...)
     coefs[ind...] = A
     coefs, pad
 end
@@ -130,8 +131,6 @@ for IT in (
         Linear{OnCell},
         Quadratic{Flat,OnCell},
         Quadratic{Flat,OnGrid},
-        Quadratic{Reflect,OnCell},
-        Quadratic{Reflect,OnGrid},
         Quadratic{Line,OnGrid},
         Quadratic{Line,OnCell},
         Quadratic{Free,OnGrid},
@@ -150,10 +149,8 @@ for IT in (
         it = IT()
         eb = EB()
         gr = gridrepresentation(it)
-        eval(ngenerate(
-            :N,
-            :T,
-            :(getindex{T,N,TCoefs<:Real}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,TCoefs}...)), 
+
+        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs,TIndex<:Real}(itp::Interpolation{T,N,TCoefs,TIndex,$IT,$EB}, x::NTuple{N,TIndex}...)), 
             N->quote
                 # Handle extrapolation, by either throwing an error,
                 # returning a value, or shifting x to somewhere inside
@@ -172,14 +169,11 @@ for IT in (
                 ret
             end
         ))
-        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs<:Real}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, xs::Real...)),
-            N->:(getindex(itp, [convert(TCoefs, x) for x in xs]...))
+        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs,TIndex<:Real}(itp::Interpolation{T,N,TCoefs,TIndex}, xs::NTuple{N,Real}...)),
+            N->:(itp[[convert(TIndex, x) for x in @ntuple $N xs]...])
         ))
 
-        eval(ngenerate(
-            :N,
-            :T,
-            :(gradient!{T,N,TCoefs<:Real}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,TCoefs}...)),
+        eval(ngenerate(:N, :T, :(gradient!{T,N,TCoefs,TIndex<:Real}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,TIndex,$IT,$EB}, x::NTuple{N,TIndex}...)),
             N->quote
                 $(extrap_transform_x(gr,eb,N))
                 $(define_indices(it,N))
@@ -195,14 +189,13 @@ for IT in (
                 g
             end
         ))
-        eval(ngenerate(:N, :T, :(gradient!{T,N,TCoefs<:Real}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, xs::Real...)),
-            N->:(gradient!(g, itp, [convert(TCoefs, x) for x in xs]...))
+        eval(ngenerate(:N, :T, :(gradient!{T,N,TCoefs,TIndex<:Real}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,TIndex}, xs::NTuple{N,Real}...)),
+            N->:(gradient!(g, itp, [convert(TCoefs, x) for x in @ntuple $N xs]...))
         ))
     end
 end
 
-gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array(T,N),itp,x...)
-gradient1{T}(itp::Interpolation{T,1}, x) = gradient!(Array(T,1),itp,x)[1]
+gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array(T,N), itp, x...)
 
 # This creates prefilter specializations for all interpolation types that need them
 for IT in (
@@ -217,8 +210,8 @@ for IT in (
         Quadratic{Periodic,OnGrid},
         Quadratic{Periodic,OnCell},
     )
-    @ngenerate N Array{TCoefs,N} function prefilter{T,N,TCoefs}(::Type{TCoefs}, A::Array{T,N},it::IT)
-        ret, pad = copy_with_padding(TCoefs, A,it)
+    @ngenerate N Array{T,N} function prefilter{TIndex,TCoefs,N}(::Type{TIndex}, A::Array{TCoefs,N}, it::IT)
+        ret, pad = copy_with_padding(A, it)
 
         szs = collect(size(ret))
         strds = collect(strides(ret))
@@ -227,7 +220,7 @@ for IT in (
             n = szs[dim]
             szs[dim] = 1
 
-            M, b = prefiltering_system(TCoefs, n, it)
+            M, b = prefiltering_system(TCoefs, TIndex, n, it)
 
             @nloops N i d->1:szs[d] begin
                 cc = @ntuple N i

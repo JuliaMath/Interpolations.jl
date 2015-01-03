@@ -6,7 +6,7 @@ function define_indices(::Linear, N)
     quote
         @nexprs $N d->begin
             ix_d = clamp(floor(x_d), 1, size(itp,d)-1)
-            ixp_d = ix_d + one(typeof(ix_d))
+            ixp_d = ix_d + 1
             fx_d = x_d - ix_d
         end
     end
@@ -19,7 +19,7 @@ end
 function coefficients(::Linear, N, d)
     sym, symp, symfx = symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("fx_",d))
     quote
-        $sym = one(typeof($symfx)) - $symfx
+        $sym = one(TIndex) - $symfx
         $symp = $symfx
     end
 end
@@ -27,8 +27,8 @@ end
 function gradient_coefficients(::Linear,N,d)
     sym, symp, symfx = symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("fx_",d))
     quote
-        $sym = -one(typeof($symfx))
-        $symp = one(typeof($symfx))
+        $sym = -one(TIndex)
+        $symp = one(TIndex)
     end
 end
 
