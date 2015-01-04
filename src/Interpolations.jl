@@ -184,8 +184,14 @@ for IT in (
 
         # Resolve ambiguity with general array indexing,
         #   getindex{T,N}(A::AbstractArray{T,N}, I::AbstractArray{T,N})
-        eval(ngenerate(:N, :T, :(getindex{T,N}(itp::Interpolation{T,N}, I::AbstractArray{T,N})),
+        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, I::AbstractArray{T})),
             N->:(error("Array indexing is not defined for interpolation objects."))
+        ))
+
+        # Resolve ambiguity with colon indexing for 1D interpolations
+        #   getindex{T}(A::AbstractArray{T,1}, C::Colon)
+        eval(ngenerate(:N, :T, :(getindex{T,TCoefs}(itp::Interpolation{T,1,TCoefs,$IT,$EB}, c::Colon)),
+            N->:(error("Colon indexing is not supported for interpolation objects"))
         ))
 
         # Allow multilinear indexing with any types
@@ -193,7 +199,7 @@ for IT in (
 
         # Define in-place gradient calculation
         #   gradient!(g::Vector, itp::Interpolation, NTuple{N}...)
-        eval(ngenerate(:N, :(Vector{TOut}), :(gradient!{T,N,TCoefs}(g::Vector{TOut}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N}...)),
+        eval(ngenerate(:N, :(Vector{TOut}), :(gradient!{T,N,TCoefs,TOut}(g::Vector{TOut}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,Any}...)),
             N->quote
                 length(g) == N || error("g must be an array with exactly N elements (length(g) == "*string(length(g))*", N == "*string(N)*")")
                 $(extrap_transform_x(gr,eb,N))
