@@ -59,18 +59,18 @@ abstract AbstractInterpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavi
 type Interpolation{T,N,TCoefs,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractInterpolation{T,N,IT,EB}
     coefs::Array{TCoefs,N}
 end
-function Interpolation{N,TCoefs,TIndex<:Real,IT<:InterpolationType,EB<:ExtrapolationBehavior}(::Type{TIndex}, A::AbstractArray{TCoefs,N}, it::IT, ::EB)
+function Interpolation{N,TCoefs,TWeights<:Real,IT<:InterpolationType,EB<:ExtrapolationBehavior}(::Type{TWeights}, A::AbstractArray{TCoefs,N}, it::IT, ::EB)
     isleaftype(IT) || error("The interpolation type must be a leaf type (was $IT)")
 
     isleaftype(TCoefs) || warn("For performance reasons, consider using an array of a concrete type T (eltype(A) == $(eltype(A)))")
 
-    c = one(TIndex)
+    c = one(TWeights)
     for _ in 2:N
         c *= c
     end
     T = typeof(c * one(TCoefs))
 
-    Interpolation{T,N,TCoefs,IT,EB}(prefilter(TIndex,A,it))
+    Interpolation{T,N,TCoefs,IT,EB}(prefilter(TWeights,A,it))
 end
 Interpolation(A::AbstractArray, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Float64, A, it, eb)
 Interpolation(A::AbstractArray{Float32}, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Float32, A, it, eb)
@@ -78,7 +78,7 @@ Interpolation(A::AbstractArray{Rational{Int}}, it::InterpolationType, eb::Extrap
 
 # Unless otherwise specified, use coefficients as they are, i.e. without prefiltering
 # However, all prefilters copy the array, so do that here as well
-prefilter{TIndex,T,N,IT<:InterpolationType}(::Type{TIndex}, A::AbstractArray{T,N}, ::IT) = copy(A)
+prefilter{TWeights,T,N,IT<:InterpolationType}(::Type{TWeights}, A::AbstractArray{T,N}, ::IT) = copy(A)
 
 size{T,N}(itp::Interpolation{T,N}, d::Integer) = d > N ? 1 : size(itp.coefs, d) - 2*padding(interpolationtype(itp))
 size(itp::AbstractInterpolation) = tuple([size(itp,i) for i in 1:ndims(itp)]...)
@@ -228,7 +228,7 @@ for IT in (
         Quadratic{Periodic,OnGrid},
         Quadratic{Periodic,OnCell},
     )
-    @ngenerate N Array{T,N} function prefilter{T,TCoefs,N}(::Type{T}, A::Array{TCoefs,N}, it::IT)
+    @ngenerate N Array{TWeights,N} function prefilter{TWeights,TCoefs,N}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)
         ret, pad = copy_with_padding(A, it)
 
         szs = collect(size(ret))
@@ -238,7 +238,7 @@ for IT in (
             n = szs[dim]
             szs[dim] = 1
 
-            M, b = prefiltering_system(TCoefs, T, n, it)
+            M, b = prefiltering_system(TWeights, TCoefs, n, it)
 
             @nloops N i d->1:szs[d] begin
                 cc = @ntuple N i
