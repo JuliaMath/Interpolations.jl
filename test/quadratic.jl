@@ -63,11 +63,6 @@ for x in 2:xmax-1
     @test_approx_eq A[x] itp3[x]
 end
 
-# Rational element types
-A = Rational{Int}[x^2//10 for x in 1:10]
-itp = Interpolation(A, Quadratic(Free(),OnCell()), ExtrapNaN())
-@test itp[11//10] == (11//10)^2//10
-
 end
 
 module Quadratic2DTests

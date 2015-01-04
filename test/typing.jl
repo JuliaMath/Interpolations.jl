@@ -27,4 +27,11 @@ end
 
 @test typeof(gradient(itp, 3.5)[1]) == Float32
 
+if Base.VERSION >= v"0.4-" # This doesn't work on 0.3 due to rational errors in linalg
+    # Rational element types
+    R = Rational{Int}[x^2//10 for x in 1:10]
+    itp = Interpolation(R, Quadratic(Free(),OnCell()), ExtrapNaN())
+    @test itp[11//10] == (11//10)^2//10
+end
+
 end
