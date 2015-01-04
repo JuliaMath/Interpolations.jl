@@ -123,6 +123,12 @@ function copy_with_padding(A, it::InterpolationType)
     coefs, pad
 end
 
+# This resolves ambiguity with general array indexing,
+#   getindex{T,N}(A::AbstractArray{T,N}, I::AbstractArray{T,N})
+eval(ngenerate(:N, :T, :(getindex{T,N}(itp::Interpolation{T,N}, I::AbstractArray{T,N})),
+    N->:(error("Array indexing is not defined for interpolation objects."))
+))
+
 # This creates getindex methods for all supported combinations
 for IT in (
         Constant{OnGrid},
@@ -152,8 +158,8 @@ for IT in (
         eb = EB()
         gr = gridrepresentation(it)
 
-        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs,TIndex<:Real}(itp::Interpolation{T,N,TCoefs,TIndex,$IT,$EB}, x::NTuple{N,TIndex}...)), 
-            N->quote
+        function getindex_impl(N)
+                quote
                 # Handle extrapolation, by either throwing an error,
                 # returning a value, or shifting x to somewhere inside
                 # the domain
@@ -170,13 +176,26 @@ for IT in (
                 @inbounds ret = $(index_gen(degree(it), N))
                 ret
             end
-        ))
-        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs,TIndex<:Real}(itp::Interpolation{T,N,TCoefs,TIndex}, xs::NTuple{N,Real}...)),
-            N->:(itp[[convert(TIndex, x) for x in @ntuple $N xs]...])
+        end
+
+        # Resolve ambiguity with linear indexing,
+        #   getindex{T,N}(A::AbstractArray{T,N}, i::Real)
+        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::Real)),
+            N->:(error("Linear indexing is not supported for interpolation objects"))
         ))
 
-        eval(ngenerate(:N, :T, :(gradient!{T,N,TCoefs,TIndex<:Real}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,TIndex,$IT,$EB}, x::NTuple{N,TIndex}...)),
+        # Resolve ambiguity with real multilinear indexing
+        #   getindex{T,N}(A::AbstractArray{T,N}, NTuple{N,Real}...)
+        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,Real}...)), getindex_impl))
+
+        # Allow multilinear indexing with any types
+        eval(ngenerate(:N, :(promote_type(T,TIndex)), :(getindex{T,N,TCoefs,TIndex}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,TIndex}...)), getindex_impl))
+
+        # Define in-place gradient calculation
+        #   gradient!(g::Vector, itp::Interpolation, NTuple{N}...)
+        eval(ngenerate(:N, :T, :(gradient!{T,N,TCoefs,TIndex}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,TIndex}...)),
             N->quote
+                length(g) == N || error("g must be an array with exactly N elements (length(g) == "*string(length(g))*", N == "*string(N)*")")
                 $(extrap_transform_x(gr,eb,N))
                 $(define_indices(it,N))
                 @nexprs $N dim->begin
@@ -190,9 +209,6 @@ for IT in (
                 end
                 g
             end
-        ))
-        eval(ngenerate(:N, :T, :(gradient!{T,N,TCoefs,TIndex<:Real}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,TIndex}, xs::NTuple{N,Real}...)),
-            N->:(gradient!(g, itp, [convert(TCoefs, x) for x in @ntuple $N xs]...))
         ))
     end
 end
