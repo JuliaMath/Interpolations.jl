@@ -19,7 +19,7 @@ for x in [3.1:.2:4.3]
     @test_approx_eq_eps float(f(x)) float(itp[x]) abs(.1*f(x))
 end
 
-@test typeof(itp[3.5]) == Float32
+@test typeof(itp[3.5f0]) == Float32
 
 for x in [3.1:.2:4.3]
     @test_approx_eq_eps g(x) gradient(itp, x) abs(.1*g(x))

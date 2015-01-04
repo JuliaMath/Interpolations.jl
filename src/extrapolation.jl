@@ -8,7 +8,7 @@ function extrap_transform_x(::OnGrid, ::ExtrapError, N)
 end
 function extrap_transform_x(::OnCell, ::ExtrapError, N)
     quote
-        @nexprs $N d->(.5 <= real(x_d) <= size(itp,d) + .5 || throw(BoundsError()))
+        @nexprs $N d->(1//2 <= real(x_d) <= size(itp,d) + 1//2 || throw(BoundsError()))
     end
 end
 
@@ -20,7 +20,7 @@ function extrap_transform_x(::OnGrid, ::ExtrapNaN, N)
 end
 function extrap_transform_x(::OnCell, ::ExtrapNaN, N)
     quote
-        @nexprs $N d->(.5 <= real(x_d) <= size(itp,d) + .5 || return convert(T, NaN))
+        @nexprs $N d->(1//2 <= real(x_d) <= size(itp,d) + 1//2 || return convert(T, NaN))
     end
 end
 
@@ -32,7 +32,7 @@ function extrap_transform_x(::OnGrid, ::ExtrapConstant, N)
 end
 function extrap_transform_x(::OnCell, ::ExtrapConstant, N)
     quote
-        @nexprs $N d->(x_d = clamp(x_d, .5, size(itp,d)+.5))
+        @nexprs $N d->(x_d = clamp(x_d, 1//2, size(itp,d)+1//2))
     end
 end
 
