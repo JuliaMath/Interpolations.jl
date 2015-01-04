@@ -201,7 +201,7 @@ for IT in (
         #   gradient!(g::Vector, itp::Interpolation, NTuple{N}...)
         eval(ngenerate(:N, :(Vector{TOut}), :(gradient!{T,N,TCoefs,TOut}(g::Vector{TOut}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,Any}...)),
             N->quote
-                length(g) == N || error("g must be an array with exactly N elements (length(g) == "*string(length(g))*", N == "*string(N)*")")
+                length(g) == $N || error("g must be an array with exactly N elements (length(g) == "*string(length(g))*", N == "*string(N)*")")
                 $(extrap_transform_x(gr,eb,N))
                 $(define_indices(it,N))
                 @nexprs $N dim->begin
