@@ -36,9 +36,9 @@ function coefficients(q::Quadratic, N, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote
-        $symm = 1//2 * ($symfx - 1//2)^2
-        $sym  = 3//4 - $symfx^2
-        $symp = 1//2 * ($symfx + 1//2)^2
+        $symm = convert(T, 1//2 * ($symfx - 1//2)^2)
+        $sym  = convert(T, 3//4 - $symfx^2)
+        $symp = convert(T, 1//2 * ($symfx + 1//2)^2)
     end
 end
 
@@ -46,9 +46,9 @@ function gradient_coefficients(q::Quadratic, N, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote
-        $symm = $symfx - 1//2
-        $sym = -2 * $symfx
-        $symp = $symfx + 1//2
+        $symm = convert(T, $symfx - 1//2)
+        $sym = convert(T, -2 * $symfx)
+        $symp = convert(T, $symfx + 1//2)
     end
 end
 
@@ -75,8 +75,8 @@ padding(::Quadratic) = 1
 padding(::Quadratic{Periodic}) = 0
 
 function inner_system_diags{T}(::Type{T}, n::Int, ::Quadratic)
-    du = fill(1//8, n-1)
-    d = fill(3//4, n)
+    du = fill(convert(T, 1//8), n-1)
+    d = fill(convert(T, 3//4), n)
     dl = copy(du)
     (dl,d,du)
 end
