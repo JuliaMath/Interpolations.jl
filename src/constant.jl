@@ -1,9 +1,9 @@
-type ConstantDegree <: Degree{0} end
-type Constant{GR<:GridRepresentation} <: InterpolationType{ConstantDegree,None,GR} end
+immutable ConstantDegree <: Degree{0} end
+immutable Constant{GR<:GridRepresentation} <: InterpolationType{ConstantDegree,None,GR} end
 Constant{GR<:GridRepresentation}(::GR) = Constant{GR}()
 
 function define_indices(::Constant, N)
-    :(@nexprs $N d->(ix_d = clamp(round(Int,x_d), 1, size(itp,d))))
+    :(@nexprs $N d->(ix_d = clamp(round(real(x_d)), 1, size(itp,d))))
 end
 
 function coefficients(c::Constant, N)
@@ -12,12 +12,12 @@ end
 
 function coefficients(::Constant, N, d)
     sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
-    :($sym = one(typeof($symx)))
+    :($sym = 1)
 end
 
 function gradient_coefficients(::Constant, N, d)
     sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
-    :($sym = zero(typeof($symx)))
+    :($sym = 0)
 end
 
 function index_gen(degree::ConstantDegree, N::Integer, offsets...)

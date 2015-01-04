@@ -1,30 +1,30 @@
 abstract ExtrapolationBehavior
 
-type ExtrapError <: ExtrapolationBehavior end
+immutable ExtrapError <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapError, N)
     quote
-        @nexprs $N d->(1 <= x_d <= size(itp,d) || throw(BoundsError()))
+        @nexprs $N d->(1 <= real(x_d) <= size(itp,d) || throw(BoundsError()))
     end
 end
 function extrap_transform_x(::OnCell, ::ExtrapError, N)
     quote
-        @nexprs $N d->(.5 <= x_d <= size(itp,d) + .5 || throw(BoundsError()))
+        @nexprs $N d->(1//2 <= real(x_d) <= size(itp,d) + 1//2 || throw(BoundsError()))
     end
 end
 
-type ExtrapNaN <: ExtrapolationBehavior end
+immutable ExtrapNaN <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapNaN, N)
     quote
-        @nexprs $N d->(1 <= x_d <= size(itp,d) || return convert(T, NaN))
+        @nexprs $N d->(1 <= real(x_d) <= size(itp,d) || return convert(T, NaN))
     end
 end
 function extrap_transform_x(::OnCell, ::ExtrapNaN, N)
     quote
-        @nexprs $N d->(.5 <= x_d <= size(itp,d) + .5 || return convert(T, NaN))
+        @nexprs $N d->(1//2 <= real(x_d) <= size(itp,d) + 1//2 || return convert(T, NaN))
     end
 end
 
-type ExtrapConstant <: ExtrapolationBehavior end
+immutable ExtrapConstant <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapConstant, N)
     quote
         @nexprs $N d->(x_d = clamp(x_d, 1, size(itp,d)))
@@ -32,11 +32,11 @@ function extrap_transform_x(::OnGrid, ::ExtrapConstant, N)
 end
 function extrap_transform_x(::OnCell, ::ExtrapConstant, N)
     quote
-        @nexprs $N d->(x_d = clamp(x_d, .5, size(itp,d)+.5))
+        @nexprs $N d->(x_d = clamp(x_d, 1//2, size(itp,d)+1//2))
     end
 end
 
-type ExtrapReflect <: ExtrapolationBehavior end
+immutable ExtrapReflect <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapReflect, N)
     quote
         @nexprs $N d->begin
@@ -80,23 +80,12 @@ function extrap_transform_x(::OnCell, ::ExtrapReflect, N)
     end
 end
 
-type ExtrapPeriodic <: ExtrapolationBehavior end
+immutable ExtrapPeriodic <: ExtrapolationBehavior end
 function extrap_transform_x(::GridRepresentation, ::ExtrapPeriodic, N)
-    quote
-        @nexprs $N d->begin
-            # translate x_d to inside the domain
-            n = convert(typeof(x_d), size(itp,d))
-            while x_d < .5
-                x_d += n
-            end
-            while x_d >= n + .5
-                x_d -= n
-            end
-        end
-    end
+    :(@nexprs $N d->(x_d = mod1(x_d, size(itp,d))))
 end
 
-type ExtrapLinear <: ExtrapolationBehavior end
+immutable ExtrapLinear <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapLinear, N)
     quote
         @nexprs $N d->begin

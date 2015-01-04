@@ -12,7 +12,7 @@ A = Float64[f(x) for x in 1:xmax]
 
 itp1 = Interpolation(A, Quadratic(Flat(),OnCell()), ExtrapError())
 
-for x in [3.1:.2:4.3]  
+for x in [3.1:.2:4.3]
     @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
 end
 
@@ -44,7 +44,7 @@ for x in [3.1:.2:4.3]
     @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
 end
 
-xlo, xhi = itp3[.9], itp3[xmax+.2]
+xlo, xhi = itp3[.2], itp3[xmax+.7]
 @test_approx_eq xlo A[1]
 @test_approx_eq xhi A[end]
 

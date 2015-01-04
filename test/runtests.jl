@@ -15,6 +15,9 @@ include("on-grid.jl")
 # test gradient evaluation
 include("gradient.jl")
 
+# test interpolation with specific types
+include("typing.jl")
+
 # Tests copied from Grid.jl's old test suite
 #include("grid.jl")
 

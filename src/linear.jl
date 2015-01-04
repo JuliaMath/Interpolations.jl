@@ -1,13 +1,13 @@
-type LinearDegree <: Degree{1} end
-type Linear{GR<:GridRepresentation} <: InterpolationType{LinearDegree,None,GR} end
+immutable LinearDegree <: Degree{1} end
+immutable Linear{GR<:GridRepresentation} <: InterpolationType{LinearDegree,None,GR} end
 Linear{GR<:GridRepresentation}(::GR) = Linear{GR}()
 
 function define_indices(::Linear, N)
     quote
         @nexprs $N d->begin
-            ix_d = clamp(floor(Int,x_d), 1, size(itp,d)-1)
+            ix_d = clamp(floor(real(x_d)), 1, size(itp,d)-1)
             ixp_d = ix_d + 1
-            fx_d = x_d - convert(typeof(x_d), ix_d)
+            fx_d = x_d - ix_d
         end
     end
 end
@@ -19,7 +19,7 @@ end
 function coefficients(::Linear, N, d)
     sym, symp, symfx = symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("fx_",d))
     quote
-        $sym = one(typeof($symfx)) - $symfx
+        $sym = 1 - $symfx
         $symp = $symfx
     end
 end
@@ -27,8 +27,8 @@ end
 function gradient_coefficients(::Linear,N,d)
     sym, symp, symfx = symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("fx_",d))
     quote
-        $sym = -one(typeof($symfx))
-        $symp = one(typeof($symfx))
+        $sym = -1
+        $symp = 1
     end
 end
 

@@ -42,6 +42,11 @@ xlo, xhi = itp3[.9], itp3[xmax+.2]
 @test xlo == A[1]
 @test xhi == A[end]
 
+# Rational element types
+A = Rational{Int}[x//10+2 for x in 1:10]
+itp = Interpolation(A, Linear(OnGrid()), ExtrapNaN())
+@test itp[11//10] == (11//10)//10+2
+
 end
 
 module Linear2DTests
