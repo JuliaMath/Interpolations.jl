@@ -52,10 +52,10 @@ yg = 1:ny
 f2(x,y) = sin(2pi/nx * (x-1)) * cos(2pi/ny * (y-1))
 zg = Float64[f2(x,y) for x in xg, y in yg]
 
-xf = 1:.1:nx
-yf = 1:.1:ny
+xf = -1:.1:nx+1
+yf = -1:.1:ny+1
 
-itp2 = Interpolation(zg, Quadratic(Flat(),OnCell()),ExtrapConstant())
+itp2 = Interpolation(zg, Quadratic(Flat(),OnCell()),ExtrapLinear())
 
 display(plot(
     layer(x=xf,y=yf,z=[itp2[x,y] for x in xf, y in yf], Geom.contour),
