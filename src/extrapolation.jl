@@ -3,24 +3,24 @@ abstract ExtrapolationBehavior
 immutable ExtrapError <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapError, N)
     quote
-        @nexprs $N d->(1 <= x_d <= size(itp,d) || throw(BoundsError()))
+        @nexprs $N d->(1 <= real(x_d) <= size(itp,d) || throw(BoundsError()))
     end
 end
 function extrap_transform_x(::OnCell, ::ExtrapError, N)
     quote
-        @nexprs $N d->(.5 <= x_d <= size(itp,d) + .5 || throw(BoundsError()))
+        @nexprs $N d->(.5 <= real(x_d) <= size(itp,d) + .5 || throw(BoundsError()))
     end
 end
 
 immutable ExtrapNaN <: ExtrapolationBehavior end
 function extrap_transform_x(::OnGrid, ::ExtrapNaN, N)
     quote
-        @nexprs $N d->(1 <= x_d <= size(itp,d) || return convert(T, NaN))
+        @nexprs $N d->(1 <= real(x_d) <= size(itp,d) || return convert(T, NaN))
     end
 end
 function extrap_transform_x(::OnCell, ::ExtrapNaN, N)
     quote
-        @nexprs $N d->(.5 <= x_d <= size(itp,d) + .5 || return convert(T, NaN))
+        @nexprs $N d->(.5 <= real(x_d) <= size(itp,d) + .5 || return convert(T, NaN))
     end
 end
 

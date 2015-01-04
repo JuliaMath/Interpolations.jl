@@ -7,7 +7,7 @@ function define_indices(q::Quadratic, N)
     quote
         pad = padding($q)
         @nexprs $N d->begin
-            ix_d = clamp(round(x_d), 1, size(itp,d)) + pad
+            ix_d = clamp(round(real(x_d)), 1, size(itp,d)) + pad
             ixp_d = ix_d + 1
             ixm_d = ix_d - 1
 
@@ -19,7 +19,7 @@ function define_indices(q::Quadratic{Periodic}, N)
     quote
         pad = padding($q)
         @nexprs $N d->begin
-            ix_d = clamp(round(x_d), 1, size(itp,d)) + pad
+            ix_d = clamp(round(real(x_d)), 1, size(itp,d)) + pad
             ixp_d = mod1(ix_d + 1, size(itp,d))
             ixm_d = mod1(ix_d - 1, size(itp,d))
 
