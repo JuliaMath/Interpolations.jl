@@ -56,7 +56,7 @@ abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentatio
 include("extrapolation.jl")
 
 abstract AbstractInterpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractArray{T,N}
-type Interpolation{T,N,TCoefs,TIndex<:Real,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractInterpolation{T,N,IT,EB}
+type Interpolation{T,N,TCoefs,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractInterpolation{T,N,IT,EB}
     coefs::Array{TCoefs,N}
 end
 function Interpolation{N,TCoefs,TIndex<:Real,IT<:InterpolationType,EB<:ExtrapolationBehavior}(::Type{TIndex}, A::AbstractArray{TCoefs,N}, it::IT, ::EB)
@@ -70,7 +70,7 @@ function Interpolation{N,TCoefs,TIndex<:Real,IT<:InterpolationType,EB<:Extrapola
     end
     T = typeof(c * one(TCoefs))
 
-    Interpolation{T,N,TCoefs,TIndex,IT,EB}(prefilter(TIndex,A,it))
+    Interpolation{T,N,TCoefs,IT,EB}(prefilter(TIndex,A,it))
 end
 Interpolation(A::AbstractArray, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Float64, A, it, eb)
 Interpolation(A::AbstractArray{Float32}, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Float32, A, it, eb)
@@ -89,7 +89,7 @@ offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
                     off ==  1 ? symbol(string("ixp_", d)) :
                     off ==  2 ? symbol(string("ixpp_", d)) : error("offset $off not recognized")
 
-interpolationtype{T,N,TCoefs,TIndex,IT<:InterpolationType}(itp::Interpolation{T,N,TCoefs,TIndex,IT}) = IT()
+interpolationtype{T,N,TCoefs,IT<:InterpolationType}(itp::Interpolation{T,N,TCoefs,IT}) = IT()
 
 boundarycondition{D,BC<:BoundaryCondition}(::InterpolationType{D,BC}) = BC()
 gridrepresentation{D,BC,GR<:GridRepresentation}(::InterpolationType{D,BC,GR}) = GR()
@@ -212,7 +212,7 @@ for IT in (
         Quadratic{Periodic,OnGrid},
         Quadratic{Periodic,OnCell},
     )
-    @ngenerate N Array{T,N} function prefilter{TIndex,TCoefs,N}(::Type{TIndex}, A::Array{TCoefs,N}, it::IT)
+    @ngenerate N Array{T,N} function prefilter{T,TCoefs,N}(::Type{T}, A::Array{TCoefs,N}, it::IT)
         ret, pad = copy_with_padding(A, it)
 
         szs = collect(size(ret))
@@ -222,7 +222,7 @@ for IT in (
             n = szs[dim]
             szs[dim] = 1
 
-            M, b = prefiltering_system(TCoefs, TIndex, n, it)
+            M, b = prefiltering_system(TCoefs, T, n, it)
 
             @nloops N i d->1:szs[d] begin
                 cc = @ntuple N i

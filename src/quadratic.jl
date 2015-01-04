@@ -36,9 +36,9 @@ function coefficients(q::Quadratic, N, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote
-        $symm = convert(TIndex, 1//2 * ($symfx - 1//2)^2)
-        $sym  = convert(TIndex, 3//4 - $symfx^2)
-        $symp = convert(TIndex, 1//2 * ($symfx + 1//2)^2)
+        $symm = 1//2 * ($symfx - 1//2)^2
+        $sym  = 3//4 - $symfx^2
+        $symp = 1//2 * ($symfx + 1//2)^2
     end
 end
 
@@ -46,9 +46,9 @@ function gradient_coefficients(q::Quadratic, N, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote
-        $symm = convert(TIndex, $symfx - 1//2)
-        $sym = convert(TIndex, -2 * $symfx)
-        $symp = convert(TIndex, $symfx + 1//2)
+        $symm = $symfx - 1//2
+        $sym = -2 * $symfx
+        $symp = $symfx + 1//2
     end
 end
 
@@ -75,67 +75,67 @@ padding(::Quadratic) = 1
 padding(::Quadratic{Periodic}) = 0
 
 function inner_system_diags{T}(::Type{T}, n::Int, ::Quadratic)
-    du = fill(convert(T,1//8), n-1)
-    d = fill(convert(T,3//4),n)
+    du = fill(1//8, n-1)
+    d = fill(3//4, n)
     dl = copy(du)
     (dl,d,du)
 end
 
-function prefiltering_system{TCoefs,TIndex,BC<:Union(Flat,Reflect)}(::Type{TCoefs}, ::Type{TIndex}, n::Int, q::Quadratic{BC,OnCell})
-    dl,d,du = inner_system_diags(TIndex,n,q)
+function prefiltering_system{TCoefs,T,BC<:Union(Flat,Reflect)}(::Type{TCoefs}, ::Type{T}, n::Int, q::Quadratic{BC,OnCell})
+    dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
     lufact!(Tridiagonal(dl, d, du)), zeros(TCoefs, n)
 end
 
-function prefiltering_system{TCoefs,TIndex,BC<:Union(Flat,Reflect)}(::Type{TCoefs}, ::Type{TIndex}, n::Int, q::Quadratic{BC,OnGrid})
-    dl,d,du = inner_system_diags(TIndex,n,q)
+function prefiltering_system{TCoefs,T,BC<:Union(Flat,Reflect)}(::Type{TCoefs}, ::Type{T}, n::Int, q::Quadratic{BC,OnGrid})
+    dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = -1
     du[1] = dl[end] = 0
 
-    rowspec = zeros(TIndex,n,2)
+    rowspec = zeros(T,n,2)
     # first row     last row
     rowspec[1,1] = rowspec[n,2] = 1
-    colspec = zeros(TIndex,2,n)
+    colspec = zeros(T,2,n)
     # third col     third-to-last col
     colspec[1,3] = colspec[2,n-2] = 1
-    valspec = zeros(TIndex,2,2)
+    valspec = zeros(T,2,2)
     # [1,3]         [n,n-2]
     valspec[1,1] = valspec[2,2] = 1
 
     Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
-function prefiltering_system{TCoefs,TIndex}(::Type{TCoefs}, ::Type{TIndex}, n::Int, q::Quadratic{Line})
-    dl,d,du = inner_system_diags(TIndex,n,q)
+function prefiltering_system{TCoefs,T}(::Type{TCoefs}, ::Type{T}, n::Int, q::Quadratic{Line})
+    dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
 
-    rowspec = zeros(TIndex,n,2)
+    rowspec = zeros(T,n,2)
     # first row     last row
     rowspec[1,1] = rowspec[n,2] = 1
-    colspec = zeros(TIndex,2,n)
+    colspec = zeros(T,2,n)
     # third col     third-to-last col
     colspec[1,3] = colspec[2,n-2] = 1
-    valspec = zeros(TIndex,2,2)
+    valspec = zeros(T,2,2)
     # [1,3]         [n,n-2]
     valspec[1,1] = valspec[2,2] = 1
 
     Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
-function prefiltering_system{TCoefs,TIndex}(::Type{TCoefs}, ::Type{TIndex}, n::Int, q::Quadratic{Free})
-    dl,d,du = inner_system_diags(TIndex,n,q)
+function prefiltering_system{TCoefs,T}(::Type{TCoefs}, ::Type{T}, n::Int, q::Quadratic{Free})
+    dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = 1
     du[1] = dl[end] = -3
 
-    rowspec = zeros(TIndex,n,4)
+    rowspec = zeros(T,n,4)
     # first row     first row       last row       last row
     rowspec[1,1] = rowspec[1,2] = rowspec[n,3] = rowspec[n,4] = 1
-    colspec = zeros(TIndex,4,n)
+    colspec = zeros(T,4,n)
     # third col     fourth col     third-to-last col  fourth-to-last col
     colspec[1,3] = colspec[2,4] = colspec[3,n-2] = colspec[4,n-3] = 1
-    valspec = zeros(TIndex,4,4)
+    valspec = zeros(T,4,4)
     # [1,3]          [n,n-2]
     valspec[1,1] = valspec[3,3] = 3
     # [1,4]          [n,n-3]
@@ -144,16 +144,16 @@ function prefiltering_system{TCoefs,TIndex}(::Type{TCoefs}, ::Type{TIndex}, n::I
     Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
-function prefiltering_system{TCoefs,TIndex}(::Type{TCoefs}, ::Type{TIndex}, n::Int, q::Quadratic{Periodic})
-    dl,d,du = inner_system_diags(TIndex,n,q)
+function prefiltering_system{TCoefs,T}(::Type{TCoefs}, ::Type{T}, n::Int, q::Quadratic{Periodic})
+    dl,d,du = inner_system_diags(T,n,q)
 
-    rowspec = zeros(TIndex,n,2)
+    rowspec = zeros(T,n,2)
     # first row       last row
     rowspec[1,1] = rowspec[n,2] = 1
-    colspec = zeros(TIndex,2,n)
+    colspec = zeros(T,2,n)
     # last col         first col
     colspec[1,n] = colspec[2,1] = 1
-    valspec = zeros(TIndex,2,2)
+    valspec = zeros(T,2,2)
     # [1,n]            [n,1]
     valspec[1,1] = valspec[2,2] = 1//8
 

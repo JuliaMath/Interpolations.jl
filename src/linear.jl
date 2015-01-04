@@ -19,7 +19,7 @@ end
 function coefficients(::Linear, N, d)
     sym, symp, symfx = symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("fx_",d))
     quote
-        $sym = one(TIndex) - $symfx
+        $sym = 1 - $symfx
         $symp = $symfx
     end
 end
@@ -27,8 +27,8 @@ end
 function gradient_coefficients(::Linear,N,d)
     sym, symp, symfx = symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("fx_",d))
     quote
-        $sym = -one(TIndex)
-        $symp = one(TIndex)
+        $sym = -1
+        $symp = 1
     end
 end
 
