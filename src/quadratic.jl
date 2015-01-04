@@ -36,9 +36,9 @@ function coefficients(q::Quadratic, N, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote
-        $symm = convert(T, 1//2 * ($symfx - 1//2)^2)
-        $sym  = convert(T, 3//4 - $symfx^2)
-        $symp = convert(T, 1//2 * ($symfx + 1//2)^2)
+        $symm = 1//2 * ($symfx - 1//2)^2
+        $sym  = 3//4 - $symfx^2
+        $symp = 1//2 * ($symfx + 1//2)^2
     end
 end
 
@@ -46,9 +46,9 @@ function gradient_coefficients(q::Quadratic, N, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote
-        $symm = convert(T, $symfx - 1//2)
-        $sym = convert(T, -2 * $symfx)
-        $symp = convert(T, $symfx + 1//2)
+        $symm = $symfx - 1//2
+        $sym = -2 * $symfx
+        $symp = $symfx + 1//2
     end
 end
 
