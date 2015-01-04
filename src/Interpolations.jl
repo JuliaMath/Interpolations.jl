@@ -123,12 +123,6 @@ function copy_with_padding(A, it::InterpolationType)
     coefs, pad
 end
 
-# This resolves ambiguity with general array indexing,
-#   getindex{T,N}(A::AbstractArray{T,N}, I::AbstractArray{T,N})
-eval(ngenerate(:N, :T, :(getindex{T,N}(itp::Interpolation{T,N}, I::AbstractArray{T,N})),
-    N->:(error("Array indexing is not defined for interpolation objects."))
-))
-
 # This creates getindex methods for all supported combinations
 for IT in (
         Constant{OnGrid},
@@ -187,6 +181,12 @@ for IT in (
         # Resolve ambiguity with real multilinear indexing
         #   getindex{T,N}(A::AbstractArray{T,N}, NTuple{N,Real}...)
         eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,Real}...)), getindex_impl))
+
+        # Resolve ambiguity with general array indexing,
+        #   getindex{T,N}(A::AbstractArray{T,N}, I::AbstractArray{T,N})
+        eval(ngenerate(:N, :T, :(getindex{T,N}(itp::Interpolation{T,N}, I::AbstractArray{T,N})),
+            N->:(error("Array indexing is not defined for interpolation objects."))
+        ))
 
         # Allow multilinear indexing with any types
         eval(ngenerate(:N, :(promote_type(T,TIndex)), :(getindex{T,N,TCoefs,TIndex}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,TIndex}...)), getindex_impl))
