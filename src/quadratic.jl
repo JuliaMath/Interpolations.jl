@@ -81,14 +81,14 @@ function inner_system_diags{T}(::Type{T}, n::Int, ::Quadratic)
     (dl,d,du)
 end
 
-function prefiltering_system{TCoefs,T,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{BC,OnCell})
+function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{BC,OnCell})
     dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
     lufact!(Tridiagonal(dl, d, du)), zeros(TCoefs, n)
 end
 
-function prefiltering_system{TCoefs,T,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{BC,OnGrid})
+function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{BC,OnGrid})
     dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = -1
     du[1] = dl[end] = 0
@@ -106,7 +106,7 @@ function prefiltering_system{TCoefs,T,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type
     Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
-function prefiltering_system{TCoefs,T}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Line})
+function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Line})
     dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
@@ -124,7 +124,7 @@ function prefiltering_system{TCoefs,T}(::Type{T}, ::Type{TCoefs}, n::Int, q::Qua
     Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
-function prefiltering_system{TCoefs,T}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Free})
+function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Free})
     dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = 1
     du[1] = dl[end] = -3
@@ -144,7 +144,7 @@ function prefiltering_system{TCoefs,T}(::Type{T}, ::Type{TCoefs}, n::Int, q::Qua
     Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
-function prefiltering_system{TCoefs,T}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Periodic})
+function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Periodic})
     dl,d,du = inner_system_diags(T,n,q)
 
     rowspec = zeros(T,n,2)
