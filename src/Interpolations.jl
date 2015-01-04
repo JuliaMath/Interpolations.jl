@@ -193,7 +193,7 @@ for IT in (
 
         # Define in-place gradient calculation
         #   gradient!(g::Vector, itp::Interpolation, NTuple{N}...)
-        eval(ngenerate(:N, :T, :(gradient!{T,N,TCoefs,TIndex}(g::Array{T,1}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,TIndex}...)),
+        eval(ngenerate(:N, :(Vector{TOut}), :(gradient!{T,N,TCoefs}(g::Vector{TOut}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N}...)),
             N->quote
                 length(g) == N || error("g must be an array with exactly N elements (length(g) == "*string(length(g))*", N == "*string(N)*")")
                 $(extrap_transform_x(gr,eb,N))
