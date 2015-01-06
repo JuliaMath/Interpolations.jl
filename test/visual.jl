@@ -55,6 +55,7 @@ itp2 = Interpolation(zg, Quadratic(Flat(),OnCell()),ExtrapLinear())
 
 display(plot(
     layer(x=xf,y=yf,z=[itp2[x,y] for x in xf, y in yf], Geom.contour),
+    Guide.title("Quadratic{Flat,Oncell}, ExtrapLinear")
 ))
 
 end
