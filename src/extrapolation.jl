@@ -92,15 +92,21 @@ function extrap_transform_x(::OnGrid, ::ExtrapLinear, N)
             if x_d < 1
                 fx_d = x_d - convert(typeof(x_d), 1)
 
-                k = -4*itp.coefs[1]
-                return itp[1] - k * fx_d
+                xc = [(@ntuple $N x)...]
+                xc[d] = 1
+                k = gradient(itp, xc...)[d]
+
+                return itp[xc...] + k * fx_d
             end
             if x_d > size(itp, d)
                 s_d = size(itp,d)
                 fx_d = x_d - convert(typeof(x_d), s_d)
 
-                k = itp[s_d] - itp[s_d - 1]
-                return itp[s_d] + k * fx_d
+                xc = [(@ntuple $N x)...]
+                xc[d] = s_d
+                k = gradient(itp, xc...)[d]
+
+                return itp[xc...] + k * fx_d
             end
         end
     end

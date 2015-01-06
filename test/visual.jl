@@ -1,8 +1,6 @@
 module VisualTests
 
-print("loading packages...")
 using Gadfly, Interpolations
-println("done!")
 const nx = 10
 xg = 1:nx
 xf = -1.2nx:.1:3.3nx
@@ -37,10 +35,8 @@ for (IT, EB) in (
 
     push!(stuff, layer(x=xg,y=y1,Geom.point,Theme(default_color=color("green"))))
     push!(stuff, layer(x=xf,y=[itp[x] for x in xf],Geom.path,Theme(default_point_size=2px)))
-    push!(stuff, Guide.title("$IT, $EB"))
-    if boundarycondition(IT()) == Periodic()
-        push!(stuff, layer(x=xg,y=y1,Geom.point,Theme(default_color=color("green"))))
-    end
+    title = "$(IT.name.name){$(join(map(t -> t.name.name, IT.parameters), ','))}, $(EB.name.name)"
+    push!(stuff, Guide.title(title))
     display(plot(stuff...))
 end
 
@@ -52,13 +48,14 @@ yg = 1:ny
 f2(x,y) = sin(2pi/nx * (x-1)) * cos(2pi/ny * (y-1))
 zg = Float64[f2(x,y) for x in xg, y in yg]
 
-xf = 1:.1:nx
-yf = 1:.1:ny
+xf = -1:.1:nx+1
+yf = -1:.1:ny+1
 
-itp2 = Interpolation(zg, Quadratic(Flat(),OnCell()),ExtrapConstant())
+itp2 = Interpolation(zg, Quadratic(Flat(),OnCell()),ExtrapLinear())
 
 display(plot(
     layer(x=xf,y=yf,z=[itp2[x,y] for x in xf, y in yf], Geom.contour),
+    Guide.title("Quadratic{Flat,Oncell}, ExtrapLinear")
 ))
 
 end
