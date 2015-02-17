@@ -174,7 +174,7 @@ end
 # Resolve ambiguity with real multilinear indexing
 stagedfunction getindex{T,N,TCoefs,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::Real...)
     n = length(x)
-    n == N || return :(error("Must index interpolation objects with as many indexes as dimensions"))
+    n == N || return :(error("Must index $N-dimensional interpolation objects with $(nindexes(N))"))
     getindex_impl(N, IT, EB)
 end
 
@@ -193,7 +193,7 @@ end
 # Allow multilinear indexing with any types
 stagedfunction getindex{T,N,TCoefs,TIndex,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::TIndex...)
     n = length(x)
-    n == N || return :(error("Must index interpolation objects with as many indexes as dimensions"))
+    n == N || return :(error("Must index $N-dimensional interpolation objects with $(nindexes(N))"))
     getindex_impl(N, IT, EB)
 end
 
@@ -201,7 +201,7 @@ end
 #   gradient!(g::Vector, itp::Interpolation, NTuple{N}...)
 stagedfunction gradient!{T,N,TCoefs,TOut,IT,EB}(g::Vector{TOut}, itp::Interpolation{T,N,TCoefs,IT,EB}, x...)
     n = length(x)
-    n == N || return :(error("Must index interpolation objects with as many indexes as dimensions"))
+    n == N || return :(error("Must index $N-dimensional interpolation objects with $(nindexes(N))"))
     it = IT()
     eb = EB()
     gr = gridrepresentation(it)
@@ -236,7 +236,7 @@ stagedfunction prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::A
         strds = collect(strides(ret))
 
         for dim in 1:$N
-             n = szs[dim]
+            n = szs[dim]
             szs[dim] = 1
 
             M, b = prefiltering_system(TWeights, TCoefs, n, it)
@@ -258,5 +258,7 @@ stagedfunction prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::A
         ret
     end
 end
+
+nindexes(N::Int) = N == 1 ? "1 index" : "$N indexes"
 
 end # module
