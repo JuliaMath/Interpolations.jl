@@ -1,7 +1,7 @@
 module Interpolations
 
 using Base.Cartesian
-using Compat
+using WoodburyMatrices, Compat
 
 import Base:
     eltype,
@@ -10,7 +10,7 @@ import Base:
     ndims,
     size
 
-export 
+export
     Interpolation,
     Constant,
     Linear,
@@ -123,131 +123,126 @@ function copy_with_padding(A, it::InterpolationType)
     coefs, pad
 end
 
-# This creates getindex methods for all supported combinations
-for IT in (
-        Constant{OnGrid},
-        Constant{OnCell},
-        Linear{OnGrid},
-        Linear{OnCell},
-        Quadratic{Flat,OnCell},
-        Quadratic{Flat,OnGrid},
-        Quadratic{Reflect,OnCell},
-        Quadratic{Reflect,OnGrid},
-        Quadratic{Line,OnGrid},
-        Quadratic{Line,OnCell},
-        Quadratic{Free,OnGrid},
-        Quadratic{Free,OnCell},
-        Quadratic{Periodic,OnGrid},
-        Quadratic{Periodic,OnCell},
-    )
-    for EB in (
-            ExtrapError,
-            ExtrapNaN,
-            ExtrapConstant,
-            ExtrapLinear,
-            ExtrapReflect,
-            ExtrapPeriodic,
-        )
-        it = IT()
-        eb = EB()
-        gr = gridrepresentation(it)
+supported(::Type{Constant{OnGrid}}) = true
+supported(::Type{Constant{OnCell}}) = true
+supported(::Type{Linear{OnGrid}}) = true
+supported(::Type{Linear{OnCell}}) = true
+supported(::Type{Quadratic{Flat,OnCell}}) = true
+supported(::Type{Quadratic{Flat,OnGrid}}) = true
+supported(::Type{Quadratic{Reflect,OnCell}}) = true
+supported(::Type{Quadratic{Reflect,OnGrid}}) = true
+supported(::Type{Quadratic{Line,OnGrid}}) = true
+supported(::Type{Quadratic{Line,OnCell}}) = true
+supported(::Type{Quadratic{Free,OnGrid}}) = true
+supported(::Type{Quadratic{Free,OnCell}}) = true
+supported(::Type{Quadratic{Periodic,OnGrid}}) = true
+supported(::Type{Quadratic{Periodic,OnCell}}) = true
+supported(::Any) = false
 
-        function getindex_impl(N)
-                quote
-                # Handle extrapolation, by either throwing an error,
-                # returning a value, or shifting x to somewhere inside
-                # the domain
-                $(extrap_transform_x(gr,eb,N))
+function getindex_impl(N, IT::Type, EB::Type)
+    it = IT()
+    eb = EB()
+    gr = gridrepresentation(it)
+    quote
+        @nexprs $N d->(x_d = x[d])
 
-                # Calculate the indices of all coefficients that will be used
-                # and define fx = x - xi in each dimension
-                $(define_indices(it, N))
+        # Handle extrapolation, by either throwing an error,
+        # returning a value, or shifting x to somewhere inside
+        # the domain
+        $(extrap_transform_x(gr,eb,N))
 
-                # Calculate coefficient weights based on fx
-                $(coefficients(it, N))
+        # Calculate the indices of all coefficients that will be used
+        # and define fx = x - xi in each dimension
+        $(define_indices(it, N))
 
-                # Generate the indexing expression
-                @inbounds ret = $(index_gen(degree(it), N))
-                ret
-            end
-        end
+        # Calculate coefficient weights based on fx
+        $(coefficients(it, N))
 
-        # Resolve ambiguity with linear indexing,
-        #   getindex{T,N}(A::AbstractArray{T,N}, i::Real)
-        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::Real)),
-            N->:(error("Linear indexing is not supported for interpolation objects"))
-        ))
-
-        # Resolve ambiguity with real multilinear indexing
-        #   getindex{T,N}(A::AbstractArray{T,N}, NTuple{N,Real}...)
-        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,Real}...)), getindex_impl))
-
-        # Resolve ambiguity with general array indexing,
-        #   getindex{T,N}(A::AbstractArray{T,N}, I::AbstractArray{T,N})
-        eval(ngenerate(:N, :T, :(getindex{T,N,TCoefs}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, I::AbstractArray{T})),
-            N->:(error("Array indexing is not defined for interpolation objects."))
-        ))
-
-        # Resolve ambiguity with colon indexing for 1D interpolations
-        #   getindex{T}(A::AbstractArray{T,1}, C::Colon)
-        eval(ngenerate(:N, :T, :(getindex{T,TCoefs}(itp::Interpolation{T,1,TCoefs,$IT,$EB}, c::Colon)),
-            N->:(error("Colon indexing is not supported for interpolation objects"))
-        ))
-
-        # Allow multilinear indexing with any types
-        eval(ngenerate(:N, :(promote_type(T,TIndex)), :(getindex{T,N,TCoefs,TIndex}(itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,TIndex}...)), getindex_impl))
-
-        # Define in-place gradient calculation
-        #   gradient!(g::Vector, itp::Interpolation, NTuple{N}...)
-        eval(ngenerate(:N, :(Vector{TOut}), :(gradient!{T,N,TCoefs,TOut}(g::Vector{TOut}, itp::Interpolation{T,N,TCoefs,$IT,$EB}, x::NTuple{N,Any}...)),
-            N->quote
-                length(g) == $N || error("g must be an array with exactly N elements (length(g) == "*string(length(g))*", N == "*string(N)*")")
-                $(extrap_transform_x(gr,eb,N))
-                $(define_indices(it,N))
-                @nexprs $N dim->begin
-                    @nexprs $N d->begin
-                        (d==dim
-                            ? $(gradient_coefficients(it,N,:d))
-                            : $(coefficients(it,N,:d)))
-                    end
-
-                    @inbounds g[dim] = $(index_gen(degree(it),N))
-                end
-                g
-            end
-        ))
+        # Generate the indexing expression
+        @inbounds ret = $(index_gen(degree(it), N))
+        ret
     end
+end
+
+# Resolve ambiguity with linear indexing
+getindex{T,N,TCoefs,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::Real) =
+    error("Linear indexing is not supported for interpolation objects")
+stagedfunction getindex{T,TCoefs,IT,EB}(itp::Interpolation{T,1,TCoefs,IT,EB}, x::Real)
+    getindex_impl(1, IT, EB)
+end
+
+# Resolve ambiguity with real multilinear indexing
+stagedfunction getindex{T,N,TCoefs,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::Real...)
+    n = length(x)
+    n == N || return :(error("Must index interpolation objects with as many indexes as dimensions"))
+    getindex_impl(N, IT, EB)
+end
+
+# Resolve ambiguity with general array indexing,
+#   getindex{T,N}(A::AbstractArray{T,N}, I::AbstractArray{T,N})
+function getindex{T,N,TCoefs,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, I::AbstractArray{T})
+    error("Array indexing is not defined for interpolation objects.")
+end
+
+# Resolve ambiguity with colon indexing for 1D interpolations
+#   getindex{T}(A::AbstractArray{T,1}, C::Colon)
+function getindex{T,TCoefs,IT,EB}(itp::Interpolation{T,1,TCoefs,IT,EB}, c::Colon)
+    error("Colon indexing is not supported for interpolation objects")
+end
+
+# Allow multilinear indexing with any types
+stagedfunction getindex{T,N,TCoefs,TIndex,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::TIndex...)
+    n = length(x)
+    n == N || return :(error("Must index interpolation objects with as many indexes as dimensions"))
+    getindex_impl(N, IT, EB)
+end
+
+# Define in-place gradient calculation
+#   gradient!(g::Vector, itp::Interpolation, NTuple{N}...)
+stagedfunction gradient!{T,N,TCoefs,TOut,IT,EB}(g::Vector{TOut}, itp::Interpolation{T,N,TCoefs,IT,EB}, x...)
+    n = length(x)
+    n == N || return :(error("Must index interpolation objects with as many indexes as dimensions"))
+    it = IT()
+    eb = EB()
+    gr = gridrepresentation(it)
+    q = quote
+        length(g) == $N || error("g must be an array with exactly N elements (length(g) == "*string(length(g))*", N == "*string($N)*")")
+        @nexprs $N d->(x_d = x[d])
+        $(extrap_transform_x(gr,eb,N))
+        $(define_indices(it,N))
+        @nexprs $N dim->begin
+            @nexprs $N d->begin
+                (d==dim ? $(gradient_coefficients(it,N,:d))
+                        : $(coefficients(it,N,:d)))
+            end
+
+            @inbounds g[dim] = $(index_gen(degree(it),N))
+        end
+        @show g
+        g
+    end
+    # @show q
+    q
 end
 
 gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array(T,N), itp, x...)
 
 # This creates prefilter specializations for all interpolation types that need them
-for IT in (
-        Quadratic{Flat,OnCell},
-        Quadratic{Flat,OnGrid},
-        Quadratic{Reflect,OnCell},
-        Quadratic{Reflect,OnGrid},
-        Quadratic{Line,OnGrid},
-        Quadratic{Line,OnCell},
-        Quadratic{Free,OnGrid},
-        Quadratic{Free,OnCell},
-        Quadratic{Periodic,OnGrid},
-        Quadratic{Periodic,OnCell},
-    )
-    @ngenerate N Array{TWeights,N} function prefilter{TWeights,TCoefs,N}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)
+stagedfunction prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)
+    quote
         ret, pad = copy_with_padding(A, it)
 
         szs = collect(size(ret))
         strds = collect(strides(ret))
 
-        for dim in 1:N
-            n = szs[dim]
+        for dim in 1:$N
+             n = szs[dim]
             szs[dim] = 1
 
             M, b = prefiltering_system(TWeights, TCoefs, n, it)
 
-            @nloops N i d->1:szs[d] begin
-                cc = @ntuple N i
+            @nloops $N i d->1:szs[d] begin
+                cc = @ntuple $N i
 
                 strt_diff = sum([(cc[i]-1)*strds[i] for i in 1:length(cc)])
                 strt = 1 + strt_diff

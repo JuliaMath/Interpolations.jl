@@ -22,6 +22,7 @@ end
 itp1 = Interpolation(Float64[f1(x) for x in 1:nx-1],
             Linear(OnGrid()), ExtrapPeriodic())
 for x in 2.5:nx-1.5
+    @show gradient!(g, itp1, x)
     @test_approx_eq_eps g1(x) gradient(itp1, x)[1] abs(.1*g1(x))
     @test_approx_eq_eps g1(x) gradient!(g, itp1, x)[1] abs(.1*g1(x))
     @test_approx_eq_eps g1(x) g[1] abs(.1*g1(x))
