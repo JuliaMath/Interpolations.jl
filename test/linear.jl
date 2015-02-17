@@ -12,7 +12,7 @@ A = Float64[f(x) for x in 1:xmax]
 
 itp1 = Interpolation(A, Linear(OnGrid()), ExtrapError())
 
-for x in [1:.2:xmax]
+for x in 1:.2:xmax
     @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
 end
 
@@ -23,7 +23,7 @@ end
 
 itp2 = Interpolation(A, Linear(OnGrid()), ExtrapNaN())
 
-for x in [1:.2:xmax]
+for x in 1:.2:xmax
     @test_approx_eq_eps f(x) itp2[x] abs(.1*f(x))
 end
 
@@ -34,7 +34,7 @@ xlo, xhi = itp2[.9], itp2[xmax+.2]
 ## ExtrapConstant
 
 itp3 = Interpolation(A, Linear(OnGrid()), ExtrapConstant())
-for x in [3.1:.2:4.3]
+for x in 3.1:.2:4.3
     @test_approx_eq_eps f(x) itp3[x] abs(.1*f(x))
 end
 

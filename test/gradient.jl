@@ -28,7 +28,7 @@ for x in 2.5:nx-1.5
 end
 
 # Since Quadratic is OnCell in the domain, check gradients at grid points
-itp1 = Interpolation(Float64[f1(x) for x in 1:nx-1], 
+itp1 = Interpolation(Float64[f1(x) for x in 1:nx-1],
             Quadratic(Periodic(),OnGrid()), ExtrapPeriodic())
 for x in 2:nx-1
     @test_approx_eq_eps g1(x) gradient(itp1, x)[1] abs(.05*g1(x))
