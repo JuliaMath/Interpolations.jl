@@ -15,13 +15,13 @@ itp = Interpolation(A, Quadratic(Flat(), OnCell()), ExtrapConstant())
 #     layer(x=1:.1:nx,y=[itp[x] for x in 1:1//10:nx],Geom.path),
 # ))
 
-for x in [3.1:.2:4.3]
+for x in 3.1:.2:4.3
     @test_approx_eq_eps float(f(x)) float(itp[x]) abs(.1*f(x))
 end
 
 @test typeof(itp[3.5f0]) == Float32
 
-for x in [3.1:.2:4.3]
+for x in 3.1:.2:4.3
     @test_approx_eq_eps g(x) gradient(itp, x) abs(.1*g(x))
 end
 

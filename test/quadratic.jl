@@ -49,7 +49,7 @@ xlo, xhi = itp3[.2], itp3[xmax+.7]
 @test_approx_eq xhi A[end]
 
 # Check continuity
-xs = [0:.1:length(A)+1;]
+xs = 0:.1:length(A)+1
 
 for i in 1:length(xs)-1
     @test_approx_eq_eps itp3[xs[i]] itp3[xs[i+1]] .1
