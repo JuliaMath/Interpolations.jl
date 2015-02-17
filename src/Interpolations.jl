@@ -174,7 +174,7 @@ end
 # Resolve ambiguity with real multilinear indexing
 stagedfunction getindex{T,N,TCoefs,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::Real...)
     n = length(x)
-    n == N || return :(error("Must index $N-dimensional interpolation objects with $(nindexes(N))"))
+    n == N || return :(error("Must index ", $N, "-dimensional interpolation objects with ", $(nindexes(N))))
     getindex_impl(N, IT, EB)
 end
 
@@ -193,7 +193,7 @@ end
 # Allow multilinear indexing with any types
 stagedfunction getindex{T,N,TCoefs,TIndex,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::TIndex...)
     n = length(x)
-    n == N || return :(error("Must index $N-dimensional interpolation objects with $(nindexes(N))"))
+    n == N || return :(error("Must index ", $N, "-dimensional interpolation objects with ", $(nindexes(N))))
     getindex_impl(N, IT, EB)
 end
 
@@ -201,11 +201,11 @@ end
 #   gradient!(g::Vector, itp::Interpolation, NTuple{N}...)
 stagedfunction gradient!{T,N,TCoefs,TOut,IT,EB}(g::Vector{TOut}, itp::Interpolation{T,N,TCoefs,IT,EB}, x...)
     n = length(x)
-    n == N || return :(error("Must index $N-dimensional interpolation objects with $(nindexes(N))"))
+    n == N || return :(error("Must index ", $N, "-dimensional interpolation objects with ", $(nindexes(N))))
     it = IT()
     eb = EB()
     gr = gridrepresentation(it)
-    q = quote
+    quote
         length(g) == $N || error("g must be an array with exactly N elements (length(g) == "*string(length(g))*", N == "*string($N)*")")
         @nexprs $N d->(x_d = x[d])
         $(extrap_transform_x(gr,eb,N))
@@ -218,11 +218,8 @@ stagedfunction gradient!{T,N,TCoefs,TOut,IT,EB}(g::Vector{TOut}, itp::Interpolat
 
             @inbounds g[dim] = $(index_gen(degree(it),N))
         end
-        @show g
         g
     end
-    # @show q
-    q
 end
 
 gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array(T,N), itp, x...)
