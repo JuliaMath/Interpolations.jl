@@ -60,4 +60,27 @@ include("b-splines/b-splines.jl")
 include("gridded/gridded.jl")
 include("extrapolation/extrapolation.jl")
 
+nindexes(N::Int) = N == 1 ? "1 index" : "$N indexes"
+
+type FilledInterpolation{T}
+    fillvalue
+    itp::Interpolation{T}
 end
+FilledInterpolation(fillvalue, itpargs...) = FilledInterpolation(fillvalue, Interpolation(itpargs...))
+
+function getindex(fitp::FilledInterpolation, args...)
+    n = length(args)
+    N = ndims(fitp.itp)
+    n == N || return error("Must index $(N)-dimensional interpolation objects with $(nindexes(N))")
+
+    for i = 1:length(args)
+        if args[i] < 1 || args[i] > size(fitp.itp, i)
+            #In the extrapolation region
+            return fitp.fillvalue
+        end
+    end
+    #In the interpolation region
+    return getindex(fitp.itp,args...)
+end
+
+end # module
