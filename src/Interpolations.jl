@@ -1,7 +1,7 @@
 module Interpolations
 
 using Base.Cartesian
-using WoodburyMatrices, Compat
+using WoodburyMatrices
 
 import Base:
     eltype,
