@@ -8,10 +8,10 @@ function getindex_impl{T,N,TCoefs,IT<:BSpline,GT<:GridType}(itp::Type{BSplineInt
 
         # Calculate the indices of all coefficients that will be used
         # and define fx = x - xi in each dimension
-        $(define_indices(IT, GT, N))
+        $(define_indices(IT, N))
 
         # Calculate coefficient weights based on fx
-        $(coefficients(IT, GT, N))
+        $(coefficients(IT, N))
 
         # Generate the indexing expression
         @inbounds ret = $(index_gen(IT, N))
