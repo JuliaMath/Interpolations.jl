@@ -1,5 +1,4 @@
 immutable Constant <: Degree{0} end
-BSpline(::Type{Constant}) = BSpline(Constant, None)
 
 function define_indices{GT<:GridType}(::Type{BSpline{Constant,None}}, ::Type{GT}, N)
     :(@nexprs $N d->(ix_d = clamp(round(Int, real(x_d)), 1, size(itp, d))))

@@ -6,8 +6,8 @@ export
 
 abstract Degree{N}
 
-immutable BSpline{D<:Degree,BC<:BoundaryCondition} <: InterpolationType end
-BSpline{D<:Degree,BC<:BoundaryCondition}(::Type{D}, ::Type{BC}) = BSpline{D,BC}
+immutable BSpline{D<:Degree} <: InterpolationType end
+BSpline{D<:Degree}(::Type{D}) = BSpline{D}
 
 type BSplineInterpolation{T,N,TCoefs,IT<:BSpline,GT<:GridType} <: AbstractInterpolation{T,N,IT,GT}
     coefs::Array{TCoefs,N}
