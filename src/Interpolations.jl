@@ -4,9 +4,7 @@ export
     interpolate,
 
     OnCell,
-    OnGrid,
-
-    getindex
+    OnGrid
 
     # see the following files for further exports:
     # b-splines/b-splines.jl
