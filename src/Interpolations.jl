@@ -12,6 +12,7 @@ import Base:
 
 export
     Interpolation,
+    Interpolation!,
     Constant,
     Linear,
     Quadratic,
@@ -28,6 +29,7 @@ export
     Free,
     Periodic,
     Reflect,
+    Interior,
 
     degree,
     boundarycondition,
@@ -50,6 +52,7 @@ typealias Natural Line
 immutable Free <: BoundaryCondition end
 immutable Periodic <: BoundaryCondition end
 immutable Reflect <: BoundaryCondition end
+immutable Interior <: BoundaryCondition end
 
 abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
 
@@ -75,6 +78,14 @@ end
 Interpolation(A::AbstractArray, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Float64, A, it, eb)
 Interpolation(A::AbstractArray{Float32}, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Float32, A, it, eb)
 Interpolation(A::AbstractArray{Rational{Int}}, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Rational{Int}, A, it, eb)
+
+# In-place (destructive) interpolation
+function Interpolation!{T<:FloatingPoint,N,D<:Degree,G<:GridRepresentation,EB<:ExtrapolationBehavior}(A::AbstractArray{T,N}, it::InterpolationType{D,Interior,G}, ::EB)
+    IT = typeof(it)
+    isleaftype(typeof(IT)) || error("The interpolation type must be a leaf type (was $IT)")
+    isleaftype(T) || error("Must be an array of a concrete type T (eltype(A) == $(eltype(A)))")
+    Interpolation{T,N,T,IT,EB}(prefilter!(T,A,0,it))
+end
 
 # Unless otherwise specified, use coefficients as they are, i.e. without prefiltering
 # However, all prefilters copy the array, so do that here as well
@@ -150,7 +161,7 @@ function getindex_impl(N, IT::Type, EB::Type)
         # Handle extrapolation, by either throwing an error,
         # returning a value, or shifting x to somewhere inside
         # the domain
-        $(extrap_transform_x(gr,eb,N))
+        $(extrap_transform_x(gr,eb,N,it))
 
         # Calculate the indices of all coefficients that will be used
         # and define fx = x - xi in each dimension
@@ -209,7 +220,7 @@ end
     quote
         length(g) == $N || error("g must be an array with exactly N elements (length(g) == "*string(length(g))*", N == "*string($N)*")")
         @nexprs $N d->(x_d = x[d])
-        $(extrap_transform_x(gr,eb,N))
+        $(extrap_transform_x(gr,eb,N,it))
         $(define_indices(it,N))
         @nexprs $N dim->begin
             @nexprs $N d->begin
@@ -227,6 +238,10 @@ gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array(T,N), itp, x...)
 
 function prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)
     ret, pad = copy_with_padding(A, it)
+    prefilter!(TWeights, ret, pad, it)
+end
+
+function prefilter!{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, ret::Array{TCoefs,N}, pad::Integer, it::IT)
     sz = size(ret)
     first = true
     for dim in 1:N

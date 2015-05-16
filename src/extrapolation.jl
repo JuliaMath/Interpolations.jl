@@ -1,43 +1,43 @@
 abstract ExtrapolationBehavior
 
 immutable ExtrapError <: ExtrapolationBehavior end
-function extrap_transform_x(::OnGrid, ::ExtrapError, N)
+function extrap_transform_x(::OnGrid, ::ExtrapError, N, ::InterpolationType)
     quote
         @nexprs $N d->(1 <= real(x_d) <= size(itp,d) || throw(BoundsError()))
     end
 end
-function extrap_transform_x(::OnCell, ::ExtrapError, N)
+function extrap_transform_x(::OnCell, ::ExtrapError, N, ::InterpolationType)
     quote
         @nexprs $N d->(1//2 <= real(x_d) <= size(itp,d) + 1//2 || throw(BoundsError()))
     end
 end
 
 immutable ExtrapNaN <: ExtrapolationBehavior end
-function extrap_transform_x(::OnGrid, ::ExtrapNaN, N)
+function extrap_transform_x(::OnGrid, ::ExtrapNaN, N, ::InterpolationType)
     quote
         @nexprs $N d->(1 <= real(x_d) <= size(itp,d) || return convert(T, NaN))
     end
 end
-function extrap_transform_x(::OnCell, ::ExtrapNaN, N)
+function extrap_transform_x(::OnCell, ::ExtrapNaN, N, ::InterpolationType)
     quote
         @nexprs $N d->(1//2 <= real(x_d) <= size(itp,d) + 1//2 || return convert(T, NaN))
     end
 end
 
 immutable ExtrapConstant <: ExtrapolationBehavior end
-function extrap_transform_x(::OnGrid, ::ExtrapConstant, N)
+function extrap_transform_x(::OnGrid, ::ExtrapConstant, N, ::InterpolationType)
     quote
         @nexprs $N d->(x_d = clamp(x_d, 1, size(itp,d)))
     end
 end
-function extrap_transform_x(::OnCell, ::ExtrapConstant, N)
+function extrap_transform_x(::OnCell, ::ExtrapConstant, N, ::InterpolationType)
     quote
         @nexprs $N d->(x_d = clamp(x_d, 1//2, size(itp,d)+1//2))
     end
 end
 
 immutable ExtrapReflect <: ExtrapolationBehavior end
-function extrap_transform_x(::OnGrid, ::ExtrapReflect, N)
+function extrap_transform_x(::OnGrid, ::ExtrapReflect, N, ::InterpolationType)
     quote
         @nexprs $N d->begin
             # translate x_d to inside the domain, and count the translations
@@ -58,7 +58,7 @@ function extrap_transform_x(::OnGrid, ::ExtrapReflect, N)
         end
     end
 end
-function extrap_transform_x(::OnCell, ::ExtrapReflect, N)
+function extrap_transform_x(::OnCell, ::ExtrapReflect, N, ::InterpolationType)
     quote
         @nexprs $N d->begin
             # translate x_d to inside the domain, and count the translations
@@ -81,12 +81,12 @@ function extrap_transform_x(::OnCell, ::ExtrapReflect, N)
 end
 
 immutable ExtrapPeriodic <: ExtrapolationBehavior end
-function extrap_transform_x(::GridRepresentation, ::ExtrapPeriodic, N)
+function extrap_transform_x(::GridRepresentation, ::ExtrapPeriodic, N, ::InterpolationType)
     :(@nexprs $N d->(x_d = mod1(x_d, size(itp,d))))
 end
 
 immutable ExtrapLinear <: ExtrapolationBehavior end
-function extrap_transform_x(::OnGrid, ::ExtrapLinear, N)
+function extrap_transform_x(::OnGrid, ::ExtrapLinear, N, ::InterpolationType)
     quote
         @nexprs $N d->begin
             if x_d < 1
@@ -111,4 +111,4 @@ function extrap_transform_x(::OnGrid, ::ExtrapLinear, N)
         end
     end
 end
-extrap_transform_x(::OnCell, e::ExtrapLinear, N) = extrap_transform_x(OnGrid(), e, N)
+extrap_transform_x(::OnCell, e::ExtrapLinear, N, it::InterpolationType) = extrap_transform_x(OnGrid(), e, N, it)
