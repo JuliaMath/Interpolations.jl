@@ -85,7 +85,7 @@ function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type
     dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
-    lufact!(Tridiagonal(dl, d, du)), zeros(TCoefs, n)
+    lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TCoefs, n)
 end
 
 function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{BC,OnGrid})
@@ -103,7 +103,7 @@ function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type
     # [1,3]         [n,n-2]
     valspec[1,1] = valspec[2,2] = 1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
 function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Line})
@@ -121,7 +121,7 @@ function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Qua
     # [1,3]         [n,n-2]
     valspec[1,1] = valspec[2,2] = 1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
 function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Free})
@@ -141,7 +141,7 @@ function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Qua
     # [1,4]          [n,n-3]
     valspec[2,2] = valspec[4,4] = -1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
 function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Periodic})
@@ -157,5 +157,5 @@ function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Qua
     # [1,n]            [n,1]
     valspec[1,1] = valspec[2,2] = 1//8
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end

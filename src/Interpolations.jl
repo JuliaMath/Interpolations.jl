@@ -105,6 +105,7 @@ end
 include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")
+include("filter1d.jl")
 
 function padded_index(sz::Tuple, pad)
     sz = Int[s+2pad for s in sz]
@@ -224,36 +225,29 @@ end
 
 gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array(T,N), itp, x...)
 
-# This creates prefilter specializations for all interpolation types that need them
-@generated function prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)
-    quote
-        ret, pad = copy_with_padding(A, it)
-
-        szs = collect(size(ret))
-        strds = collect(strides(ret))
-
-        for dim in 1:$N
-            n = szs[dim]
-            szs[dim] = 1
-
-            M, b = prefiltering_system(TWeights, TCoefs, n, it)
-
-            @nloops $N i d->1:szs[d] begin
-                cc = @ntuple $N i
-
-                strt_diff = sum([(cc[i]-1)*strds[i] for i in 1:length(cc)])
-                strt = 1 + strt_diff
-                rng = range(strt, strds[dim], n)
-
-                bdiff = ret[rng]
-                b += bdiff
-                ret[rng] = M \ b
-                b -= bdiff
+function prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)
+    ret, pad = copy_with_padding(A, it)
+    sz = size(ret)
+    first = true
+    for dim in 1:N
+        M, b = prefiltering_system(TWeights, TCoefs, sz[dim], it)
+        if !isa(M, Woodbury)
+            A_ldiv_B_md!(ret, M, ret, dim, b)
+        else
+            if first
+                buf = Array(eltype(ret), length(ret,))
+                shape = sz
+                retrs = reshape(ret, shape)  # for type-stability against a future julia #10507
+                first = false
             end
-            szs[dim] = n
+            bufrs = reshape(buf, shape)
+            filter_dim1!(bufrs, M, retrs, b)
+            shape = (sz[dim+1:end]..., sz[1:dim]...)
+            retrs = reshape(ret, shape)
+            permutedims!(retrs, bufrs, ((2:N)..., 1))
         end
-        ret
     end
+    ret
 end
 
 nindexes(N::Int) = N == 1 ? "1 index" : "$N indexes"
