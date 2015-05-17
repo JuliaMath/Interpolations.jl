@@ -167,12 +167,12 @@ end
 # Resolve ambiguity with linear indexing
 getindex{T,N,TCoefs,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::Real) =
     error("Linear indexing is not supported for interpolation objects")
-stagedfunction getindex{T,TCoefs,IT,EB}(itp::Interpolation{T,1,TCoefs,IT,EB}, x::Real)
+@generated function getindex{T,TCoefs,IT,EB}(itp::Interpolation{T,1,TCoefs,IT,EB}, x::Real)
     getindex_impl(1, IT, EB)
 end
 
 # Resolve ambiguity with real multilinear indexing
-stagedfunction getindex{T,N,TCoefs,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::Real...)
+@generated function getindex{T,N,TCoefs,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::Real...)
     n = length(x)
     n == N || return :(error("Must index ", $N, "-dimensional interpolation objects with ", $(nindexes(N))))
     getindex_impl(N, IT, EB)
@@ -191,7 +191,7 @@ function getindex{T,TCoefs,IT,EB}(itp::Interpolation{T,1,TCoefs,IT,EB}, c::Colon
 end
 
 # Allow multilinear indexing with any types
-stagedfunction getindex{T,N,TCoefs,TIndex,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::TIndex...)
+@generated function getindex{T,N,TCoefs,TIndex,IT,EB}(itp::Interpolation{T,N,TCoefs,IT,EB}, x::TIndex...)
     n = length(x)
     n == N || return :(error("Must index ", $N, "-dimensional interpolation objects with ", $(nindexes(N))))
     getindex_impl(N, IT, EB)
@@ -199,7 +199,7 @@ end
 
 # Define in-place gradient calculation
 #   gradient!(g::Vector, itp::Interpolation, NTuple{N}...)
-stagedfunction gradient!{T,N,TCoefs,TOut,IT,EB}(g::Vector{TOut}, itp::Interpolation{T,N,TCoefs,IT,EB}, x...)
+@generated function gradient!{T,N,TCoefs,TOut,IT,EB}(g::Vector{TOut}, itp::Interpolation{T,N,TCoefs,IT,EB}, x...)
     n = length(x)
     n == N || return :(error("Must index ", $N, "-dimensional interpolation objects with ", $(nindexes(N))))
     it = IT()
@@ -225,7 +225,7 @@ end
 gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array(T,N), itp, x...)
 
 # This creates prefilter specializations for all interpolation types that need them
-stagedfunction prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)
+@generated function prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)
     quote
         ret, pad = copy_with_padding(A, it)
 

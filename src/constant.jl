@@ -3,7 +3,7 @@ immutable Constant{GR<:GridRepresentation} <: InterpolationType{ConstantDegree,N
 Constant{GR<:GridRepresentation}(::GR) = Constant{GR}()
 
 function define_indices(::Constant, N)
-    :(@nexprs $N d->(ix_d = clamp(round(real(x_d)), 1, size(itp,d))))
+    :(@nexprs $N d->(ix_d = clamp(round(Int, real(x_d)), 1, size(itp,d))))
 end
 
 function coefficients(c::Constant, N)
