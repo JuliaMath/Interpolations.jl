@@ -12,6 +12,7 @@ import Base:
 
 export
     Interpolation,
+    Interpolation!,
     Constant,
     Linear,
     Quadratic,
@@ -28,6 +29,7 @@ export
     Free,
     Periodic,
     Reflect,
+    Interior,
 
     degree,
     boundarycondition,
@@ -50,6 +52,7 @@ typealias Natural Line
 immutable Free <: BoundaryCondition end
 immutable Periodic <: BoundaryCondition end
 immutable Reflect <: BoundaryCondition end
+immutable Interior <: BoundaryCondition end
 
 abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
 
@@ -75,6 +78,14 @@ end
 Interpolation(A::AbstractArray, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Float64, A, it, eb)
 Interpolation(A::AbstractArray{Float32}, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Float32, A, it, eb)
 Interpolation(A::AbstractArray{Rational{Int}}, it::InterpolationType, eb::ExtrapolationBehavior) = Interpolation(Rational{Int}, A, it, eb)
+
+# In-place (destructive) interpolation
+function Interpolation!{T<:FloatingPoint,N,D<:Degree,G<:GridRepresentation,EB<:ExtrapolationBehavior}(A::AbstractArray{T,N}, it::InterpolationType{D,Interior,G}, ::EB)
+    IT = typeof(it)
+    isleaftype(typeof(IT)) || error("The interpolation type must be a leaf type (was $IT)")
+    isleaftype(T) || error("Must be an array of a concrete type T (eltype(A) == $(eltype(A)))")
+    Interpolation{T,N,T,IT,EB}(prefilter!(T,A,0,it))
+end
 
 # Unless otherwise specified, use coefficients as they are, i.e. without prefiltering
 # However, all prefilters copy the array, so do that here as well
@@ -105,6 +116,7 @@ end
 include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")
+include("filter1d.jl")
 
 function padded_index(sz::Tuple, pad)
     sz = Int[s+2pad for s in sz]
@@ -149,7 +161,7 @@ function getindex_impl(N, IT::Type, EB::Type)
         # Handle extrapolation, by either throwing an error,
         # returning a value, or shifting x to somewhere inside
         # the domain
-        $(extrap_transform_x(gr,eb,N))
+        $(extrap_transform_x(gr,eb,N,it))
 
         # Calculate the indices of all coefficients that will be used
         # and define fx = x - xi in each dimension
@@ -208,7 +220,7 @@ end
     quote
         length(g) == $N || error("g must be an array with exactly N elements (length(g) == "*string(length(g))*", N == "*string($N)*")")
         @nexprs $N d->(x_d = x[d])
-        $(extrap_transform_x(gr,eb,N))
+        $(extrap_transform_x(gr,eb,N,it))
         $(define_indices(it,N))
         @nexprs $N dim->begin
             @nexprs $N d->begin
@@ -224,36 +236,33 @@ end
 
 gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array(T,N), itp, x...)
 
-# This creates prefilter specializations for all interpolation types that need them
-@generated function prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)
-    quote
-        ret, pad = copy_with_padding(A, it)
+function prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)
+    ret, pad = copy_with_padding(A, it)
+    prefilter!(TWeights, ret, pad, it)
+end
 
-        szs = collect(size(ret))
-        strds = collect(strides(ret))
-
-        for dim in 1:$N
-            n = szs[dim]
-            szs[dim] = 1
-
-            M, b = prefiltering_system(TWeights, TCoefs, n, it)
-
-            @nloops $N i d->1:szs[d] begin
-                cc = @ntuple $N i
-
-                strt_diff = sum([(cc[i]-1)*strds[i] for i in 1:length(cc)])
-                strt = 1 + strt_diff
-                rng = range(strt, strds[dim], n)
-
-                bdiff = ret[rng]
-                b += bdiff
-                ret[rng] = M \ b
-                b -= bdiff
+function prefilter!{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, ret::Array{TCoefs,N}, pad::Integer, it::IT)
+    sz = size(ret)
+    first = true
+    for dim in 1:N
+        M, b = prefiltering_system(TWeights, TCoefs, sz[dim], it)
+        if !isa(M, Woodbury)
+            A_ldiv_B_md!(ret, M, ret, dim, b)
+        else
+            if first
+                buf = Array(eltype(ret), length(ret,))
+                shape = sz
+                retrs = reshape(ret, shape)  # for type-stability against a future julia #10507
+                first = false
             end
-            szs[dim] = n
+            bufrs = reshape(buf, shape)
+            filter_dim1!(bufrs, M, retrs, b)
+            shape = (sz[dim+1:end]..., sz[1:dim]...)
+            retrs = reshape(ret, shape)
+            permutedims!(retrs, bufrs, ((2:N)..., 1))
         end
-        ret
     end
+    ret
 end
 
 nindexes(N::Int) = N == 1 ? "1 index" : "$N indexes"

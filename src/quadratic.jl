@@ -73,6 +73,8 @@ padding(::Quadratic) = 1
 # For periodic boundary conditions, we don't pad - instead, we wrap the
 # the coefficients
 padding(::Quadratic{Periodic}) = 0
+# No padding for Interior, either
+padding(::Quadratic{Interior}) = 0
 
 function inner_system_diags{T}(::Type{T}, n::Int, ::Quadratic)
     du = fill(convert(T, 1//8), n-1)
@@ -85,7 +87,7 @@ function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type
     dl,d,du = inner_system_diags(T,n,q)
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
-    lufact!(Tridiagonal(dl, d, du)), zeros(TCoefs, n)
+    lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TCoefs, n)
 end
 
 function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{BC,OnGrid})
@@ -103,7 +105,7 @@ function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type
     # [1,3]         [n,n-2]
     valspec[1,1] = valspec[2,2] = 1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
 function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Line})
@@ -121,7 +123,7 @@ function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Qua
     # [1,3]         [n,n-2]
     valspec[1,1] = valspec[2,2] = 1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
 function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Free})
@@ -141,7 +143,7 @@ function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Qua
     # [1,4]          [n,n-3]
     valspec[2,2] = valspec[4,4] = -1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
 function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Periodic})
@@ -157,5 +159,16 @@ function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Qua
     # [1,n]            [n,1]
     valspec[1,1] = valspec[2,2] = 1//8
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du)), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
+end
+
+function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, q::Quadratic{Interior,OnGrid})
+    dl,d,du = inner_system_diags(T,n,q)
+    lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TCoefs, n)
+end
+
+function extrap_transform_x(::OnGrid, ::ExtrapError, N, ::Quadratic{Interior})
+    quote
+        @nexprs $N d->(2 <= real(x_d) <= size(itp,d)-1 || throw(BoundsError()))
+    end
 end
