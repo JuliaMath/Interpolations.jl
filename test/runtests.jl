@@ -3,9 +3,6 @@ module RunTests
 using Base.Test
 using Interpolations
 
-# helper functions
-include("helpers.jl")
-
 # b-spline interpolation tests
 include("b-splines/runtests.jl")
 
