@@ -33,19 +33,19 @@ end
 
 # Resolve ambiguity with indexing with Real indices
 #   getindex{T,N}(A::AbstractArray{T,N}, x::Real...)
-stagedfunction getindex{T,N,TCoefs,IT<:BSpline}(itp::BSplineInterpolation{T,N,TCoefs,IT}, xs::Real...)
+@generated function getindex{T,N,TCoefs,IT<:BSpline}(itp::BSplineInterpolation{T,N,TCoefs,IT}, xs::Real...)
     getindex_impl(itp)
 end
 
 # Linear indexing is supported only for 1D interpolations
-stagedfunction getindex{T,N}(itp::BSplineInterpolation{T,N}, xs::Real)
+@generated function getindex{T,N}(itp::BSplineInterpolation{T,N}, xs::Real)
     if N > 1
         error("Linear indexing is not supported for interpolation objects")
     end
     getindex_impl(itp)
 end
 
-stagedfunction getindex{T,N}(itp::BSplineInterpolation{T,N}, xs...)
+@generated function getindex{T,N}(itp::BSplineInterpolation{T,N}, xs...)
     getindex_impl(itp)
 end
 
@@ -53,3 +53,4 @@ offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
                     off ==  0 ? symbol(string("ix_", d)) :
                     off ==  1 ? symbol(string("ixp_", d)) :
                     off ==  2 ? symbol(string("ixpp_", d)) : error("offset $off not recognized")
+

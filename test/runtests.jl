@@ -3,22 +3,24 @@ module RunTests
 using Base.Test
 using Interpolations
 
-# specific tests for linear extrapolation
-include("linear.jl")
-# specific tests for quadratic extrapolation
-include("quadratic.jl")
+# helper functions
+include("helpers.jl")
 
-# tests that ensure that itp[i...] = A[i...] for integer
-# indices inbounds in A.
-include("on-grid.jl")
+# b-spline interpolation tests
+include("b-splines/runtests.jl")
 
-# test gradient evaluation
-include("gradient.jl")
+# extrapolation tests
+include("extrapolation/runtests.jl")
 
-# test interpolation with specific types
-include("typing.jl")
+# # test gradient evaluation
+# include("gradient.jl")
+
+# # test interpolation with specific types
+# include("typing.jl")
 
 # Tests copied from Grid.jl's old test suite
 #include("grid.jl")
+
+println("all tests passed")
 
 end

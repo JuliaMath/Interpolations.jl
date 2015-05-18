@@ -2,7 +2,8 @@ export
     BSpline,
 
     Constant,
-    Linear
+    Linear,
+    Quadratic
 
 abstract Degree{N}
 
@@ -32,9 +33,8 @@ interpolate{IT<:BSpline,GT<:GridType}(A::AbstractArray, ::Type{IT}, ::Type{GT}) 
 interpolate{IT<:BSpline,GT<:GridType}(A::AbstractArray{Float32}, ::Type{IT}, ::Type{GT}) = interpolate(Float32, A, IT, GT)
 interpolate{IT<:BSpline,GT<:GridType}(A::AbstractArray{Rational{Int}}, ::Type{IT}, ::Type{GT}) = interpolate(Rational{Int}, A, IT, GT)
 
-prefilter{TWeights, IT<:BSpline, GT<:GridType}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = A
-
 include("constant.jl")
 include("linear.jl")
-# include("quadratic.jl")
+include("quadratic.jl")
 include("indexing.jl")
+include("prefiltering.jl")
