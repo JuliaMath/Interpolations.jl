@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/tlycken/Interpolations.jl.svg?branch=master)](https://travis-ci.org/tlycken/Interpolations.jl)
 
-This package is the continuation of Tim Holy's work on [Grid.jl](https://github.com/timholy/Grid.jl), with the explicit goal of reaching feature parity for [B-splines](en.wikipedia.org/wiki/B-spline) in the near future (PRs are more than welcome!).
+This package is the continuation of Tim Holy's work on [Grid.jl](https://github.com/timholy/Grid.jl), with the explicit goal of reaching feature parity for [B-splines](https://en.wikipedia.org/wiki/B-spline) in the near future (PRs are more than welcome!).
 
 ## Installation
 
