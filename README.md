@@ -22,9 +22,10 @@ from the Julia REPL.
 using Interpolations
 x = 1:5 # must be a unit range starting at 1
 coarse = sin(x)
-itp1 = Interpolation(coarse, Linear(OnGrid()), ExtrapPeriodic())
-sinx = [itp1[x] for x in -pi:.01:3pi]
-cosx = [gradient(itp,x)[1] for x in -pi:.1:3pi]
+itp1 = interpolate(coarse, BSpline(Linear), OnGrid)
+extr1 = extrapolate(itp1, Flat)
+xeval = -pi:.01:3pi
+sinx = [extr1[x] for x in xeval]
 ```
 
 ## Options
@@ -33,17 +34,15 @@ To interpolate this data using `Interpolations.jl` you provide the constructor w
 
 ### Interpolation
 
-The first argument describes the interpolation type in terms of *degree*, *grid behavior* and, if necessary, *boundary conditions*. There are currently three degrees available: `Constant`, `Linear` and `Quadratic`, corresponding to B-splines of degree 0, 1 and 2, respectively.
+The interpolation type is described in terms of *degree*, *grid behavior* and, if necessary, *boundary conditions*. There are currently three degrees available: `Constant`, `Linear` and `Quadratic`, corresponding to B-splines of degree 0, 1 and 2, respectively.
 
-You also have to specify what *grid representation* you want. There are currently two choices: `OnGrid`, in which the data points are assumed to lie *on* the boundaries of the interpolation interval, and `OnCell` in which the data points are assumed to lie on half-intervals between cell boundaries.
+You also have to specify what *grid representation* you want. There are currently two choices: `OnGrid`, in which the supplied data points are assumed to lie *on* the boundaries of the interpolation interval, and `OnCell` in which the data points are assumed to lie on half-intervals between cell boundaries.
 
-B-splines of quadratic or higher degree require solving an equation system to obtain the interpolation coefficients, and for that you must specify a *boundary condition* that is applied to close the system. The following boundary conditions are implemented: `Flat`, `Line`, `Free`, `Periodic` and `Reflect`; their mathematical implications are described in detail in the pdf document under /doc/latex.
+B-splines of quadratic or higher degree require solving an equation system to obtain the interpolation coefficients, and for that you must specify a *boundary condition* that is applied to close the system. The following boundary conditions are implemented: `Flat`, `Line` (alternatively, `Natural`), `Free`, `Periodic` and `Reflect`; their mathematical implications are described in detail in the pdf document under /doc/latex.
 
 ### Extrapolation
 
-The final argument to the `Interpolation` constructor describes what happens if you try to index into the interpolation object with coordinates outside of `[1, size(data,d)]` in any dimension `d`. The implemented boundary conditions are `ExtrapError`, `ExtrapNaN`, `ExtrapConstant`, `ExtrapLinear`, `ExtrapPeriodic` and `ExtrapReflect`.
-
-Note that for extrapolating a periodic data set in a way that makes sense, you should specify *both* the `Periodic` boundary condition *and* the `ExtrapPeriodic` extrapolation behavior, and similarly for reflecting extrapolation. There might be API changes in the future to make these behaviors easier to specify.
+The call to `extrapolate` defines what happens if you try to index into the interpolation object with coordinates outside of `[1, size(data,d)]` in any dimension `d`. The implemented boundary conditions are `Throw` and `Flat`, with more options planned.
 
 ## More examples
 
