@@ -36,6 +36,11 @@ interpolate{IT<:BSpline,GT<:GridType}(A::AbstractArray, ::Type{IT}, ::Type{GT}) 
 interpolate{IT<:BSpline,GT<:GridType}(A::AbstractArray{Float32}, ::Type{IT}, ::Type{GT}) = interpolate(Float32, A, IT, GT)
 interpolate{IT<:BSpline,GT<:GridType}(A::AbstractArray{Rational{Int}}, ::Type{IT}, ::Type{GT}) = interpolate(Rational{Int}, A, IT, GT)
 
+interpolate!{TWeights,IT<:BSpline,GT<:GridType}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = BSplineInterpolation(TWeights, prefilter!(TWeights, A, IT, GT), IT, GT, Val{0}())
+interpolate!{IT<:BSpline,GT<:GridType}(A::AbstractArray, ::Type{IT}, ::Type{GT}) = interpolate!(Float64, A, IT, GT)
+interpolate!{IT<:BSpline,GT<:GridType}(A::AbstractArray{Float32}, ::Type{IT}, ::Type{GT}) = interpolate!(Float32, A, IT, GT)
+interpolate!{IT<:BSpline,GT<:GridType}(A::AbstractArray{Rational{Int}}, ::Type{IT}, ::Type{GT}) = interpolate!(Rational{Int}, A, IT, GT)
+
 include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")

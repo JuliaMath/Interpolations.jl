@@ -2,6 +2,7 @@ module Interpolations
 
 export
     interpolate,
+    interpolate!,
     extrapolate,
 
     OnCell,
