@@ -1,25 +1,26 @@
 immutable Quadratic{BC<:BoundaryCondition} <: Degree{2} end
 Quadratic{BC<:BoundaryCondition}(::Type{BC}) = Quadratic{BC}
 
-function define_indices{BC}(::Type{BSpline{Quadratic{BC}}}, N)
+function define_indices{BC}(::Type{BSpline{Quadratic{BC}}}, N, pad)
     quote
         @nexprs $N d->begin
-            ix_d = clamp(round(Int, real(x_d)), 1, size(itp,d)) + 1 # padding for oob coefficient
+            # ensure that all three ix_d, ixm_d, and ixp_d are in-bounds no matter
+            # the value of pad
+            ix_d = clamp(round(Int, real(x_d)), 2-$pad, size(itp,d)+$pad-1)
+            fx_d = x_d - ix_d
+            ix_d += $pad # padding for oob coefficient
             ixp_d = ix_d + 1
             ixm_d = ix_d - 1
-
-            fx_d = x_d - (ix_d - 1)
         end
     end
 end
-function define_indices(::Type{BSpline{Quadratic{Periodic}}}, N)
+function define_indices(::Type{BSpline{Quadratic{Periodic}}}, N, pad)
     quote
         @nexprs $N d->begin
             ix_d = clamp(round(Int, real(x_d)), 1, size(itp,d))
+            fx_d = x_d - ix_d
             ixp_d = mod1(ix_d + 1, size(itp,d))
             ixm_d = mod1(ix_d - 1, size(itp,d))
-
-            fx_d = x_d - ix_d
         end
     end
 end
@@ -62,8 +63,8 @@ function index_gen{Q<:Quadratic}(::Type{BSpline{Q}}, N::Integer, offsets...)
     end
 end
 
-padding{BC<:BoundaryCondition}(::Type{BSpline{Quadratic{BC}}}) = 1
-padding(::Type{BSpline{Quadratic{Periodic}}}) = 0
+padding{BC<:BoundaryCondition}(::Type{BSpline{Quadratic{BC}}}) = Val{1}()
+padding(::Type{BSpline{Quadratic{Periodic}}}) = Val{0}()
 
 function inner_system_diags{T,Q<:Quadratic}(::Type{T}, n::Int, ::Type{Q})
     du = fill(convert(T, 1//8), n-1)

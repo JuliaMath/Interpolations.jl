@@ -22,16 +22,22 @@ for i in 1:length(A1)
     @test A1[i] == itp1c[i] == itp1g[i]
     @test A1[i] == itp1c[convert(Float64,i)] == itp1g[convert(Float64,i)]
 end
+@test @inferred(size(itp1c)) == size(A1)
+@test @inferred(size(itp1g)) == size(A1)
 # 2D
 for i in 1:N1, j in 1:N1
     @test A2[i,j] == itp2c[i,j] == itp2g[i,j]
     @test A2[i,j] == itp2c[convert(Float64,i),convert(Float64,j)] == itp2g[convert(Float64,i),convert(Float64,j)]
 end
+@test @inferred(size(itp2c)) == size(A2)
+@test @inferred(size(itp2g)) == size(A2)
 # 3D
 for i in 1:N1, j in 1:N1, k in 1:N1
     @test A3[i,j,k] == itp3c[i,j,k] == itp3g[i,j,k]
     @test A3[i,j,k] == itp3c[convert(Float64,i),convert(Float64,j),convert(Float64,k)] == itp3g[convert(Float64,i),convert(Float64,j),convert(Float64,k)]
 end
+@test @inferred(size(itp3c)) == size(A3)
+@test @inferred(size(itp3g)) == size(A3)
 
 # Evaluation between data points
 for i in 2:N1-1

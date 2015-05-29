@@ -1,6 +1,6 @@
 immutable Linear <: Degree{1} end
 
-function define_indices(::Type{BSpline{Linear}}, N)
+function define_indices(::Type{BSpline{Linear}}, N, pad)
     quote
         @nexprs $N d->begin
             ix_d = clamp(floor(Int, real(x_d)), 1, size(itp, d)-1)

@@ -10,10 +10,10 @@ abstract Degree{N}
 immutable BSpline{D<:Degree} <: InterpolationType end
 BSpline{D<:Degree}(::Type{D}) = BSpline{D}
 
-type BSplineInterpolation{T,N,TCoefs,IT<:BSpline,GT<:GridType} <: AbstractInterpolation{T,N,IT,GT}
+type BSplineInterpolation{T,N,TCoefs,IT<:BSpline,GT<:GridType,pad} <: AbstractInterpolation{T,N,IT,GT}
     coefs::Array{TCoefs,N}
 end
-function BSplineInterpolation{N,TCoefs,TWeights<:Real,IT<:BSpline,GT<:GridType}(::Type{TWeights}, A::AbstractArray{TCoefs,N}, ::Type{IT}, ::Type{GT})
+function BSplineInterpolation{N,TCoefs,TWeights<:Real,IT<:BSpline,GT<:GridType,pad}(::Type{TWeights}, A::AbstractArray{TCoefs,N}, ::Type{IT}, ::Type{GT}, ::Val{pad})
     isleaftype(IT) || error("The b-spline type must be a leaf type (was $IT)")
     isleaftype(TCoefs) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
 
@@ -23,12 +23,15 @@ function BSplineInterpolation{N,TCoefs,TWeights<:Real,IT<:BSpline,GT<:GridType}(
     end
     T = typeof(c * one(TCoefs))
 
-    BSplineInterpolation{T,N,TCoefs,IT,GT}(A)
+    BSplineInterpolation{T,N,TCoefs,IT,GT,pad}(A)
 end
 
-size(itp::BSplineInterpolation, d) = size(itp.coefs, d)
+size{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d) = (d <= N ? size(itp.coefs, d) - 2*pad : 1)::Int
 
-interpolate{TWeights,IT<:BSpline,GT<:GridType}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = BSplineInterpolation(TWeights, prefilter(TWeights, A, IT, GT), IT, GT)
+function interpolate{TWeights,IT<:BSpline,GT<:GridType}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT})
+    Apad, Pad = prefilter(TWeights, A, IT, GT)
+    BSplineInterpolation(TWeights, Apad, IT, GT, Pad)
+end
 interpolate{IT<:BSpline,GT<:GridType}(A::AbstractArray, ::Type{IT}, ::Type{GT}) = interpolate(Float64, A, IT, GT)
 interpolate{IT<:BSpline,GT<:GridType}(A::AbstractArray{Float32}, ::Type{IT}, ::Type{GT}) = interpolate(Float32, A, IT, GT)
 interpolate{IT<:BSpline,GT<:GridType}(A::AbstractArray{Rational{Int}}, ::Type{IT}, ::Type{GT}) = interpolate(Rational{Int}, A, IT, GT)

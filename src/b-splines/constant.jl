@@ -1,6 +1,6 @@
 immutable Constant <: Degree{0} end
 
-function define_indices(::Type{BSpline{Constant}}, N)
+function define_indices(::Type{BSpline{Constant}}, N, pad)
     :(@nexprs $N d->(ix_d = clamp(round(Int, real(x_d)), 1, size(itp, d))))
 end
 
