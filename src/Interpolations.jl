@@ -21,7 +21,7 @@ export
 
 using WoodburyMatrices
 
-import Base: size, getindex
+import Base: convert, size, getindex, promote_rule
 
 abstract InterpolationType
 abstract GridType
@@ -52,6 +52,7 @@ function getindex{T}(itp::AbstractInterpolation{T,1}, x::Real, y::Real)
     itp[x]
 end
 
+include("ratio.jl")
 include("b-splines/b-splines.jl")
 include("extrapolation/extrapolation.jl")
 
