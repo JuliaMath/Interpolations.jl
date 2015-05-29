@@ -1,12 +1,12 @@
 padding{IT<:BSpline}(::Type{IT}) = 0
 
 function padded_index{N}(sz::NTuple{N,Int}, pad)
-    sz = [s+2pad for s in sz]
-    ind = Array(Any,N)
+    szpad = ntuple(i->sz[i]+2pad, N)::NTuple{N,Int}
+    ind = Array(UnitRange{Int},N)
     for i in 1:N
-        ind[i] = 1+pad:sz[i]-pad
+        ind[i] = 1+pad:szpad[i]-pad
     end
-    ind,sz
+    ind,szpad
 end
 function copy_with_padding{IT<:InterpolationType}(A, ::Type{IT})
     pad = padding(IT)
@@ -38,7 +38,7 @@ function prefilter{TWeights,TCoefs,N,IT<:Quadratic,GT<:GridType}(
             end
             bufrs = reshape(buf, shape)
             filter_dim1!(bufrs, M, retrs, b)
-            shape = (sz[dim+1:end]..., sz[1:dim]...)
+            shape = (sz[dim+1:end]..., sz[1:dim]...)::NTuple{N,Int}
             retrs = reshape(ret, shape)
             permutedims!(retrs, bufrs, ((2:N)..., 1))
         end

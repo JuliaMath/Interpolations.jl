@@ -8,7 +8,7 @@ xmax = 10
 A = Float64[f(x) for x in 1:xmax]
 
 for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
-    itp1 = interpolate(A, BSpline(Quadratic(BC)), GT)
+    itp1 = @inferred(interpolate(A, BSpline(Quadratic(BC)), GT))
 
     # test that inner region is close to data
     for x in 3.1:.2:8.3
@@ -38,7 +38,7 @@ A = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
 
 # test that inner region is close to data
 for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
-    itp2 = interpolate(A, BSpline(Quadratic(BC)), GT)
+    itp2 = @inferred(interpolate(A, BSpline(Quadratic(BC)), GT))
 
     for x in 3.1:.2:xmax-3, y in 3.1:2:ymax-3
         @test_approx_eq_eps f(x,y) itp2[x,y] abs(.1*f(x,y))

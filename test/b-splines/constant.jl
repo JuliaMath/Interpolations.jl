@@ -9,12 +9,12 @@ A1 = rand(Float64, N1) * 100
 A2 = rand(Float64, N1, N1) * 100
 A3 = rand(Float64, N1, N1, N1) * 100
 
-itp1c = interpolate(A1, BSpline(Constant), OnCell)
-itp1g = interpolate(A1, BSpline(Constant), OnGrid)
-itp2c = interpolate(A2, BSpline(Constant), OnCell)
-itp2g = interpolate(A2, BSpline(Constant), OnGrid)
-itp3c = interpolate(A3, BSpline(Constant), OnCell)
-itp3g = interpolate(A3, BSpline(Constant), OnGrid)
+itp1c = @inferred(interpolate(A1, BSpline(Constant), OnCell))
+itp1g = @inferred(interpolate(A1, BSpline(Constant), OnGrid))
+itp2c = @inferred(interpolate(A2, BSpline(Constant), OnCell))
+itp2g = @inferred(interpolate(A2, BSpline(Constant), OnGrid))
+itp3c = @inferred(interpolate(A3, BSpline(Constant), OnCell))
+itp3g = @inferred(interpolate(A3, BSpline(Constant), OnGrid))
 
 # Evaluation on provided data points
 # 1D
