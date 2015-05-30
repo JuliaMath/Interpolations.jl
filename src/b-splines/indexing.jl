@@ -51,6 +51,10 @@ end
     getindex_impl(itp)
 end
 
+@generated function getindex{T,N}(itp::BSplineInterpolation{T,N}, index::CartesianIndex{N})
+    :(getindex(itp, $(Base.IteratorsMD.cartindex_exprs((index,), (:index,))...)))
+end
+
 offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
                     off ==  0 ? symbol(string("ix_", d)) :
                     off ==  1 ? symbol(string("ixp_", d)) :
