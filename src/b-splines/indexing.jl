@@ -3,7 +3,9 @@ using Base.Cartesian
 import Base.getindex
 
 function getindex_impl{T,N,TCoefs,IT<:BSpline,GT<:GridType,Pad}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}})
+    meta = Expr(:meta, :inline)
     quote
+        $meta
         @nexprs $N d->(x_d = xs[d])
 
         # Calculate the indices of all coefficients that will be used
