@@ -19,7 +19,7 @@ export
     # b-splines/b-splines.jl
     # extrapolation/extrapolation.jl
 
-using WoodburyMatrices
+using WoodburyMatrices, Ratios
 
 import Base: convert, size, getindex, promote_rule
 
@@ -52,7 +52,6 @@ function getindex{T}(itp::AbstractInterpolation{T,1}, x::Real, y::Real)
     itp[x]
 end
 
-include("ratio.jl")
 include("b-splines/b-splines.jl")
 include("extrapolation/extrapolation.jl")
 
