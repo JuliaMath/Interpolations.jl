@@ -2,13 +2,13 @@ using Base.Cartesian
 
 import Base.getindex
 
-function getindex_impl{T,N,TCoefs,IT<:BSpline,GT<:GridType}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT}})
+function getindex_impl{T,N,TCoefs,IT<:BSpline,GT<:GridType,Pad}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}})
     quote
         @nexprs $N d->(x_d = xs[d])
 
         # Calculate the indices of all coefficients that will be used
         # and define fx = x - xi in each dimension
-        $(define_indices(IT, N))
+        $(define_indices(IT, N, Pad))
 
         # Calculate coefficient weights based on fx
         $(coefficients(IT, N))

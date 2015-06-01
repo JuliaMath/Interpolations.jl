@@ -2,6 +2,7 @@ module Interpolations
 
 export
     interpolate,
+    interpolate!,
     extrapolate,
 
     OnCell,
@@ -38,7 +39,8 @@ immutable Periodic <: BoundaryCondition end
 immutable Reflect <: BoundaryCondition end
 typealias Natural Line
 
-size(itp::AbstractInterpolation) = tuple([size(itp,i) for i in 1:ndims(itp)]...)
+# TODO: size might have to be faster?
+size{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->size(itp,i), N)::NTuple{N,Int}
 size(exp::AbstractExtrapolation, d) = size(exp.itp, d)
 gridtype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = GT
 
