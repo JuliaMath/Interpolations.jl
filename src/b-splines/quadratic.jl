@@ -85,10 +85,10 @@ function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type
     d[1] = d[end] = -1
     du[1] = dl[end] = 0
 
-    rowspec = zeros(T,n,2)
+    rowspec = spzeros(T,n,2)
     # first row     last row
     rowspec[1,1] = rowspec[n,2] = 1
-    colspec = zeros(T,2,n)
+    colspec = spzeros(T,2,n)
     # third col     third-to-last col
     colspec[1,3] = colspec[2,n-2] = 1
     valspec = zeros(T,2,2)
@@ -103,10 +103,10 @@ function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
 
-    rowspec = zeros(T,n,2)
+    rowspec = spzeros(T,n,2)
     # first row     last row
     rowspec[1,1] = rowspec[n,2] = 1
-    colspec = zeros(T,2,n)
+    colspec = spzeros(T,2,n)
     # third col     third-to-last col
     colspec[1,3] = colspec[2,n-2] = 1
     valspec = zeros(T,2,2)
@@ -121,10 +121,10 @@ function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n
     d[1] = d[end] = 1
     du[1] = dl[end] = -3
 
-    rowspec = zeros(T,n,4)
+    rowspec = spzeros(T,n,4)
     # first row     first row       last row       last row
     rowspec[1,1] = rowspec[1,2] = rowspec[n,3] = rowspec[n,4] = 1
-    colspec = zeros(T,4,n)
+    colspec = spzeros(T,4,n)
     # third col     fourth col     third-to-last col  fourth-to-last col
     colspec[1,3] = colspec[2,4] = colspec[3,n-2] = colspec[4,n-3] = 1
     valspec = zeros(T,4,4)
@@ -139,10 +139,10 @@ end
 function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{Periodic}}, ::Type{GT})
     dl,d,du = inner_system_diags(T,n,Quadratic{Periodic})
 
-    rowspec = zeros(T,n,2)
+    rowspec = spzeros(T,n,2)
     # first row       last row
     rowspec[1,1] = rowspec[n,2] = 1
-    colspec = zeros(T,2,n)
+    colspec = spzeros(T,2,n)
     # last col         first col
     colspec[1,n] = colspec[2,1] = 1
     valspec = zeros(T,2,2)

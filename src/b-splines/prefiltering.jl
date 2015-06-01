@@ -34,21 +34,7 @@ function prefilter!{TWeights,TCoefs,N,IT<:Quadratic,GT<:GridType}(
     first = true
     for dim in 1:N
         M, b = prefiltering_system(TWeights, TCoefs, sz[dim], IT, GT)
-        if !isa(M, Woodbury)
-            A_ldiv_B_md!(ret, M, ret, dim, b)
-        else
-            if first
-                buf = Array(eltype(ret), length(ret,))
-                shape = sz
-                retrs = reshape(ret, shape)  # for type-stability against a future julia #10507
-                first = false
-            end
-            bufrs = reshape(buf, shape)
-            filter_dim1!(bufrs, M, retrs, b)
-            shape = (sz[dim+1:end]..., sz[1:dim]...)::NTuple{N,Int}
-            retrs = reshape(ret, shape)
-            permutedims!(retrs, bufrs, ((2:N)..., 1))
-        end
+        A_ldiv_B_md!(ret, M, ret, dim, b)
     end
     ret
 end
