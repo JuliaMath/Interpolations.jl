@@ -50,6 +50,6 @@ There's an [IJulia notebook](http://nbviewer.ipython.org/github/tlycken/Interpol
 
 ## Contributing
 
-Work is very much in progress, but and help is always welcome. If you want to help out but don't know where to start, take a look at issue [#5 - our feature wishlist](https://github.com/tlycken/Interpolations.jl/issues/5) =)
+Work is very much in progress, but and help is always welcome. If you want to help out but don't know where to start, take a look at issue [#5 - our feature wishlist](https://github.com/tlycken/Interpolations.jl/issues/5) =) There is also some [developer documentation](doc/devdocs.md) that may help you understand how things work internally.
 
 Contributions in any form are appreciated, but my time is limited and your code is most likely to be included quickly in the library if it comes in a pull request with at least a few sanity tests (see the `/test` directory for some examples).
