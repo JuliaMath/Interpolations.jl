@@ -33,9 +33,9 @@ function coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, N, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote
-        $symm = 1//2 * ($symfx - 1//2)^2
-        $sym  = 3//4 - $symfx^2
-        $symp = 1//2 * ($symfx + 1//2)^2
+        $symm = sqr($symfx - SimpleRatio(1,2))/2
+        $sym  = SimpleRatio(3,4) - sqr($symfx)
+        $symp = sqr($symfx + SimpleRatio(1,2))/2
     end
 end
 
@@ -43,9 +43,9 @@ function gradient_coefficients{Q<:Quadratic}(::Type{Q}, N, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote
-        $symm = $symfx - 1//2
+        $symm = $symfx - SimpleRatio(1,2)
         $sym = -2 * $symfx
-        $symp = $symfx + 1//2
+        $symp = $symfx + SimpleRatio(1,2)
     end
 end
 
@@ -67,8 +67,8 @@ padding{BC<:BoundaryCondition}(::Type{BSpline{Quadratic{BC}}}) = Val{1}()
 padding(::Type{BSpline{Quadratic{Periodic}}}) = Val{0}()
 
 function inner_system_diags{T,Q<:Quadratic}(::Type{T}, n::Int, ::Type{Q})
-    du = fill(convert(T, 1//8), n-1)
-    d = fill(convert(T, 3//4), n)
+    du = fill(convert(T, SimpleRatio(1,8)), n-1)
+    d = fill(convert(T, SimpleRatio(3,4)), n)
     dl = copy(du)
     (dl,d,du)
 end
@@ -147,7 +147,9 @@ function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n
     colspec[1,n] = colspec[2,1] = 1
     valspec = zeros(T,2,2)
     # [1,n]            [n,1]
-    valspec[1,1] = valspec[2,2] = 1//8
+    valspec[1,1] = valspec[2,2] = SimpleRatio(1,8)
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
+
+sqr(x) = x*x

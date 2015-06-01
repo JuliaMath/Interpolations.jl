@@ -19,9 +19,9 @@ export
     # b-splines/b-splines.jl
     # extrapolation/extrapolation.jl
 
-using WoodburyMatrices
+using WoodburyMatrices, Ratios
 
-import Base: size, getindex
+import Base: convert, size, getindex, promote_rule
 
 abstract InterpolationType
 abstract GridType

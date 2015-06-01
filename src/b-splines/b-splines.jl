@@ -10,7 +10,7 @@ abstract Degree{N}
 immutable BSpline{D<:Degree} <: InterpolationType end
 BSpline{D<:Degree}(::Type{D}) = BSpline{D}
 
-type BSplineInterpolation{T,N,TCoefs,IT<:BSpline,GT<:GridType,pad} <: AbstractInterpolation{T,N,IT,GT}
+immutable BSplineInterpolation{T,N,TCoefs,IT<:BSpline,GT<:GridType,pad} <: AbstractInterpolation{T,N,IT,GT}
     coefs::Array{TCoefs,N}
 end
 function BSplineInterpolation{N,TCoefs,TWeights<:Real,IT<:BSpline,GT<:GridType,pad}(::Type{TWeights}, A::AbstractArray{TCoefs,N}, ::Type{IT}, ::Type{GT}, ::Val{pad})
@@ -26,7 +26,11 @@ function BSplineInterpolation{N,TCoefs,TWeights<:Real,IT<:BSpline,GT<:GridType,p
     BSplineInterpolation{T,N,TCoefs,IT,GT,pad}(A)
 end
 
-size{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d) = (d <= N ? size(itp.coefs, d) - 2*pad : 1)::Int
+@generated function size{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d)
+    quote
+        d <= $N ? size(itp.coefs, d) - 2*$pad : 1
+    end
+end
 
 function interpolate{TWeights,IT<:BSpline,GT<:GridType}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT})
     Apad, Pad = prefilter(TWeights, A, IT, GT)
