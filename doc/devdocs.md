@@ -1,7 +1,7 @@
 # Developer documentation
 
-Interpolations uses metaprogramming to improve performance; however, for people new to metaprogramming
-this can can be a barrier.
+Interpolations provides flexibility without compromising on performance by exploiting metaprogramming to
+generate streamlined code. However, for people new to metaprogramming this can can be a barrier.
 Fortunately, with a few tips a lot of the mystique goes away.
 
 ## Looking under the hood
@@ -107,7 +107,7 @@ However, the impact of these macros can be gleaned through `macroexpand`:
 
 This is probably starting to look like something you can read. Briefly, what's happening is:
 
-- `floor(Int,x_1)` gets clamped to the range `[1,size(itp,1)-1]`; this is the lower-bound integer grid point
+- `floor(Int,x_1)` gets clamped to the range `1:size(itp,1)-1` and assigned to `ix_1`; this is the lower-bound integer grid point for the *first dimension* (this is a one-dimensional problem, but in two or higher dimensions you'd have `ix_2`, etc.)
 - `ixp_1` is defined as `ix_1+1`; this is the upper-bound integer grid point. In Interpolations, `m` and `p` often mean "minus" and "plus", meaning the lower or upper grid point.
 - The fractional part is stored in `fx_1`
 - Position-coefficients `c_1` and `cp_1` associated with the lower and upper grid point are computed from `fx_1`
@@ -120,4 +120,4 @@ As useful exercises:
 
 Once you've gotten this far, you probably understand quite a lot about how Interpolations works.
 At this point, your best bet is to start looking into the helper functions used by `getindex_impl`;
-once you learn how to define these, you should be able to fairly easily extend Interpolations to new types.
+once you learn how to define these, you should be able to extend Interpolations to support new algorithms.
