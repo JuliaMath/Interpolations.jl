@@ -78,8 +78,8 @@ function _A_ldiv_B_md!(dest, W::Woodbury, src,  R1, R2, b)
     tmp2 = AxisAlgorithms._A_mul_B_md(W.Cp, tmp1, R1, R2)
     tmp3 = AxisAlgorithms._A_mul_B_md(W.U, tmp2, R1, R2)
     # TODO?: would be nice to fuse the next two steps
-    tmp4 = AxisAlgorithms._A_ldiv_B_md(W.A, tmp3, R1, R2)
-    AxisAlgorithms.sub!(dest, tmp4)
+    AxisAlgorithms._A_ldiv_B_md!(tmp3, W.A, tmp3, R1, R2)
+    AxisAlgorithms.sub!(dest, tmp3)
 end
 
 function check_matrix{T}(F::LU{T,Tridiagonal{T}})
