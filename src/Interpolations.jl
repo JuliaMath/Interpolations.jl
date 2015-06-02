@@ -19,7 +19,7 @@ export
     # b-splines/b-splines.jl
     # extrapolation/extrapolation.jl
 
-using WoodburyMatrices, Ratios
+using WoodburyMatrices, Ratios, AxisAlgorithms
 
 import Base: convert, size, getindex, promote_rule
 
