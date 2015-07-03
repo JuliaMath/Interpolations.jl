@@ -2,7 +2,7 @@ using Base.Cartesian
 
 import Base.getindex
 
-function getindex_impl{T,N,TCoefs,IT<:BSpline,GT<:GridType,Pad}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}})
+function getindex_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}})
     meta = Expr(:meta, :inline)
     quote
         $meta
@@ -59,4 +59,3 @@ offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
                     off ==  0 ? symbol(string("ix_", d)) :
                     off ==  1 ? symbol(string("ixp_", d)) :
                     off ==  2 ? symbol(string("ixpp_", d)) : error("offset $off not recognized")
-
