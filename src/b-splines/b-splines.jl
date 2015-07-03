@@ -58,6 +58,8 @@ define_indices{IT}(::Type{IT}, N, pad) = Expr(:block, Expr[define_indices_d(iext
 
 coefficients{IT}(::Type{IT}, N) = Expr(:block, Expr[coefficients(iextract(IT, d), N, d) for d = 1:N]...)
 
+gradient_coefficients{IT}(::Type{IT}, N, d) = gradient_coefficients(bsplinetype(iextract(IT, d)), N, d)
+
 index_gen{IT}(::Type{IT}, N::Integer, offsets...) = index_gen(iextract(IT, min(length(offsets)+1, N)), IT, N, offsets...)
 
 include("constant.jl")
