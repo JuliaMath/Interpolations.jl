@@ -7,10 +7,9 @@ function define_indices_d{BC}(::Type{BSpline{Quadratic{BC}}}, d, pad)
     quote
         # ensure that all three ix_d, ixm_d, and ixp_d are in-bounds no matter
         # the value of pad
-        p = $(padextract(pad, d))
-        $symix = clamp(round(Int, real($symx)), 2-p, size(itp,$d)+p-1)
+        $symix = clamp(round(Int, real($symx)), 2-$pad, size(itp,$d)+$pad-1)
         $symfx = $symx - $symix
-        $symix += p # padding for oob coefficient
+        $symix += $pad # padding for oob coefficient
         $symixp = $symix + 1
         $symixm = $symix - 1
     end
@@ -23,6 +22,20 @@ function define_indices_d(::Type{BSpline{Quadratic{Periodic}}}, d, pad)
         $symfx = $symx - $symix
         $symixp = mod1($symix + 1, size(itp,$d))
         $symixm = mod1($symix - 1, size(itp,$d))
+    end
+end
+function define_indices_d(::Type{BSpline{Quadratic{InPlace}}}, d, pad)
+    symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
+    symx, symfx = symbol("x_",d), symbol("fx_",d)
+    pad == 0 || error("Use InPlace only with interpolate!")
+    quote
+        # ensure that all three ix_d, ixm_d, and ixp_d are in-bounds no matter
+        # the value of pad
+        $symix = clamp(round(Int, real($symx)), 1, size(itp,$d))
+        $symfx = $symx - $symix
+        $symix += $pad # padding for oob coefficient
+        $symixp = min(size(itp,$d), $symix + 1)
+        $symixm = max(1, $symix - 1)
     end
 end
 
@@ -74,6 +87,12 @@ function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type
     dl,d,du = inner_system_diags(T,n,Quadratic{BC})
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
+    lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TCoefs, n)
+end
+
+function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{InPlace}}, ::Type{OnCell})
+    dl,d,du = inner_system_diags(T,n,Quadratic{InPlace})
+    d[1] = d[end] = convert(T, SimpleRatio(7,8))
     lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TCoefs, n)
 end
 

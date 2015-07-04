@@ -15,7 +15,8 @@ export
     Free,
     Periodic,
     Reflect,
-    Natural
+    Natural,
+    InPlace
 
     # see the following files for further exports:
     # b-splines/b-splines.jl
@@ -41,6 +42,7 @@ immutable Line <: BoundaryCondition end
 immutable Free <: BoundaryCondition end
 immutable Periodic <: BoundaryCondition end
 immutable Reflect <: BoundaryCondition end
+immutable InPlace <: BoundaryCondition end
 typealias Natural Line
 
 # TODO: size might have to be faster?
