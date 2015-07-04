@@ -57,6 +57,13 @@ end
 
 function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}})
     meta = Expr(:meta, :inline)
+    # Alternately calculate coefficients and set components of the gradient
+    exs = Array(Expr, 2N)
+    for d = 1:N
+        exs[2d-1] = gradient_coefficients(IT, N, d)
+        exs[2d] = :(@inbounds g[$d] = $(index_gen(IT, N)))
+    end
+    gradient_exprs = Expr(:block, exs...)
     quote
         $meta
         length(g) == $N || throw(BoundsError())
@@ -66,13 +73,8 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
         # and define fx = x - xi in each dimension
         $(define_indices(IT, N, Pad))
 
-        @nexprs $N dim->begin
-            @nexprs $N d->begin
-                (d==dim ? $(gradient_coefficients(IT, N, :d))
-                        : $(coefficients(IT, N, :d)))
-            end
-            @inbounds g[dim] = $(index_gen(IT, N))
-        end
+        $gradient_exprs
+
         g
     end
 end

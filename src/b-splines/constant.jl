@@ -10,7 +10,7 @@ function coefficients(::Type{BSpline{Constant}}, N, d)
     :($sym = 1)
 end
 
-function gradient_coefficients(::Type{BSpline{Constant}}, N, d)
+function gradient_coefficients(::Type{BSpline{Constant}}, d)
     sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
     :($sym = 0)
 end

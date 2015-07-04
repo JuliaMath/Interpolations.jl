@@ -36,7 +36,7 @@ function coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, N, d)
     end
 end
 
-function gradient_coefficients{Q<:Quadratic}(::Type{Q}, N, d)
+function gradient_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
     symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
     symfx = symbol(string("fx_",d))
     quote

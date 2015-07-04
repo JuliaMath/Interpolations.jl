@@ -50,4 +50,23 @@ for i = 1:10
     @test_approx_eq epsilon(itp1[xd]) gtmp
 end
 
+A2 = rand(Float64, nx, nx) * 100
+for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
+    itp_a = interpolate(A2, Tuple{BSpline(Linear), BSpline(Quadratic(BC))}, GT)
+    itp_b = interpolate(A2, Tuple{BSpline(Quadratic(BC)), BSpline(Linear)}, GT)
+
+    for i = 1:10
+        x = rand()*(nx-2)+1.5
+        y = rand()*(nx-2)+1.5
+        xd = dual(x, 1)
+        yd = dual(y, 1)
+        gtmp = gradient(itp_a, x, y)
+        @test_approx_eq epsilon(itp_a[xd, y]) gtmp[1]
+        @test_approx_eq epsilon(itp_a[x, yd]) gtmp[2]
+        gtmp = gradient(itp_b, x, y)
+        @test_approx_eq epsilon(itp_b[xd, y]) gtmp[1]
+        @test_approx_eq epsilon(itp_b[x, yd]) gtmp[2]
+    end
+end
+
 end
