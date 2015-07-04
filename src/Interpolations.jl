@@ -16,7 +16,8 @@ export
     Periodic,
     Reflect,
     Natural,
-    InPlace
+    InPlace,
+    InPlaceQ
 
     # see the following files for further exports:
     # b-splines/b-splines.jl
@@ -43,6 +44,9 @@ immutable Free <: BoundaryCondition end
 immutable Periodic <: BoundaryCondition end
 immutable Reflect <: BoundaryCondition end
 immutable InPlace <: BoundaryCondition end
+# InPlaceQ is exact for an underlying quadratic. This is nice for ground-truth testing
+# of in-place (unpadded) interpolation.
+immutable InPlaceQ <: BoundaryCondition end
 typealias Natural Line
 
 # TODO: size might have to be faster?

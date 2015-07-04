@@ -24,10 +24,10 @@ function define_indices_d(::Type{BSpline{Quadratic{Periodic}}}, d, pad)
         $symixm = mod1($symix - 1, size(itp,$d))
     end
 end
-function define_indices_d(::Type{BSpline{Quadratic{InPlace}}}, d, pad)
+function define_indices_d{BC<:Union(InPlace,InPlaceQ)}(::Type{BSpline{Quadratic{BC}}}, d, pad)
     symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
     symx, symfx = symbol("x_",d), symbol("fx_",d)
-    pad == 0 || error("Use InPlace only with interpolate!")
+    pad == 0 || error("Use $BC only with interpolate!")
     quote
         # ensure that all three ix_d, ixm_d, and ixp_d are in-bounds no matter
         # the value of pad
@@ -94,6 +94,21 @@ function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type
     dl,d,du = inner_system_diags(T,n,Quadratic{InPlace})
     d[1] = d[end] = convert(T, SimpleRatio(7,8))
     lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TCoefs, n)
+end
+
+# InPlaceQ continues the quadratic at 2 all the way down to 1 (rather than 1.5)
+function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{InPlaceQ}}, ::Type{OnCell})
+    dl,d,du = inner_system_diags(T,n,Quadratic{InPlaceQ})
+    d[1] = d[end] = SimpleRatio(9,8)
+    dl[end] = du[1] = SimpleRatio(-1,4)
+    # Woodbury correction to add 1/8 for row 1, col 3 and row n, col n-2
+    rowspec = spzeros(T, n, 2)
+    colspec = spzeros(T, 2, n)
+    valspec = zeros(T, 2, 2)
+    valspec[1,1] = valspec[2,2] = SimpleRatio(1,8)
+    rowspec[1,1] = rowspec[n,2] = 1
+    colspec[1,3] = colspec[2,n-2] = 1
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
 function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnGrid})

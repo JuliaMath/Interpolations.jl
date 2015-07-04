@@ -76,17 +76,20 @@ g = gradient(iq, 4, 3)
 @test_approx_eq g[1] 2*(4-1.75)*(3-1.75)^2
 @test_approx_eq g[2] 2*(4-1.75)^2*(3-1.75)
 
-# To get full accuracy here, one might want to define new boundary
-# conditions that impose y''[1] == y''[n] and which minimize
-# (y[1] - v_1)^2 + (y[n] - v_n)^2. But this seems like a lot of
-# work for an artifical case.  Instead, just allow sloppiness on
-# the gradient.
 iq = interpolate!(copy(A), BSpline(Quadratic(InPlace)), OnCell)
 @test_approx_eq iq[4,4] (4-1.75)^4
 @test_approx_eq iq[4,3] (4-1.75)^2*(3-1.75)^2
 g = gradient(iq, 4, 3)
 @test_approx_eq_eps g[1] 2*(4-1.75)*(3-1.75)^2 0.03
 @test_approx_eq_eps g[2] 2*(4-1.75)^2*(3-1.75) 0.2
+
+# InPlaceQ is exact for an underlying quadratic
+iq = interpolate!(copy(A), BSpline(Quadratic(InPlaceQ)), OnCell)
+@test_approx_eq iq[4,4] (4-1.75)^4
+@test_approx_eq iq[4,3] (4-1.75)^2*(3-1.75)^2
+g = gradient(iq, 4, 3)
+@test_approx_eq g[1] 2*(4-1.75)*(3-1.75)^2
+@test_approx_eq g[2] 2*(4-1.75)^2*(3-1.75)
 
 A2 = rand(Float64, nx, nx) * 100
 for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
