@@ -21,3 +21,5 @@ include("gradient.jl")
 println("all tests passed")
 
 end
+
+nothing

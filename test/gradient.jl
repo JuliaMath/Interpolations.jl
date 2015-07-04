@@ -50,6 +50,32 @@ for i = 1:10
     @test_approx_eq epsilon(itp1[xd]) gtmp
 end
 
+# For a quadratic function and quadratic interpolation, we expect an
+# "exact" answer
+# 1d
+c = 2.3
+a = 8.1
+o = 1.6
+qfunc = x -> a*(x-c).^2 + o
+dqfunc = x -> 2*a*(x-c)
+xg = Float64[1:5;]
+y = qfunc(xg)
+
+iq = interpolate(y, BSpline(Quadratic(Free)), OnCell)
+x = 1.8
+@test_approx_eq iq[x] qfunc(x)
+@test_approx_eq gradient(iq, x)[1] dqfunc(x)
+
+# 2d (biquadratic)
+p = [(x-1.75)^2 for x = 1:7]
+A = p*p'
+iq = interpolate(A, BSpline(Quadratic(Free)), OnCell)
+@test_approx_eq iq[4,4] (4-1.75)^4
+@test_approx_eq iq[4,3] (4-1.75)^2*(3-1.75)^2
+g = gradient(iq, 4, 3)
+@test_approx_eq g[1] 2*(4-1.75)*(3-1.75)^2
+@test_approx_eq g[2] 2*(4-1.75)^2*(3-1.75)
+
 A2 = rand(Float64, nx, nx) * 100
 for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
     itp_a = interpolate(A2, Tuple{BSpline(Linear), BSpline(Quadratic(BC))}, GT)
