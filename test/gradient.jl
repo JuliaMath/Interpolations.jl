@@ -80,6 +80,8 @@ A2 = rand(Float64, nx, nx) * 100
 for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
     itp_a = interpolate(A2, Tuple{BSpline(Linear), BSpline(Quadratic(BC))}, GT)
     itp_b = interpolate(A2, Tuple{BSpline(Quadratic(BC)), BSpline(Linear)}, GT)
+    itp_c = interpolate(A2, Tuple{BSpline(NoInterp), BSpline(Quadratic(BC))}, GT)
+    itp_d = interpolate(A2, Tuple{BSpline(Quadratic(BC)), BSpline(NoInterp)}, GT)
 
     for i = 1:10
         x = rand()*(nx-2)+1.5
@@ -87,11 +89,20 @@ for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
         xd = dual(x, 1)
         yd = dual(y, 1)
         gtmp = gradient(itp_a, x, y)
+        @test length(gtmp) == 2
         @test_approx_eq epsilon(itp_a[xd, y]) gtmp[1]
         @test_approx_eq epsilon(itp_a[x, yd]) gtmp[2]
         gtmp = gradient(itp_b, x, y)
+        @test length(gtmp) == 2
         @test_approx_eq epsilon(itp_b[xd, y]) gtmp[1]
         @test_approx_eq epsilon(itp_b[x, yd]) gtmp[2]
+        ix, iy = round(Int, x), round(Int, y)
+        gtmp = gradient(itp_c, ix, y)
+        @test length(gtmp) == 1
+        @test_approx_eq epsilon(itp_c[ix, yd]) gtmp[1]
+        gtmp = gradient(itp_d, x, iy)
+        @test length(gtmp) == 1
+        @test_approx_eq epsilon(itp_d[xd, iy]) gtmp[1]
     end
 end
 

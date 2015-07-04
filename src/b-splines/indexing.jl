@@ -57,16 +57,22 @@ end
 
 function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}})
     meta = Expr(:meta, :inline)
-    # Alternately calculate coefficients and set components of the gradient
-    exs = Array(Expr, 2N)
+    # For each component of the gradient, alternately calculate
+    # coefficients and set component
+    n = count_interp_dims(IT, N)
+    exs = Array(Expr, 2n)
+    cntr = 0
     for d = 1:N
-        exs[2d-1] = gradient_coefficients(IT, N, d)
-        exs[2d] = :(@inbounds g[$d] = $(index_gen(IT, N)))
+        if count_interp_dims(iextract(IT, d), 1) > 0
+            cntr += 1
+            exs[2cntr-1] = gradient_coefficients(IT, N, d)
+            exs[2cntr] = :(@inbounds g[$cntr] = $(index_gen(IT, N)))
+        end
     end
     gradient_exprs = Expr(:block, exs...)
     quote
         $meta
-        length(g) == $N || throw(BoundsError())
+        length(g) == $n || throw(DimensionMismatch("Gradient has wrong number of components"))
         @nexprs $N d->(x_d = xs[d])
 
         # Calculate the indices of all coefficients that will be used

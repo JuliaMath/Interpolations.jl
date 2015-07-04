@@ -1,6 +1,7 @@
 export
     BSpline,
 
+    NoInterp,
     Constant,
     Linear,
     Quadratic
@@ -66,6 +67,12 @@ end
 
 index_gen{IT}(::Type{IT}, N::Integer, offsets...) = index_gen(iextract(IT, min(length(offsets)+1, N)), IT, N, offsets...)
 
+@generated function gradient{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, xs...)
+    n = count_interp_dims(IT, N)
+    :(gradient!(Array(T,$n), itp, xs...))
+end
+
+include("nointerp.jl")
 include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")
