@@ -1,18 +1,29 @@
+deval{N}(::Val{N}) = N
 padding{IT<:BSpline}(::Type{IT}) = Val{0}()
+@generated function padding{IT}(t::Type{IT})
+    pad = [deval(padding(IT.parameters[d])) for d = 1:length(IT.parameters)]
+    t = tuple(pad...)
+    :(Val{$t}())
+end
 
 function padded_index{N,pad}(sz::NTuple{N,Int}, ::Val{pad})
-    szpad = ntuple(i->sz[i]+2pad, N)::NTuple{N,Int}
+    szpad = ntuple(i->sz[i]+2padextract(pad,i), N)::NTuple{N,Int}
     ind = Array(UnitRange{Int},N)
     for i in 1:N
-        ind[i] = 1+pad:szpad[i]-pad
+        p = padextract(pad,i)
+        ind[i] = 1+p:szpad[i]-p
     end
     ind,szpad
 end
-function copy_with_padding{IT<:InterpolationType}(A, ::Type{IT})
+function copy_with_padding{IT<:DimSpec{InterpolationType}}(A, ::Type{IT})
     Pad = padding(IT)
     ind,sz = padded_index(size(A), Pad)
-    coefs = zeros(eltype(A), sz...)
-    coefs[ind...] = A
+    if sz == size(A)
+        coefs = copy(A)
+    else
+        coefs = zeros(eltype(A), sz...)
+        coefs[ind...] = A
+    end
     coefs, Pad
 end
 
@@ -24,6 +35,13 @@ function prefilter{TWeights,TCoefs,N,IT<:Quadratic,GT<:GridType}(
     )
     ret, Pad = copy_with_padding(A, BSpline{IT})
     prefilter!(TWeights, ret, BSpline{IT}, GT), Pad
+end
+
+function prefilter{TWeights,TCoefs,N,IT<:Tuple{Vararg{BSpline}},GT<:DimSpec{GridType}}(
+    ::Type{TWeights}, A::Array{TCoefs,N}, ::Type{IT}, ::Type{GT}
+    )
+    ret, Pad = copy_with_padding(A, IT)
+    prefilter!(TWeights, ret, IT, GT), Pad
 end
 
 function prefilter!{TWeights,TCoefs,N,IT<:Quadratic,GT<:GridType}(
@@ -38,3 +56,20 @@ function prefilter!{TWeights,TCoefs,N,IT<:Quadratic,GT<:GridType}(
     end
     ret
 end
+
+function prefilter!{TWeights,TCoefs,N,IT<:Tuple{Vararg{BSpline}},GT<:DimSpec{GridType}}(
+    ::Type{TWeights}, ret::Array{TCoefs,N}, ::Type{IT}, ::Type{GT}
+    )
+    local buf, shape, retrs
+    sz = size(ret)
+    first = true
+    for dim in 1:N
+        M, b = prefiltering_system(TWeights, TCoefs, sz[dim], bsplinetype(iextract(IT, dim)), iextract(GT, dim))
+        if M != nothing
+            A_ldiv_B_md!(ret, M, ret, dim, b)
+        end
+    end
+    ret
+end
+
+prefiltering_system(::Any, ::Any, ::Any, ::Any, ::Any) = nothing, nothing

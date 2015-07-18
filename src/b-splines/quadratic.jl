@@ -1,32 +1,29 @@
 immutable Quadratic{BC<:BoundaryCondition} <: Degree{2} end
 Quadratic{BC<:BoundaryCondition}(::Type{BC}) = Quadratic{BC}
 
-function define_indices{BC}(::Type{BSpline{Quadratic{BC}}}, N, pad)
+function define_indices_d{BC}(::Type{BSpline{Quadratic{BC}}}, d, pad)
+    symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
+    symx, symfx = symbol("x_",d), symbol("fx_",d)
     quote
-        @nexprs $N d->begin
-            # ensure that all three ix_d, ixm_d, and ixp_d are in-bounds no matter
-            # the value of pad
-            ix_d = clamp(round(Int, real(x_d)), 2-$pad, size(itp,d)+$pad-1)
-            fx_d = x_d - ix_d
-            ix_d += $pad # padding for oob coefficient
-            ixp_d = ix_d + 1
-            ixm_d = ix_d - 1
-        end
+        # ensure that all three ix_d, ixm_d, and ixp_d are in-bounds no matter
+        # the value of pad
+        p = $(padextract(pad, d))
+        $symix = clamp(round(Int, real($symx)), 2-p, size(itp,$d)+p-1)
+        $symfx = $symx - $symix
+        $symix += p # padding for oob coefficient
+        $symixp = $symix + 1
+        $symixm = $symix - 1
     end
 end
-function define_indices(::Type{BSpline{Quadratic{Periodic}}}, N, pad)
+function define_indices_d(::Type{BSpline{Quadratic{Periodic}}}, d, pad)
+    symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
+    symx, symfx = symbol("x_",d), symbol("fx_",d)
     quote
-        @nexprs $N d->begin
-            ix_d = clamp(round(Int, real(x_d)), 1, size(itp,d))
-            fx_d = x_d - ix_d
-            ixp_d = mod1(ix_d + 1, size(itp,d))
-            ixm_d = mod1(ix_d - 1, size(itp,d))
-        end
+        $symix = clamp(round(Int, real($symx)), 1, size(itp,$d))
+        $symfx = $symx - $symix
+        $symixp = mod1($symix + 1, size(itp,$d))
+        $symixm = mod1($symix - 1, size(itp,$d))
     end
-end
-
-function coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, N)
-    :(@nexprs $N d->($(coefficients(BSpline{Q}, N, :d))))
 end
 
 function coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, N, d)
@@ -51,12 +48,12 @@ end
 
 # This assumes integral values ixm_d, ix_d, and ixp_d,
 # coefficients cm_d, c_d, and cp_d, and an array itp.coefs
-function index_gen{Q<:Quadratic}(::Type{BSpline{Q}}, N::Integer, offsets...)
+function index_gen{Q<:Quadratic,IT<:DimSpec{BSpline}}(::Type{BSpline{Q}}, ::Type{IT}, N::Integer, offsets...)
     if length(offsets) < N
         d = length(offsets)+1
         symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
-        return :($symm * $(index_gen(BSpline{Q}, N, offsets...,-1)) + $sym * $(index_gen(BSpline{Q}, N, offsets..., 0)) +
-                 $symp * $(index_gen(BSpline{Q}, N, offsets..., 1)))
+        return :($symm * $(index_gen(IT, N, offsets...,-1)) + $sym * $(index_gen(IT, N, offsets..., 0)) +
+                 $symp * $(index_gen(IT, N, offsets..., 1)))
     else
         indices = [offsetsym(offsets[d], d) for d = 1:N]
         return :(itp.coefs[$(indices...)])

@@ -1,11 +1,8 @@
 immutable Constant <: Degree{0} end
 
-function define_indices(::Type{BSpline{Constant}}, N, pad)
-    :(@nexprs $N d->(ix_d = clamp(round(Int, real(x_d)), 1, size(itp, d))))
-end
-
-function coefficients(::Type{BSpline{Constant}}, N)
-    :(@nexprs $N d->($(coefficients(BSpline{Constant}, N, :d))))
+function define_indices_d(::Type{BSpline{Constant}}, d, pad)
+    symix, symx = symbol("ix_",d), symbol("x_",d)
+    :($symix = clamp(round(Int, real($symx)), 1, size(itp, $d)))
 end
 
 function coefficients(::Type{BSpline{Constant}}, N, d)
@@ -18,11 +15,11 @@ function gradient_coefficients(::Type{BSpline{Constant}}, N, d)
     :($sym = 0)
 end
 
-function index_gen(::Type{BSpline{Constant}}, N::Integer, offsets...)
+function index_gen{IT<:DimSpec{BSpline}}(::Type{BSpline{Constant}}, ::Type{IT}, N::Integer, offsets...)
     if (length(offsets) < N)
         d = length(offsets)+1
         sym = symbol("c_"*string(d))
-        return :($sym * $(index_gen(BSpline{Constant}, N, offsets..., 0)))
+        return :($sym * $(index_gen(IT, N, offsets..., 0)))
     else
         indices = [offsetsym(offsets[d], d) for d = 1:N]
         return :(itp.coefs[$(indices...)])

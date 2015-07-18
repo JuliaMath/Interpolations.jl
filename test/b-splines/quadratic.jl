@@ -1,4 +1,4 @@
-module Quadratic1DTests
+module QuadraticTests
 
 using Interpolations, Base.Test
 
