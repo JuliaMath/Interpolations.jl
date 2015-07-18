@@ -5,6 +5,7 @@
 \usepackage{titlesec}
 \usepackage[hidelinks]{hyperref}
 \usepackage[backend=biber,natbib=true]{biblatex}
+\usepackage{listings}
 \addbibresource{Interpolations.bib}
 
 \setcounter{secnumdepth}{4}
@@ -17,6 +18,10 @@
 
 \author{Tomas Lycken\\tomas.lycken@gmail.com\\github.com/tlycken}
 \title{\texttt{Interpolations.jl} - mathematical background}
+
+\lstset{%
+  basicstyle=\ttfamily,
+}
 
 \begin{document}
 
@@ -72,13 +77,16 @@ A quadratic polynomial requires three coefficients, and thus quadratic B-splines
 
 \subsection{General governing equations}
 
-Assuming a symmetric spline basis, one finds that 
+Assuming a symmetric spline basis, one finds that
 \begin{align}
 \label{bspline-quadratic-yi}
 y_i(\delta x) &= c_{i-1}\left(\tfrac{1}{2} - \delta x\right)^{2} + c_{i}\left(\tfrac{3}{4} - \delta x^{2}\right) + c_{i+1}\left(\tfrac{1}{2} + \delta x\right)^{2}
 \end{align}
 Furthermore, we require that on cell boundaries, the function values and first derivatives are continuous, which yields $y_{i}(\frac{1}{2}) = y_{i+1}(-\frac{1}{2})$ and $y'_{i}(\frac{1}{2}) = y'_{i+1}(-\frac{1}{2})$. Inserting these in each-other, we find the following equation for each data point:
-\begin{align*}\frac{1}{8} c_{i-1} + \frac{3}{4} c_{i} + \frac{1}{8} c_{i+1} = v_i\end{align*}
+\begin{align}
+\label{bspline-quadratic-yi-ongrid}
+\frac{1}{8} c_{i-1} + \frac{3}{4} c_{i} + \frac{1}{8} c_{i+1} = v_i
+\end{align}
 where $v_{i}$ is the provided data point at $x_{i}$. Considering the corresponding equation for all provided data points simultanesously, we form a tridiagonal equation system that we need to solve for the coefficients $c_{i}$. However, since we have two more unknowns than we have data points (namely $c_{0}$ and $c_{N+1}$), we need to apply boundary conditions to close the system.
 
 \subsection{Boundary conditions}
@@ -104,7 +112,7 @@ y'(x_{\text{edge}}) = y'_1(0) &= \frac{1}{2}\left[-c_0 + c_2\right] = 0\\
 \end{align*}
 Thus, the first few rows of the equation system become
 \begin{align*}
-\begin{bmatrix} 
+\begin{bmatrix}
 -1 & 0 & 1 \\
 \frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
  & \frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
@@ -121,7 +129,7 @@ y'(x_{\text{edge}}) = y'_1\left(-\frac{1}{2}\right) &= \frac{1}{2}\left[-2c_0 + 
 \Rightarrow -c_0 + c_1 &= 0
 \\
 \\
-\begin{bmatrix} 
+\begin{bmatrix}
 -1 & 1 \\
 \frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
  & \frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
@@ -202,6 +210,72 @@ For \texttt{OnCell}, periodic boundary conditions seemlessly links the lower and
 \end{align*}
 
 Also: $y_1(\delta x) = c_N (\frac{1}{2} - \delta x)^2 + c_1 (\frac{3}{4} - \delta x^2) + c_2(\frac{1}{2} + \delta x)^2$ (note the index on the first coefficient) with a similar wrapping applied at the upper boundary.
+
+\subsubsection{In-place boundary conditions}
+
+In some cases, speed or memory constraints make it attractive to
+perform interpolation without making a copy of the original array.
+This is achieved by calling \texttt{interpolate!} rather than
+\texttt{interpolate}.
+
+For quadratic or higher interpolation, this will result in the
+``destruction'' of the original input array, solving the tridiagonal
+systems in-place.  While you can use any of the boundary conditions
+above, ones that require padding (all but \texttt{Periodic}) may
+result in anomalies at the boundary.  Consequently, there are two
+additional options particularly relevant for in-place interpolation.
+
+\paragraph{\texttt{Quadratic\{InPlace,OnCell\}}}
+
+Ensures that evaluation at on-grid locations preserves the original
+input values.  For $x$ locations smaller than $3/2$, we clamp the
+lowest index to 1.  This implies that for evaluation of
+Eq.~\eqref{bspline-quadratic-yi-ongrid} at $x=1$, we effectively have
+$c_0 = c_1$.  The tridiagonal system can therefore be written
+\begin{align*}
+\begin{bmatrix}
+\frac{7}{8} & \frac{1}{8} & & & \\
+\frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
+ & \frac{1}{8} & \frac{3}{4} & \frac{1}{8} \\
+ & & \ddots & \ddots & \ddots
+\end{bmatrix}
+\begin{bmatrix}c_1\\ c_2\\ c_3\\\vdots\end{bmatrix}
+&=
+\begin{bmatrix}v_1 \\ v_2 \\ c_3\\\vdots\end{bmatrix}
+\end{align*}
+
+
+\paragraph{\texttt{Quadratic\{InPlaceQ,OnCell\}}}
+
+This boundary condition yields the exact (to within machine precision)
+answer when the underlying function to be interpolated is quadratic
+along each axis.  For example, in 2d
+\begin{lstlisting}
+    x = 1:8
+    y = (1:9)'
+    A = (x-4.3).^2 .* (y-5.7).^2
+\end{lstlisting}
+would be an example of such a function.  Given such functions, this
+boundary condition is particularly useful for building test suites for
+algorithms that rely on interpolation: it removes any doubts about
+whether a disagreement in the third decimal place is due to
+interpolation or a bug in your code (hint: it's the latter).
+
+These boundary conditions are specified by ensuring that the quadratic
+typically defined over the domain $[3/2,5/2]$---specified from input
+values at $x=1, 2$, and $3$---also matches the input value at $x=1$
+when extended to the range $[1,5/2]$.  From
+Eq.~\eqref{bspline-quadratic-yi}, one obtains
+\begin{align*}
+\frac{9}{4}c_1 - \frac{1}{4}c_2 + \frac{1}{4}c_3 = v_1.
+\end{align*}
+
+Note that the \emph{evaluation} of interpolation function near the
+boundary occurs via clamping, identically to \texttt{InPlace}.
+\emph{Consequently, you will get wrong answers over the domain
+$[1,3/2]$}.  The above formula is used only for setting the boundary
+conditions to ensure an exact match to the underlying quadratic at
+all interior ($[2,n-1]$) points.
 
 \nocite{*}
 \printbibliography
