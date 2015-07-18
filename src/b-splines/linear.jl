@@ -17,7 +17,7 @@ function coefficients(::Type{BSpline{Linear}}, N, d)
     end
 end
 
-function gradient_coefficients(::Type{BSpline{Linear}}, N, d)
+function gradient_coefficients(::Type{BSpline{Linear}}, d)
     sym, symp, symfx = symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("fx_",d))
     quote
         $sym = -1

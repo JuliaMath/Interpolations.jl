@@ -5,6 +5,8 @@ export
     interpolate!,
     extrapolate,
 
+    gradient!,
+
     OnCell,
     OnGrid,
 
@@ -21,7 +23,7 @@ export
 
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
-import Base: convert, size, getindex, promote_rule
+import Base: convert, size, getindex, gradient, promote_rule
 
 abstract InterpolationType
 abstract GridType
@@ -53,6 +55,8 @@ function getindex{T}(itp::AbstractInterpolation{T,1}, x::Real, y::Real)
     end
     itp[x]
 end
+
+@inline gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...) = gradient!(Array(T,N), itp, xs...)
 
 include("b-splines/b-splines.jl")
 include("extrapolation/extrapolation.jl")

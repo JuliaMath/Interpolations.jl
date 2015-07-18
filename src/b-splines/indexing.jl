@@ -55,6 +55,40 @@ end
     :(getindex(itp, $(Base.IteratorsMD.cartindex_exprs((index,), (:index,))...)))
 end
 
+function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}})
+    meta = Expr(:meta, :inline)
+    # Alternately calculate coefficients and set components of the gradient
+    exs = Array(Expr, 2N)
+    for d = 1:N
+        exs[2d-1] = gradient_coefficients(IT, N, d)
+        exs[2d] = :(@inbounds g[$d] = $(index_gen(IT, N)))
+    end
+    gradient_exprs = Expr(:block, exs...)
+    quote
+        $meta
+        length(g) == $N || throw(BoundsError())
+        @nexprs $N d->(x_d = xs[d])
+
+        # Calculate the indices of all coefficients that will be used
+        # and define fx = x - xi in each dimension
+        $(define_indices(IT, N, Pad))
+
+        $gradient_exprs
+
+        g
+    end
+end
+
+
+@generated function gradient!{T,N}(g::AbstractVector, itp::BSplineInterpolation{T,N}, xs...)
+    length(xs) == N || error("Can only be called with $N indexes")
+    gradient_impl(itp)
+end
+
+@generated function gradient!{T,N}(g::AbstractVector, itp::BSplineInterpolation{T,N}, index::CartesianIndex{N})
+    :(gradient!(g, itp, $(Base.IteratorsMD.cartindex_exprs((index,), (:index,))...)))
+end
+
 offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
                     off ==  0 ? symbol(string("ix_", d)) :
                     off ==  1 ? symbol(string("ixp_", d)) :

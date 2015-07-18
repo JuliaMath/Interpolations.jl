@@ -2,20 +2,6 @@ module GridTests
 
 using Interpolations, Base.Test
 
-println("Running select tests from the test suite in Grid.jl...")
-
-# Quadratic interpolation
-c = 2.3
-a = 8.1
-o = 1.6
-qfunc = x -> a*(x.-c).^2 .+ o
-xg = Float64[1:5]
-y = qfunc(xg)
-
-iq = Interpolation(y, Quadratic(Free(), OnCell()), ExtrapNaN())
-x = 1.8
-@assert abs(iq[x] - qfunc(x)) < 100*eps()
-
 # On-grid values
 A = randn(4,10)
 const EPS = sqrt(eps())

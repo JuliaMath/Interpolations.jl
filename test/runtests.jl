@@ -10,7 +10,7 @@ include("b-splines/runtests.jl")
 include("extrapolation/runtests.jl")
 
 # # test gradient evaluation
-# include("gradient.jl")
+include("gradient.jl")
 
 # # test interpolation with specific types
 # include("typing.jl")
@@ -21,3 +21,5 @@ include("extrapolation/runtests.jl")
 println("all tests passed")
 
 end
+
+nothing
