@@ -27,10 +27,13 @@ extrapolate{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue) = Fille
         $meta
         # Check to see if we're in the extrapolation region, i.e.,
         # out-of-bounds in an index
-        @nexprs $N d->((args[d] < 1 || args[d] > size(fitp.itp, d)) && return fitp.fillvalue)
+        @nexprs $N d->((args[d] < lbound(fitp,d) || args[d] > ubound(fitp, d)) && return fitp.fillvalue)
         # In the interpolation region
         return getindex(fitp.itp,args...)
     end
 end
 
 getindex{T}(fitp::FilledExtrapolation{T,1}, x::Number, y::Int) = y == 1 ? fitp[x] : throw(BoundsError())
+
+lbound(etp::FilledExtrapolation, d) = lbound(etp.itp, d)
+ubound(etp::FilledExtrapolation, d) = ubound(etp.itp, d)

@@ -36,6 +36,11 @@ iextract(t, d) = t.parameters[d]
 padextract(pad::Integer, d) = pad
 padextract(pad::Tuple{Vararg{Integer}}, d) = pad[d]
 
+lbound{T,N,TCoefs,IT}(itp::BSplineInterpolation{T,N,TCoefs,IT,OnGrid}, d) = one(T)
+ubound{T,N,TCoefs,IT}(itp::BSplineInterpolation{T,N,TCoefs,IT,OnGrid}, d) = convert(T, size(itp, d))
+lbound{T,N,TCoefs,IT}(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d) = convert(T, .5)
+ubound{T,N,TCoefs,IT}(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d) = convert(T, size(itp, d) + .5)
+
 @generated function size{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d)
     quote
         d <= $N ? size(itp.coefs, d) - 2*padextract($pad, d) : 1

@@ -4,6 +4,7 @@ export
     interpolate,
     interpolate!,
     extrapolate,
+    scale,
 
     gradient!,
 
@@ -22,10 +23,11 @@ export
     # see the following files for further exports:
     # b-splines/b-splines.jl
     # extrapolation/extrapolation.jl
+    # scaling/scaling.jl
 
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
-import Base: convert, size, getindex, gradient, promote_rule
+import Base: convert, size, getindex, gradient, scale, promote_rule
 
 abstract InterpolationType
 immutable NoInterp <: InterpolationType end
@@ -36,7 +38,8 @@ immutable OnCell <: GridType end
 typealias DimSpec{T} Union{T,Tuple{Vararg{Union{T,NoInterp}}},NoInterp}
 
 abstract AbstractInterpolation{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} <: AbstractArray{T,N}
-abstract AbstractExtrapolation{T,N,ITPT,IT,GT} <: AbstractInterpolation{T,N,IT,GT}
+abstract AbstractInterpolationWrapper{T,N,ITPT,IT,GT} <: AbstractInterpolation{T,N,IT,GT}
+abstract AbstractExtrapolation{T,N,ITPT,IT,GT} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
 
 abstract BoundaryCondition
 immutable Flat <: BoundaryCondition end
@@ -53,7 +56,13 @@ typealias Natural Line
 # TODO: size might have to be faster?
 size{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->size(itp,i), N)::NTuple{N,Int}
 size(exp::AbstractExtrapolation, d) = size(exp.itp, d)
- itptype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = IT
+bounds{T,N}(itp::AbstractInterpolation{T,N}) = tuple(zip(lbounds(itp), ubounds(itp))...)
+bounds{T,N}(itp::AbstractInterpolation{T,N}, d) = (lbound(itp,d),ubound(itp,d))
+lbounds{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->lbound(itp,i), N)::NTuple{N,T}
+ubounds{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->ubound(itp,i), N)::NTuple{N,T}
+lbound{T,N}(itp::AbstractInterpolation{T,N}, d) = convert(T, 1)
+ubound{T,N}(itp::AbstractInterpolation{T,N}, d) = convert(T, size(itp, d))
+itptype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = IT
 gridtype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = GT
 
 @inline gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...) = gradient!(Array(T,N), itp, xs...)
@@ -62,5 +71,6 @@ include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
 include("gridded/gridded.jl")
 include("extrapolation/extrapolation.jl")
+include("scaling/scaling.jl")
 
 end # module
