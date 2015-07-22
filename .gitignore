@@ -8,7 +8,7 @@
 *.toc
 
 ## Bibliography auxiliary files (bibtex/biblatex/biber):
-*.bbl
+*.bbl # If this is checked in, one doesn't need biber to compile the docs
 *.bcf
 *.blg
 *-blx.aux
