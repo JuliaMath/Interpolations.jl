@@ -2,6 +2,8 @@ using Base.Cartesian
 
 import Base.getindex
 
+Base.linearindexing{T<:AbstractInterpolation}(::Type{T}) = Base.LinearSlow()
+
 function getindex_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}})
     meta = Expr(:meta, :inline)
     quote
