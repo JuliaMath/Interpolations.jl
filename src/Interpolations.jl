@@ -54,14 +54,6 @@ size{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->size(itp,i), N)::NTuple{N
 size(exp::AbstractExtrapolation, d) = size(exp.itp, d)
 gridtype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = GT
 
-# Fix display issues by defining odd combinations of dimensionality and index
-function getindex{T}(itp::AbstractInterpolation{T,1}, x::Real, y::Real)
-    if y != 1
-        throw(ArgumentError("Cannot index into 1D interpolation with two indices unless y == 1 (y == $y)"))
-    end
-    itp[x]
-end
-
 @inline gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...) = gradient!(Array(T,N), itp, xs...)
 
 include("b-splines/b-splines.jl")
