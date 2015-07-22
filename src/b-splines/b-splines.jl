@@ -41,6 +41,8 @@ ubound{T,N,TCoefs,IT}(itp::BSplineInterpolation{T,N,TCoefs,IT,OnGrid}, d) = conv
 lbound{T,N,TCoefs,IT}(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d) = convert(T, .5)
 ubound{T,N,TCoefs,IT}(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d) = convert(T, size(itp, d) + .5)
 
+count_interp_dims{T,N,TCoefs,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType},pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,pad}}, n) = count_interp_dims(IT, n)
+
 @generated function size{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d)
     quote
         d <= $N ? size(itp.coefs, d) - 2*padextract($pad, d) : 1
@@ -69,23 +71,6 @@ tcoef{T<:Integer}(A::AbstractArray{T}) = typeof(float(zero(T)))
 interpolate!{TWeights,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = BSplineInterpolation(TWeights, prefilter!(TWeights, A, IT, GT), IT, GT, Val{0}())
 function interpolate!{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, ::Type{IT}, ::Type{GT})
     interpolate!(tweight(A), A, IT, GT)
-end
-
-define_indices{IT}(::Type{IT}, N, pad) = Expr(:block, Expr[define_indices_d(iextract(IT, d), d, padextract(pad, d)) for d = 1:N]...)
-
-coefficients{IT}(::Type{IT}, N) = Expr(:block, Expr[coefficients(iextract(IT, d), N, d) for d = 1:N]...)
-
-function gradient_coefficients{IT<:DimSpec{BSpline}}(::Type{IT}, N, dim)
-    exs = Expr[d==dim ? gradient_coefficients(iextract(IT, dim), d) :
-                        coefficients(iextract(IT, d), N, d) for d = 1:N]
-    Expr(:block, exs...)
-end
-
-index_gen{IT}(::Type{IT}, N::Integer, offsets...) = index_gen(iextract(IT, min(length(offsets)+1, N)), IT, N, offsets...)
-
-@generated function gradient{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, xs...)
-    n = count_interp_dims(IT, N)
-    :(gradient!(Array(T,$n), itp, xs...))
 end
 
 include("constant.jl")
