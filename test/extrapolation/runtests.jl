@@ -12,7 +12,6 @@ itpg = interpolate(A, BSpline(Linear), OnGrid)
 expg = extrapolate(itpg, Flat)
 
 @test expg[-3] == expg[-4.5] == expg[0.9] == expg[1.0] == A[1]
-#@test 
-expg[10.1] == expg[11]# == expg[148.298452] == A[end]
+@test expg[10.1] == expg[11] == expg[148.298452] == A[end]
 
 end
