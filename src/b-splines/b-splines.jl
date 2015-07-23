@@ -49,6 +49,7 @@ end
 interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, ::Type{IT}, ::Type{GT}) = interpolate(Float64, A, IT, GT)
 interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{Float32}, ::Type{IT}, ::Type{GT}) = interpolate(Float32, A, IT, GT)
 interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{Rational{Int}}, ::Type{IT}, ::Type{GT}) = interpolate(Rational{Int}, A, IT, GT)
+interpolate{T<:Integer,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{T}, ::Type{IT}, ::Type{GT}) = interpolate(float(A), IT, GT)
 
 interpolate!{TWeights,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = BSplineInterpolation(TWeights, prefilter!(TWeights, A, IT, GT), IT, GT, Val{0}())
 interpolate!{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, ::Type{IT}, ::Type{GT}) = interpolate!(Float64, A, IT, GT)
