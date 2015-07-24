@@ -42,13 +42,17 @@ padextract(pad::Tuple{Vararg{Integer}}, d) = pad[d]
     end
 end
 
-function interpolate{TWeights,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT})
-    Apad, Pad = prefilter(TWeights, A, IT, GT)
+function interpolate{TWeights,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(::Type{TWeights}, ::Type{TCoefs}, A, ::Type{IT}, ::Type{GT})
+    Apad, Pad = prefilter(TWeights, TCoefs, A, IT, GT)
     BSplineInterpolation(TWeights, Apad, IT, GT, Pad)
 end
-interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, ::Type{IT}, ::Type{GT}) = interpolate(Float64, A, IT, GT)
-interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{Float32}, ::Type{IT}, ::Type{GT}) = interpolate(Float32, A, IT, GT)
-interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{Rational{Int}}, ::Type{IT}, ::Type{GT}) = interpolate(Rational{Int}, A, IT, GT)
+interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, ::Type{IT}, ::Type{GT}) = interpolate(Float64, eltype(A), A, IT, GT)
+interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{Float32}, ::Type{IT}, ::Type{GT}) = interpolate(Float32, Float32, A, IT, GT)
+interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{Rational{Int}}, ::Type{IT}, ::Type{GT}) = interpolate(Rational{Int}, Rational{Int}, A, IT, GT)
+function interpolate{T<:Integer,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{T}, ::Type{IT}, ::Type{GT})
+    TFloat = typeof(float(zero(T)))
+    interpolate(TFloat, TFloat, A, IT, GT)
+end
 
 interpolate!{TWeights,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = BSplineInterpolation(TWeights, prefilter!(TWeights, A, IT, GT), IT, GT, Val{0}())
 interpolate!{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, ::Type{IT}, ::Type{GT}) = interpolate!(Float64, A, IT, GT)

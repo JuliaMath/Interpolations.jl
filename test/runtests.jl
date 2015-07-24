@@ -18,6 +18,8 @@ include("gradient.jl")
 # Tests copied from Grid.jl's old test suite
 #include("grid.jl")
 
+include("issues/runtests.jl")
+
 end
 
 nothing
