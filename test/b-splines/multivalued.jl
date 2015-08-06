@@ -4,6 +4,8 @@ module NonNumeric
 
 using Interpolations
 
+import Base: +, -, *, /
+
 immutable MyPair{T}
     first::T
     second::T
