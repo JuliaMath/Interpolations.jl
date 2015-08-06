@@ -64,7 +64,21 @@ and `Rational`, but also multi-valued types like `RGB` color vectors.
 Positions `(x, y, ...)` are n-tuples of numbers. Typically these will
 be real-valued (not necessarily integer-valued), but can also be of types
 such as [DualNumbers](https://github.com/JuliaDiff/DualNumbers.jl) if
-you want to verify the computed value of gradients.
+you want to verify the computed value of gradients. You can also use
+Julia's iterator objects, e.g.,
+
+```jl
+function ongrid!(dest, itp)
+    for I in CartesianRange(size(itp))
+        dest[I] = itp[I]
+    end
+end
+```
+would store the on-grid value at each grid point of `itp` in the output `dest`.
+Finally, courtesy of Julia's indexing rules, you can also use
+```jl
+fine = itp[linspace(1,10,1001), linspace(1,15,201)]
+```
 
 
 ## Control of interpolation algorithm
@@ -96,7 +110,7 @@ itp = interpolate(A, Tuple{BSpline{Linear}, BSpline{NoInterp}}, OnGrid)
 v = itp[3.65, 5]  # returns  0.35*A[3,5] + 0.65*A[4,5]
 ```
 There are more options available, for example:
-```
+```jl
 # In-place interpolation
 itp = interpolate!(A, BSpline{Quadratic{InPlace}}, OnCell)
 ```

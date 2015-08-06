@@ -23,12 +23,8 @@ function getindex_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
     end
 end
 
-@generated function getindex{T,N}(itp::BSplineInterpolation{T,N}, xs...)
+@generated function getindex{T,N}(itp::BSplineInterpolation{T,N}, xs::Number...)
     getindex_impl(itp)
-end
-
-@generated function getindex{T,N}(itp::BSplineInterpolation{T,N}, index::CartesianIndex{N})
-    :(getindex(itp, $(Base.IteratorsMD.cartindex_exprs((index,), (:index,))...)))
 end
 
 function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}})
@@ -62,7 +58,7 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
 end
 
 
-@generated function gradient!{T,N}(g::AbstractVector, itp::BSplineInterpolation{T,N}, xs...)
+@generated function gradient!{T,N}(g::AbstractVector, itp::BSplineInterpolation{T,N}, xs::Number...)
     length(xs) == N || error("Can only be called with $N indexes")
     gradient_impl(itp)
 end
