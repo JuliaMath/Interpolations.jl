@@ -1,10 +1,10 @@
-module LinearTests
+module ConstantTests
 
 using Interpolations, Base.Test
 
 a = rand(5)
 knots = (collect(linspace(1,length(a),length(a))),)
-itp = @inferred(interpolate(knots, a, Gridded{Linear}))
+itp = @inferred(interpolate(knots, a, Gridded{Constant}))
 @inferred(getindex(itp, 2))
 @inferred(getindex(itp, CartesianIndex((2,))))
 for i = 2:length(a)-1
@@ -16,7 +16,7 @@ end
 
 A = rand(6,5)
 knots = (collect(linspace(1,size(A,1),size(A,1))),collect(linspace(1,size(A,2),size(A,2))))
-itp = @inferred(interpolate(knots, A, Gridded{Linear}))
+itp = @inferred(interpolate(knots, A, Gridded{Constant}))
 @inferred(getindex(itp, 2, 2))
 @inferred(getindex(itp, CartesianIndex((2,2))))
 for j = 2:size(A,2)-1, i = 2:size(A,1)-1
