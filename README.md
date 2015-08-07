@@ -7,10 +7,10 @@ Julia langauge.  It has the goals of ease-of-use, broad algorithmic
 support, and exceptional performance.
 
 This package is still relatively new. Currently its support is best
-for [B-splines](https://en.wikipedia.org/wiki/B-spline), but the API
-has been designed with intent to support more options. Pull-requests
-are more than welcome!  It should be noted that the API may continue
-to evolve over time.
+for [B-splines](https://en.wikipedia.org/wiki/B-spline) and also
+supports irregular grids.  However, the API has been designed with
+intent to support more options. Pull-requests are more than welcome!
+It should be noted that the API may continue to evolve over time.
 
 Other interpolation packages for Julia include:
 - [Grid.jl](https://github.com/timholy/Grid.jl) (the predecessor of this package)
@@ -39,8 +39,16 @@ Given an `AbstractArray` `A`, construct an "interpolation object" `itp` as
 itp = interpolate(A, options...)
 ```
 where `options...` (discussed below) controls the type of
-interpolation you want to perform.  To evaluate the interpolation at
-position `(x, y, ...)`, simply do
+interpolation you want to perform.  This syntax assumes that the
+samples in `A` are equally-spaced.  If the spacing between adjacent
+samples differs, then you should use the syntax
+```jl
+itp = interpolate(knots, A, options...)
+```
+where `knots = (xknots, yknots, ...)` specifies the positions along
+each axis at which the array `A` is sampled.
+
+To evaluate the interpolation at position `(x, y, ...)`, simply do
 ```jl
 v = itp[x, y, ...]
 ```
@@ -83,7 +91,7 @@ fine = itp[linspace(1,10,1001), linspace(1,15,201)]
 
 ## Control of interpolation algorithm
 
-### B-splines
+### BSplines
 
 The interpolation type is described in terms of *degree*, *grid behavior* and, if necessary, *boundary conditions*. There are currently three degrees available: `Constant`, `Linear` and `Quadratic`, corresponding to B-splines of degree 0, 1 and 2, respectively.
 
@@ -115,6 +123,20 @@ There are more options available, for example:
 itp = interpolate!(A, BSpline{Quadratic{InPlace}}, OnCell)
 ```
 which destroys the input `A` but also does not need to allocate as much memory.
+
+### Gridded interpolation
+
+These use a very similar syntax to BSplines, with the major exception
+being that one does not get to choose the grid representation (they
+are all `OnGrid`).
+
+For example:
+```jl
+A = rand(8,20)
+knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
+itp = interpolate(knots, A, Gridded{Linear})
+itp[4,1.2]  # approximately A[2,6]
+```
 
 ## Extrapolation
 

@@ -46,18 +46,25 @@ function interpolate{TWeights,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
     Apad, Pad = prefilter(TWeights, TCoefs, A, IT, GT)
     BSplineInterpolation(TWeights, Apad, IT, GT, Pad)
 end
-interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, ::Type{IT}, ::Type{GT}) = interpolate(Float64, eltype(A), A, IT, GT)
-interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{Float32}, ::Type{IT}, ::Type{GT}) = interpolate(Float32, Float32, A, IT, GT)
-interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{Rational{Int}}, ::Type{IT}, ::Type{GT}) = interpolate(Rational{Int}, Rational{Int}, A, IT, GT)
-function interpolate{T<:Integer,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{T}, ::Type{IT}, ::Type{GT})
-    TFloat = typeof(float(zero(T)))
-    interpolate(TFloat, TFloat, A, IT, GT)
+function interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, ::Type{IT}, ::Type{GT})
+    interpolate(tweight(A), tcoef(A), A, IT, GT)
 end
 
+# We can't just return a tuple-of-types due to julia #12500
+tweight(A::AbstractArray) = Float64
+tweight(A::AbstractArray{Float32}) = Float32
+tweight(A::AbstractArray{Rational{Int}}) = Rational{Int}
+tweight{T<:Integer}(A::AbstractArray{T}) = typeof(float(zero(T)))
+
+tcoef(A::AbstractArray) = eltype(A)
+tcoef(A::AbstractArray{Float32}) = Float32
+tcoef(A::AbstractArray{Rational{Int}}) = Rational{Int}
+tcoef{T<:Integer}(A::AbstractArray{T}) = typeof(float(zero(T)))
+
 interpolate!{TWeights,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = BSplineInterpolation(TWeights, prefilter!(TWeights, A, IT, GT), IT, GT, Val{0}())
-interpolate!{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, ::Type{IT}, ::Type{GT}) = interpolate!(Float64, A, IT, GT)
-interpolate!{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{Float32}, ::Type{IT}, ::Type{GT}) = interpolate!(Float32, A, IT, GT)
-interpolate!{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray{Rational{Int}}, ::Type{IT}, ::Type{GT}) = interpolate!(Rational{Int}, A, IT, GT)
+function interpolate!{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, ::Type{IT}, ::Type{GT})
+    interpolate!(tweight(A), A, IT, GT)
+end
 
 define_indices{IT}(::Type{IT}, N, pad) = Expr(:block, Expr[define_indices_d(iextract(IT, d), d, padextract(pad, d)) for d = 1:N]...)
 

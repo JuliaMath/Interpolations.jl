@@ -64,7 +64,8 @@ end
 end
 
 @generated function gradient!{T,N}(g::AbstractVector, itp::BSplineInterpolation{T,N}, index::CartesianIndex{N})
-    :(gradient!(g, itp, $(Base.IteratorsMD.cartindex_exprs((index,), (:index,))...)))
+    args = [:(index[$d]) for d = 1:N]
+    :(gradient!(g, itp, $(args...)))
 end
 
 offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
