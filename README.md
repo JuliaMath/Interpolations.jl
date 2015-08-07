@@ -164,36 +164,56 @@ from the
 package (`GI`), methods from the
 [ApproXD.jl](https://github.com/floswald/ApproXD.jl) package, and
 methods from SciPy's `RegularGridInterpolator` accessed via `PyCall`
-(`Py`).  For methods that involve irregular grids, we compare them in
+(`Py`).  All methods
+are tested using an `Array` with approximately `10^6` elements, and
+the interpolation task is simply to visit each grid point.
+
+First, let's look at the two B-spline algorithms, `IBspline` and
+`Grid`.  Here's a plot of the "construction time," the amount of time
+it takes to initialize an interpolation object (smaller is better):
+
+![construction](perf/constructionB.png)
+
+The construction time is negligible until you get to second order
+(quadratic); that's because quadratic is the lowest order requiring
+the solution of tridiagonal systems upon construction.  The solvers
+used by Interpolations are much faster than the approach taken in
+Grid.
+
+Now let's examine the interpolation performance.  Here we'll measure
+"throughput", the number of interpolations performed per second
+(larger is better):
+
+![throughput](perf/rateB.png)
+
+Once again, Interpolations wins on every test, by a factor that ranges
+from 7 to 13.
+
+Now let's look at the "gridded" methods that allow irregular spacing
+along each axis.  For some of these, we compare interpolation performance in
 both "vectorized" form `itp[xvector, yvector]` and in "scalar" form
 `for y in yvector, x in xvector; val = itp[x,y]; end`.
 
-To ensure that the wide range of values can be represented on a single
-axis, these plots are presented with "square-root" scaling of the
-vertical axis.
+First, construction time (smaller is better):
 
-First, let's look at the "construction time," the amount of time it
-takes to initialize an interpolation object (smaller is better):
-
-![construction](perf/construction.png)
+![construction](perf/constructionG.png)
 
 Missing dots indicate cases that were not tested, or not supported by
-the package.  (Note that distinctions here between "vec" and "scalar"
-are just noise, since the construction time doesn't perform any
-interpolation.)  Most of the methods perform pretty well here, with
-the exceptions of Grid and Dierckx.
+the package.  (For construction, differences between "vec" and
+"scalar" are just noise, since no interpolation is performed during
+construction.)  The only package that takes appreciable construction
+time is Dierckx.
 
-Second, let's look at the "throughput," the number of interpolations
-performed per second (larger is better):
+And here's "throughput" (larger is better). To ensure we can see the
+wide range of scales, here we use "square-root" scaling of the y-axis:
 
-![throughput](perf/rate.png)
+![throughput](perf/rateG.png)
 
-For 1d, the "Dierckx scalar" and "GI scalar" tests were interrupted
-because they ran more than 10 seconds.  Both performed much better in
-2d, interestingly.
-
-You can see that Interpolations wins or ties the throughput test on
-every measure, often by a very large magnitude.
+For 1d, the "Dierckx scalar" and "GI" tests were interrupted because
+they ran more than 20 seconds (far longer than any other test).  Both
+performed much better in 2d, interestingly.  You can see that
+Interpolations wins in every case except one, often by a very large
+margin.
 
 ## Contributing
 

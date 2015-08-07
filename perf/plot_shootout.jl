@@ -11,10 +11,29 @@ ordlist =  collect(take(cycle(testord), length(dim)))
 dfconstr = DataFrame(t = vec(tconstr), name = namelist, ord = ordlist, dim = vec(dim))
 dfeval   = DataFrame(rate = vec(10^6./teval), name = namelist, ord = ordlist, dim = vec(dim))
 
-set_default_plot_size(15cm, 15cm)
+flagBspline = (dfconstr[:name] .== "IBSpline") | (dfconstr[:name] .== "Grid")
+dfBconstr = dfconstr[flagBspline, :]
+dfBeval   = dfeval[flagBspline, :]
+dfGconstr = dfconstr[!flagBspline, :]
+dfGeval   = dfeval[!flagBspline, :]
 
-pc = plot(dfconstr, xgroup="dim", ygroup="ord", x="name", y="t", Geom.subplot_grid(Geom.point), Scale.y_sqrt, Guide.ylabel("Time (s) by order"))
-draw(PNG("construction.png", 8inch, 6inch), pc)
+yscale = Scale.y_continuous
 
-pr = plot(dfeval, xgroup="dim", ygroup="ord", x="name", y="rate", Geom.subplot_grid(Geom.point), Scale.y_sqrt, Guide.ylabel("Throughput (pts/s) by order"))
-draw(PNG("rate.png", 8inch, 6inch), pr)
+# Plot the B-spline methods
+plotsize = (6inch, 8inch)
+set_default_plot_size(plotsize...)
+pBc = plot(dfBconstr, xgroup="dim", ygroup="ord", x="name", y="t", Geom.subplot_grid(Geom.point), yscale, Guide.ylabel("Time (s) by order"))
+draw(PNG("constructionB.png", plotsize...), pBc)
+
+pBr = plot(dfBeval, xgroup="dim", ygroup="ord", x="name", y="rate", Geom.subplot_grid(Geom.point), yscale, Guide.ylabel("Throughput (pts/s) by order"))
+draw(PNG("rateB.png", plotsize...), pBr)
+
+# Plot the gridded methods
+plotsize = (10inch, 8inch)
+set_default_plot_size(plotsize...)
+
+pGc = plot(dfGconstr, xgroup="dim", ygroup="ord", x="name", y="t", Geom.subplot_grid(Geom.point), yscale, Guide.ylabel("Time (s) by order"))
+draw(PNG("constructionG.png", plotsize...), pGc)
+
+pGr = plot(dfGeval, xgroup="dim", ygroup="ord", x="name", y="rate", Geom.subplot_grid(Geom.point), Scale.y_sqrt, Guide.ylabel("Throughput (pts/s) by order"))
+draw(PNG("rateG.png", plotsize...), pGr)
