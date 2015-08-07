@@ -22,6 +22,9 @@ Some of these packages support methods that `Interpolations` does not,
 so if you can't find what you need here, check one of them or submit a
 pull request here.
 
+At the bottom of this page, you can find a "performance shootout"
+among these methods (as well as SciPy's `RegularGridInterpolator`).
+
 ## Installation
 
 Just
@@ -145,6 +148,52 @@ The call to `extrapolate` defines what happens if you try to index into the inte
 ## More examples
 
 There's an [IJulia notebook](http://nbviewer.ipython.org/github/tlycken/Interpolations.jl/blob/master/doc/Interpolations.jl.ipynb) that shows off some of the current functionality, and outlines where we're headed. I try to keep it up to date when I make any significant improvements and/or breaking changes, but if it's not, do file a PR.
+
+## Performance shootout
+
+In the `perf` directory, you can find a script that tests
+interpolation with several different packages.  We consider
+interpolation in 1, 2, 3, and 4 dimensions, with orders 0
+(`Constant`), 1 (`Linear`), and 2 (`Quadratic`).  Methods include
+Interpolations `BSpline` (`IBSpline`) and `Gridded` (`IGridded`),
+methods from the [Grid.jl](https://github.com/timholy/Grid.jl)
+package, methods from the
+[Dierckx.jl](https://github.com/kbarbary/Dierckx.jl) package, methods
+from the
+[GridInterpolations.jl](https://github.com/sisl/GridInterpolations.jl)
+package (`GI`), methods from the
+[ApproXD.jl](https://github.com/floswald/ApproXD.jl) package, and
+methods from SciPy's `RegularGridInterpolator` accessed via `PyCall`
+(`Py`).  For methods that involve irregular grids, we compare them in
+both "vectorized" form `itp[xvector, yvector]` and in "scalar" form
+`for y in yvector, x in xvector; val = itp[x,y]; end`.
+
+To ensure that the wide range of values can be represented on a single
+axis, these plots are presented with "square-root" scaling of the
+vertical axis.
+
+First, let's look at the "construction time," the amount of time it
+takes to initialize an interpolation object (smaller is better):
+
+![construction](perf/construction.png)
+
+Missing dots indicate cases that were not tested, or not supported by
+the package.  (Note that distinctions here between "vec" and "scalar"
+are just noise, since the construction time doesn't perform any
+interpolation.)  Most of the methods perform pretty well here, with
+the exceptions of Grid and Dierckx.
+
+Second, let's look at the "throughput," the number of interpolations
+performed per second (larger is better):
+
+![throughput](perf/rate.png)
+
+For 1d, the "Dierckx scalar" and "GI scalar" tests were interrupted
+because they ran more than 10 seconds.  Both performed much better in
+2d, interestingly.
+
+You can see that Interpolations wins or ties the throughput test on
+every measure, often by a very large magnitude.
 
 ## Contributing
 
