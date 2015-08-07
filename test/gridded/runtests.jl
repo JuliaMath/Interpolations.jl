@@ -1,7 +1,6 @@
 module GriddedTests
 
-include("constant.jl")
-include("linear.jl")
+include("gridded.jl")
 include("mixed.jl")
 
 end

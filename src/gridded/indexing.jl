@@ -11,7 +11,7 @@ import Base.getindex
         @nexprs $N d->begin
             x_d = x[d]
             k_d = itp.knots[d]
-            ix_d = searchsortedfirst(k_d, x_d, 1, length(k_d), Base.Order.ForwardOrdering())
+            ix_d = searchsortedfirst(k_d, x_d, 1, length(k_d), Base.Order.ForwardOrdering()) - 1
         end
         $(define_indices(IT, N, P))
         $(coefficients(IT, N))
@@ -71,7 +71,7 @@ end
                     ixv_d[j] = i-1
                     xjold = xj
                 else
-                    ixv_d[j] = searchsortedfirst(k_d, xj, 1, l_d, Base.Order.ForwardOrdering())
+                    ixv_d[j] = searchsortedfirst(k_d, xj, 1, l_d, Base.Order.ForwardOrdering()) - 1
                 end
             end
         end
