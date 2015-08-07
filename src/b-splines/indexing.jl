@@ -23,12 +23,8 @@ function getindex_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
     end
 end
 
-@generated function getindex{T,N}(itp::BSplineInterpolation{T,N}, xs...)
+@generated function getindex{T,N}(itp::BSplineInterpolation{T,N}, xs::Number...)
     getindex_impl(itp)
-end
-
-@generated function getindex{T,N}(itp::BSplineInterpolation{T,N}, index::CartesianIndex{N})
-    :(getindex(itp, $(Base.IteratorsMD.cartindex_exprs((index,), (:index,))...)))
 end
 
 function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}})
@@ -68,7 +64,8 @@ end
 end
 
 @generated function gradient!{T,N}(g::AbstractVector, itp::BSplineInterpolation{T,N}, index::CartesianIndex{N})
-    :(gradient!(g, itp, $(Base.IteratorsMD.cartindex_exprs((index,), (:index,))...)))
+    args = [:(index[$d]) for d = 1:N]
+    :(gradient!(g, itp, $(args...)))
 end
 
 offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :

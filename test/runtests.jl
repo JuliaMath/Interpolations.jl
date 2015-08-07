@@ -12,6 +12,9 @@ include("extrapolation/runtests.jl")
 # # test gradient evaluation
 include("gradient.jl")
 
+# gridded interpolation tests
+include("gridded/runtests.jl")
+
 # # test interpolation with specific types
 # include("typing.jl")
 

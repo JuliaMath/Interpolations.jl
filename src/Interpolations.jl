@@ -57,6 +57,7 @@ gridtype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = GT
 @inline gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...) = gradient!(Array(T,N), itp, xs...)
 
 include("b-splines/b-splines.jl")
+include("gridded/gridded.jl")
 include("extrapolation/extrapolation.jl")
 
 end
