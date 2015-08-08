@@ -34,7 +34,7 @@ end
     indexes_exprs = Expr[define_indices_d(iextract(IT, d), d, P) for d = 1:N]
     coefficient_exprs = Expr[coefficients(iextract(IT, d), N, d) for d = 1:N]
     # A manual @nloops (the interaction of d with the two exprs above is tricky...)
-    ex = :(@inbounds @nref($N,dest,i) = $(index_gen(IT, N)))
+    ex = :(@nref($N,dest,i) = $(index_gen(IT, N)))
     for d = 1:N
         isym, xsym, xvsym, ixsym, ixvsym = symbol("i_",d), symbol("x_",d), symbol("xv_",d), symbol("ix_",d), symbol("ixv_",d)
         ex = quote
@@ -48,34 +48,36 @@ end
         end
     end
     quote
-        @nexprs $N d->begin
-            xv_d = xv[d]
-            k_d = itp.knots[d]
-            ixv_d = Array(Int, length(xv_d))  # ixv_d[i] is the smallest value such that k_d[ixv_d[i]] <= x_d[i]
-            # If x_d is sorted and has quite a few entries, it's better to match
-            # entries of x_d and k_d by iterating through them both in unison.
-            l_d = length(k_d)   # FIXME: check l_d == 1 someday, see FIXME above
-            # estimate the time required for searchsortedfirst vs. linear traversal
-            den = 5*log(l_d) - 1   # 5 is arbitrary, for now (it's the coefficient of ssf compared to the while loop below)
-            ascending = den*length(xv_d) > l_d  # if this is (or becomes) false, use searchsortedfirst
-            i = 2  # this clamps ixv_d .>= 1
-            knext = k_d[i]
-            xjold = xv_d[1]
-            for j = 1:length(xv_d)
-                xj = xv_d[j]
-                ascending = ascending & (xj >= xjold)
-                if ascending
-                    while i < length(k_d) && knext < xj
-                        knext = k_d[i+=1]
+        @inbounds begin
+            @nexprs $N d->begin
+                xv_d = xv[d]
+                k_d = itp.knots[d]
+                ixv_d = Array(Int, length(xv_d))  # ixv_d[i] is the smallest value such that k_d[ixv_d[i]] <= x_d[i]
+                # If x_d is sorted and has quite a few entries, it's better to match
+                # entries of x_d and k_d by iterating through them both in unison.
+                l_d = length(k_d)   # FIXME: check l_d == 1 someday, see FIXME above
+                # estimate the time required for searchsortedfirst vs. linear traversal
+                den = 5*log(l_d) - 1   # 5 is arbitrary, for now (it's the coefficient of ssf compared to the while loop below)
+                ascending = den*length(xv_d) > l_d  # if this is (or becomes) false, use searchsortedfirst
+                i = 2  # this clamps ixv_d .>= 1
+                knext = k_d[i]
+                xjold = xv_d[1]
+                for j = 1:length(xv_d)
+                    xj = xv_d[j]
+                    ascending = ascending & (xj >= xjold)
+                    if ascending
+                        while i < length(k_d) && knext < xj
+                            knext = k_d[i+=1]
+                        end
+                        ixv_d[j] = i-1
+                        xjold = xj
+                    else
+                        ixv_d[j] = searchsortedfirst(k_d, xj, 1, l_d, Base.Order.ForwardOrdering()) - 1
                     end
-                    ixv_d[j] = i-1
-                    xjold = xj
-                else
-                    ixv_d[j] = searchsortedfirst(k_d, xj, 1, l_d, Base.Order.ForwardOrdering()) - 1
                 end
             end
+            $ex
         end
-        $ex
         dest
     end
 end

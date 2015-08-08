@@ -212,8 +212,7 @@ wide range of scales, here we use "square-root" scaling of the y-axis:
 For 1d, the "Dierckx scalar" and "GI" tests were interrupted because
 they ran more than 20 seconds (far longer than any other test).  Both
 performed much better in 2d, interestingly.  You can see that
-Interpolations wins in every case except one, often by a very large
-margin.
+Interpolations wins in every case, sometimes by a very large margin.
 
 ## Contributing
 

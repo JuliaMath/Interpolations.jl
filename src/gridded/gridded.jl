@@ -7,7 +7,9 @@ griddedtype{D<:Degree}(::Type{Gridded{D}}) = D
 
 typealias GridIndex{T} Union(AbstractVector{T}, Tuple)
 
-immutable GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{GridIndex}},pad} <: AbstractInterpolation{T,N,IT,OnGrid}
+# Because Ranges check bounds on getindex, it's actually faster to convert the
+# knots to Vectors. It's also good to take a copy, so it doesn't get modified later.
+immutable GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{Vector}},pad} <: AbstractInterpolation{T,N,IT,OnGrid}
     knots::K
     coefs::Array{TCoefs,N}
 end
@@ -15,7 +17,8 @@ function GriddedInterpolation{N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}(
     isleaftype(IT) || error("The b-spline type must be a leaf type (was $IT)")
     isleaftype(TCoefs) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
 
-    for (d,k) in enumerate(knots)
+    knts = mapcollect(knots...)
+    for (d,k) in enumerate(knts)
         length(k) == size(A, d) || throw(DimensionMismatch("knot vectors must have the same number of elements as the corresponding dimension of the array"))
         length(k) == 1 && error("dimensions of length 1 not yet supported")  # FIXME
         issorted(k) || error("knot-vectors must be sorted in increasing order")
@@ -26,8 +29,13 @@ function GriddedInterpolation{N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}(
     end
     T = typeof(c * one(TCoefs))
 
-    GriddedInterpolation{T,N,TCoefs,IT,typeof(knots),pad}(knots, A)
+    GriddedInterpolation{T,N,TCoefs,IT,typeof(knts),pad}(knts, A)
 end
+
+# A type-stable version of map(collect, knots)
+mapcollect() = ()
+@inline mapcollect(k::AbstractVector) = (collect(k),)
+@inline mapcollect(k1::AbstractVector, k2::AbstractVector...) = (collect(k1), mapcollect(k2...)...)
 
 # Utilities for working either with scalars or tuples/tuple-types
 iextract{T<:Gridded}(::Type{T}, d) = T

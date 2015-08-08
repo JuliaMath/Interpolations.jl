@@ -170,9 +170,11 @@ for ieltype = 1:length(eltypes)
             println("    ", name, " ", ord)
             try
                 itp = fc(A)   # JIT-compile
+                gc()
                 tic(); fc(A); tconstr[i, ndim, ieltype] = toq()
                 s = ev(itp, A)  # JIT-compile
                 @assert abs(s - starget) < 1000*eps(abs(starget))
+                gc()
                 tic(); ev(itp, A); teval[i, ndim, ieltype] = toq()
             catch err
                 warn("skipping because of error: ", msg(err))
