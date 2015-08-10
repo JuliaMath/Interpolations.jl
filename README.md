@@ -43,13 +43,7 @@ itp = interpolate(A, options...)
 ```
 where `options...` (discussed below) controls the type of
 interpolation you want to perform.  This syntax assumes that the
-samples in `A` are equally-spaced.  If the spacing between adjacent
-samples differs, then you should use the syntax
-```jl
-itp = interpolate(knots, A, options...)
-```
-where `knots = (xknots, yknots, ...)` specifies the positions along
-each axis at which the array `A` is sampled.
+samples in `A` are equally-spaced. 
 
 To evaluate the interpolation at position `(x, y, ...)`, simply do
 ```jl
@@ -132,6 +126,18 @@ which destroys the input `A` but also does not need to allocate as much memory.
 These use a very similar syntax to BSplines, with the major exception
 being that one does not get to choose the grid representation (they
 are all `OnGrid`).
+```jl
+A = rand(8,20)
+itp = interpolate(A, Gridded{Linear})
+itp[4,1.2] 
+```
+
+If the spacing between adjacent samples differs, then you can use the syntax
+```jl
+itp = interpolate(knots, A, options...)
+```
+where `knots = (xknots, yknots, ...)` specifies the positions along
+each axis at which the array `A` is sampled.
 
 For example:
 ```jl

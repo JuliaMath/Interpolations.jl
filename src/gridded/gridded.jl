@@ -22,6 +22,7 @@ function GriddedInterpolation{N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}(
         length(k) == size(A, d) || throw(DimensionMismatch("knot vectors must have the same number of elements as the corresponding dimension of the array"))
         length(k) == 1 && error("dimensions of length 1 not yet supported")  # FIXME
         issorted(k) || error("knot-vectors must be sorted in increasing order")
+        iextract(IT, d) != Gridded{NoInterp} || k == collect(1:size(A, d)) || error("knot-vector should be the range 1:$(size(A,d)) for the method Gridded{NoInterp}")
     end
     c = one(TWeights)
     for _ in 2:N
