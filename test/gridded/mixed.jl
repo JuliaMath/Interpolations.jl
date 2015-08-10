@@ -19,4 +19,5 @@ knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
 itp = interpolate(knots, A, Gridded{Linear})
 @test_approx_eq itp[4,1.2] A[2,6]
 
+@test_throws  ErrorException interpolate(knots, A, Tuple{Gridded{Linear} ,Gridded{NoInterp}})
 end
