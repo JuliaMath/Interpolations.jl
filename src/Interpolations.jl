@@ -52,6 +52,7 @@ typealias Natural Line
 # TODO: size might have to be faster?
 size{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->size(itp,i), N)::NTuple{N,Int}
 size(exp::AbstractExtrapolation, d) = size(exp.itp, d)
+ itptype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = IT
 gridtype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = GT
 
 @inline gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...) = gradient!(Array(T,N), itp, xs...)
@@ -60,4 +61,4 @@ include("b-splines/b-splines.jl")
 include("gridded/gridded.jl")
 include("extrapolation/extrapolation.jl")
 
-end
+end # module
