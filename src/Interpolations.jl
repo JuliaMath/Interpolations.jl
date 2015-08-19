@@ -52,6 +52,7 @@ typealias Natural Line
 # TODO: size might have to be faster?
 size{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->size(itp,i), N)::NTuple{N,Int}
 size(exp::AbstractExtrapolation, d) = size(exp.itp, d)
+ itptype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = IT
 gridtype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = GT
 
 @inline gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...) = gradient!(Array(T,N), itp, xs...)
@@ -59,28 +60,5 @@ gridtype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = GT
 include("b-splines/b-splines.jl")
 include("gridded/gridded.jl")
 include("extrapolation/extrapolation.jl")
-
-nindexes(N::Int) = N == 1 ? "1 index" : "$N indexes"
-
-type FilledInterpolation{T}
-    fillvalue
-    itp::Interpolation{T}
-end
-FilledInterpolation(fillvalue, itpargs...) = FilledInterpolation(fillvalue, Interpolation(itpargs...))
-
-function getindex(fitp::FilledInterpolation, args...)
-    n = length(args)
-    N = ndims(fitp.itp)
-    n == N || return error("Must index $(N)-dimensional interpolation objects with $(nindexes(N))")
-
-    for i = 1:length(args)
-        if args[i] < 1 || args[i] > size(fitp.itp, i)
-            #In the extrapolation region
-            return fitp.fillvalue
-        end
-    end
-    #In the interpolation region
-    return getindex(fitp.itp,args...)
-end
 
 end # module
