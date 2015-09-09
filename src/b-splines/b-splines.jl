@@ -36,6 +36,16 @@ iextract(t, d) = t.parameters[d]
 padextract(pad::Integer, d) = pad
 padextract(pad::Tuple{Vararg{Integer}}, d) = pad[d]
 
+@generated function length{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad})
+    ex = :(len = 1)
+    for d = 1:N
+        pd = 2*padextract(pad, d)
+        ex = :($ex; len *= size(itp.coefs, $d)-$pd)
+    end
+    ex = :($ex; len)
+    ex
+end
+
 @generated function size{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d)
     quote
         d <= $N ? size(itp.coefs, d) - 2*padextract($pad, d) : 1
