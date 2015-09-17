@@ -15,8 +15,8 @@ include("gradient.jl")
 # gridded interpolation tests
 include("gridded/runtests.jl")
 
-# # test interpolation with specific types
-# include("typing.jl")
+# test interpolation with specific types
+include("typing.jl")
 
 # Tests copied from Grid.jl's old test suite
 #include("grid.jl")
