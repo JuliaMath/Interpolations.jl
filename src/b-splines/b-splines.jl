@@ -83,7 +83,6 @@ index_gen{IT}(::Type{IT}, N::Integer, offsets...) = index_gen(iextract(IT, min(l
     :(gradient!(Array(T,$n), itp, xs...))
 end
 
-include("nointerp.jl")
 include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")

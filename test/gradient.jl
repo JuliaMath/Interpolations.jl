@@ -95,8 +95,8 @@ A2 = rand(Float64, nx, nx) * 100
 for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
     itp_a = interpolate(A2, Tuple{BSpline(Linear), BSpline(Quadratic(BC))}, GT)
     itp_b = interpolate(A2, Tuple{BSpline(Quadratic(BC)), BSpline(Linear)}, GT)
-    itp_c = interpolate(A2, Tuple{BSpline(NoInterp), BSpline(Quadratic(BC))}, GT)
-    itp_d = interpolate(A2, Tuple{BSpline(Quadratic(BC)), BSpline(NoInterp)}, GT)
+    itp_c = interpolate(A2, Tuple{NoInterp, BSpline(Quadratic(BC))}, GT)
+    itp_d = interpolate(A2, Tuple{BSpline(Quadratic(BC)), NoInterp}, GT)
 
     for i = 1:10
         x = rand()*(nx-2)+1.5
