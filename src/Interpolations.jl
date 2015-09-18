@@ -28,11 +28,12 @@ using WoodburyMatrices, Ratios, AxisAlgorithms
 import Base: convert, size, getindex, gradient, promote_rule
 
 abstract InterpolationType
+immutable NoInterp <: InterpolationType end
 abstract GridType
 immutable OnGrid <: GridType end
 immutable OnCell <: GridType end
 
-typealias DimSpec{T} Union(T,Tuple{Vararg{T}})
+typealias DimSpec{T} Union(T,Tuple{Vararg{Union(T,NoInterp)}},NoInterp)
 
 abstract AbstractInterpolation{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} <: AbstractArray{T,N}
 abstract AbstractExtrapolation{T,N,ITPT,IT,GT} <: AbstractInterpolation{T,N,IT,GT}
@@ -57,6 +58,7 @@ gridtype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = GT
 
 @inline gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...) = gradient!(Array(T,N), itp, xs...)
 
+include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
 include("gridded/gridded.jl")
 include("extrapolation/extrapolation.jl")
