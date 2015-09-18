@@ -25,7 +25,7 @@ export
 
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
-import Base: convert, size, getindex, gradient, promote_rule
+import Base: convert, length, size, getindex, gradient, promote_rule
 
 abstract InterpolationType
 immutable NoInterp <: InterpolationType end
@@ -51,6 +51,7 @@ immutable InPlaceQ <: BoundaryCondition end
 typealias Natural Line
 
 # TODO: size might have to be faster?
+length(itp::AbstractExtrapolation) = length(exp.itp)
 size{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->size(itp,i), N)::NTuple{N,Int}
 size(exp::AbstractExtrapolation, d) = size(exp.itp, d)
  itptype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = IT
