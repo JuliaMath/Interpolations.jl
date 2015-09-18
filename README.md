@@ -125,27 +125,47 @@ which destroys the input `A` but also does not need to allocate as much memory.
 
 These use a very similar syntax to BSplines, with the major exception
 being that one does not get to choose the grid representation (they
-are all `OnGrid`).
+are all `OnGrid`). As such one must specify a set of coordinate arrays
+defining the knots of the array.
+
+In 1D
 ```jl
-A = rand(8,20)
-itp = interpolate(A, Gridded{Linear})
-itp[4,1.2] 
+A = rand(20)
+A_x = collect(1.:40.)
+knots = (a,)
+itp = interpolate(knots,A, Tuple{Gridded{Linear}})
+itp[2.0] 
 ```
 
-If the spacing between adjacent samples differs, then you can use the syntax
+The spacing between adjacent samples need not be constant, you can use the syntax
 ```jl
 itp = interpolate(knots, A, options...)
 ```
-where `knots = (xknots, yknots, ...)` specifies the positions along
-each axis at which the array `A` is sampled.
+where `knots = (xknots, yknots, ...)` to specify the positions along
+each axis at which the array `A` is sampled for arbitrary ("rectangular") samplings.
 
 For example:
 ```jl
 A = rand(8,20)
 knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
-itp = interpolate(knots, A, Gridded{Linear})
+itp = interpolate(knots, A, Tuple{Gridded{Linear},Gridded{Linear}})
 itp[4,1.2]  # approximately A[2,6]
 ```
+
+Presently there are only three modes for gridded:
+```jl
+Gridded{Linear}
+```
+whereby a linear interpolation is applied between knots,
+```jl
+Gridded{Constant}
+```
+whereby nearest neighbor interpolation is used on the applied axis,
+```jl
+Gridded{NoInterp}
+```
+
+
 
 ## Extrapolation
 
