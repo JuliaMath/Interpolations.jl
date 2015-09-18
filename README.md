@@ -133,7 +133,7 @@ In 1D
 A = rand(20)
 A_x = collect(1.:40.)
 knots = (a,)
-itp = interpolate(knots,A, Tuple{Gridded{Linear}})
+itp = interpolate(knots,A, Gridded{Linear})
 itp[2.0] 
 ```
 
@@ -148,9 +148,14 @@ For example:
 ```jl
 A = rand(8,20)
 knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
-itp = interpolate(knots, A, Tuple{Gridded{Linear},Gridded{Linear}})
+itp = interpolate(knots, A, Gridded{Linear})
 itp[4,1.2]  # approximately A[2,6]
 ```
+One may also mix modes, by specifying a mode vector in the form of an explicit tuple:
+```jl
+itp = interpolate(knots, A, Tuple{Gridded{Linear},Gridded{Constant}})
+```
+
 
 Presently there are only three modes for gridded:
 ```jl
@@ -164,7 +169,12 @@ whereby nearest neighbor interpolation is used on the applied axis,
 ```jl
 Gridded{NoInterp}
 ```
-
+whereby the coordinate of the selected input vector MUST be located on a grid point. Requests for off grid
+coordinates results in the throwing of an error.
+```jl
+ERROR: InexactError()
+ in getindex at C:\dev\julia\.julia\v0.4\Interpolations\src\gridded\indexing.jl:14
+```
 
 
 ## Extrapolation
