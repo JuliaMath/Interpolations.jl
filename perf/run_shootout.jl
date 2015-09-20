@@ -16,7 +16,7 @@ make_knots(A) = ntuple(d->collect(linspace(1,size(A,d),size(A,d))), ndims(A))
 make_xi(A)    = ntuple(d->collect(linspace(2,size(A,d)-1,size(A,d)-2)), ndims(A))
 
 ## Interpolations and Grid
-function evaluate_grid(itp::Union(Array,Interpolations.AbstractInterpolation,Grid.InterpGrid), A)
+function evaluate_grid(itp::Union{Array,Interpolations.AbstractInterpolation,Grid.InterpGrid), A}
     s = zero(eltype(itp)) + zero(eltype(itp))
     for I in iterrange(itp)
         s += itp[I]
@@ -58,7 +58,7 @@ function evaluate_grid(itp::Dierckx.Spline2D, A)
 end
 
 # Slow approach for Dierckx
-function evaluate_grid_scalar(itp::Union(Dierckx.Spline1D,Dierckx.Spline2D), A)
+function evaluate_grid_scalar(itp::Union{Dierckx.Spline1D,Dierckx.Spline2D), A}
     T = eltype(A)
     s = zero(T) + zero(T)
     for I in iterrange(A)

@@ -39,7 +39,7 @@ function prefilter{TWeights,TCoefs,TSrc,N,IT<:Quadratic,GT<:GridType}(
     prefilter!(TWeights, ret, BSpline{IT}, GT), Pad
 end
 
-function prefilter{TWeights,TCoefs,TSrc,N,IT<:Tuple{Vararg{Union(BSpline,NoInterp)}},GT<:DimSpec{GridType}}(
+function prefilter{TWeights,TCoefs,TSrc,N,IT<:Tuple{Vararg{Union{BSpline,NoInterp}}},GT<:DimSpec{GridType}}(
     ::Type{TWeights}, ::Type{TCoefs}, A::Array{TSrc,N}, ::Type{IT}, ::Type{GT}
     )
     ret, Pad = copy_with_padding(TCoefs,A, IT)
@@ -59,7 +59,7 @@ function prefilter!{TWeights,TCoefs,N,IT<:Quadratic,GT<:GridType}(
     ret
 end
 
-function prefilter!{TWeights,TCoefs,N,IT<:Tuple{Vararg{Union(BSpline,NoInterp)}},GT<:DimSpec{GridType}}(
+function prefilter!{TWeights,TCoefs,N,IT<:Tuple{Vararg{Union{BSpline,NoInterp}}},GT<:DimSpec{GridType}}(
     ::Type{TWeights}, ret::Array{TCoefs,N}, ::Type{IT}, ::Type{GT}
     )
     local buf, shape, retrs

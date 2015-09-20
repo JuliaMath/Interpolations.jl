@@ -33,7 +33,7 @@ abstract GridType
 immutable OnGrid <: GridType end
 immutable OnCell <: GridType end
 
-typealias DimSpec{T} Union(T,Tuple{Vararg{Union(T,NoInterp)}},NoInterp)
+typealias DimSpec{T} Union{T,Tuple{Vararg{Union{T,NoInterp}}},NoInterp}
 
 abstract AbstractInterpolation{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} <: AbstractArray{T,N}
 abstract AbstractExtrapolation{T,N,ITPT,IT,GT} <: AbstractInterpolation{T,N,IT,GT}
