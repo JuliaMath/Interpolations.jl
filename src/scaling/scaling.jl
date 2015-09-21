@@ -4,6 +4,13 @@ type ScaledInterpolation{T,N,ITPT,IT,GT,RT} <: AbstractInterpolationWrapper{T,N,
 end
 ScaledInterpolation{T,ITPT,IT,GT,RT}(::Type{T}, N, itp::ITPT, ::Type{IT}, ::Type{GT}, ranges::RT) =
     ScaledInterpolation{T,N,ITPT,IT,GT,RT}(itp, ranges)
+@doc """
+`scale(itp, xs, ys, ...)` scales an existing interpolation object to allow for indexing using other coordinate axes than unit ranges, by wrapping the interpolation object and transforming the indices from the provided axes onto unit ranges upon indexing.
+
+The parameters `xs` etc must be either ranges or linspaces, and there must be one coordinate range/linspace for each dimension of the interpolation object.
+
+For every `NoInterp` dimension of the interpolation object, the range must be exactly `1:size(itp, d)`.
+""" ->
 function scale{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, ranges::Range...)
     length(ranges) == N || throw(ArgumentError("Must scale $N-dimensional interpolation object with exactly $N ranges (you used $(length(ranges)))"))
     for d in 1:N
@@ -38,6 +45,12 @@ boundstep(r::FloatRange) = r.step / 2
 boundstep(r::StepRange) = r.step / 2
 boundstep(r::UnitRange) = 1//2
 
+@doc """
+Returns *half* the width of one step of the range.
+
+This function is used to calculate the upper and lower bounds of `OnCell` interpolation objects.
+""" -> boundstep
+
 coordlookup(r::LinSpace, x) = (r.divisor * x + r.stop - r.len * r.start) / (r.stop - r.start)
 coordlookup(r::FloatRange, x) = (r.divisor * x - r.start) / r.step + one(eltype(r))
 coordlookup(r::StepRange, x) = (x - r.start) / r.step + one(eltype(r))
@@ -67,3 +80,8 @@ rescale_gradient(r::LinSpace, g) = g * r.divisor / (r.stop - r.start)
 rescale_gradient(r::FloatRange, g) = g * r.divisor / r.step
 rescale_gradient(r::StepRange, g) = g / r.step
 rescale_gradient(r::UnitRange, g) = g
+
+@doc """
+`rescale_gradient(r::Range)`
+
+Implements the chain rule dy/dx = dy/du * du/dx for use when calculating gradients with scaled interpolation objects.""" -> rescale_gradient
