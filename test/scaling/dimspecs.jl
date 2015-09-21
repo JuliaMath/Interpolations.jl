@@ -9,18 +9,15 @@ f(x,y) = sin(x) * y^2
 itp = interpolate(Float64[f(x,y) for x in xs, y in ys], Tuple{BSpline(Quadratic(Periodic)), BSpline(Linear)}, OnGrid)
 sitp = scale(itp, xs, ys)
 
-# Don't test too near the edges until issue #64 is resolved
-for (ix,x0) in enumerate(xs[5:end-5]), (iy,y0) in enumerate(ys[2:end-1])
-    x, y = x0 + 2pi/20, y0 + .05
-    @test_approx_eq sitp[x0, y0] f(x0,y0)
-    @test_approx_eq_eps sitp[x0, y0] f(x0,y0) 0.05
+for (ix,x) in enumerate(xs), (iy,y) in enumerate(ys)
+    @test_approx_eq_eps sitp[x,y] f(x,y) sqrt(eps(1.0))
 
     g = gradient(sitp, x, y)
-    fx = epsilon(f(dual(x,1), y))
-    fy = (f(x, ys[iy+2]) - f(x, ys[iy+1])) / (ys[iy+2] - ys[iy+1])
+    fx = epsilon(sitp[dual(x,1), dual(y,0)])
+    fy = epsilon(sitp[dual(x,0), dual(y,1)])
 
-    @test_approx_eq_eps g[1] fx 0.15
-    @test_approx_eq_eps g[2] fy 0.05 # gradients for linear interpolation is "easy"
+    @test_approx_eq_eps g[1] fx sqrt(eps(1.0))
+    @test_approx_eq_eps g[2] fy sqrt(eps(1.0))
 end
 
 end

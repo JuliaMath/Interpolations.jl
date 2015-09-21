@@ -19,6 +19,8 @@ for (ix,x0) in enumerate(xs[1:end-1]), y0 in ys
     @test_approx_eq_eps sitp[x,y] f(x,y) .05
 end
 
+@test length(gradient(sitp, pi/3, 2)) == 1
+
 # Test error messages for incorrect initialization
 function message_is(message)
 	r -> r.err.msg == message || error("Incorrect error message: expected '$message' but was '$(r.err.msg)'")
