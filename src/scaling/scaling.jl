@@ -1,3 +1,5 @@
+export ScaledInterpolation
+
 type ScaledInterpolation{T,N,ITPT,IT,GT,RT} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
     itp::ITPT
     ranges::RT

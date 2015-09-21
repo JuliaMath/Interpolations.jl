@@ -8,6 +8,9 @@ export
 
     gradient!,
 
+    AbstractInterpolation,
+    AbstractExtrapolation,
+
     OnCell,
     OnGrid,
 
