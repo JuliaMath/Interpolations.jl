@@ -5,18 +5,18 @@ type FilledExtrapolation{T,N,ITP<:AbstractInterpolation,IT,GT,FT} <: AbstractExt
     itp::ITP
     fillvalue::FT
 end
-@doc """
+"""
 `FilledExtrapolation(itp, fillvalue)` creates an extrapolation object that returns the `fillvalue` any time the indexes in `itp[x1,x2,...]` are out-of-bounds.
 
 By comparison with `extrapolate`, this version lets you control the `fillvalue`'s type directly.  It's important for the `fillvalue` to be of the same type as returned by `itp[x1,x2,...]` for in-bounds regions for the index types you are using; otherwise, indexing will be type-unstable (and slow).
-""" ->
+"""
 function FilledExtrapolation{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue)
     FilledExtrapolation{T,N,typeof(itp),IT,GT,typeof(fillvalue)}(itp, fillvalue)
 end
 
-@doc """
+"""
 `extrapolate(itp, fillvalue)` creates an extrapolation object that returns the `fillvalue` any time the indexes in `itp[x1,x2,...]` are out-of-bounds.
-""" ->
+"""
 extrapolate{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue) = FilledExtrapolation(itp, convert(eltype(itp), fillvalue))
 
 @generated function getindex{T,N}(fitp::FilledExtrapolation{T,N}, args::Number...)
