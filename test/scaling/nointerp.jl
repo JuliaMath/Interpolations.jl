@@ -35,4 +35,10 @@ end
 Test.with_handler(message_is("Must index into 2-dimensional scaled interpolation object with exactly 2 indices (you used 1)")) do
 	@test sitp[2.3]
 end
+Test.with_handler(message_is("Must index into 2-dimensional scaled interpolation object with exactly 2 indices (you used 1)")) do
+	@test gradient(sitp, 2.3)
+end
+Test.with_handler(message_is("The length of the provided gradient vector (2) did not match the number of interpolating dimensions (1)")) do
+	@test gradient!(Array(Float64, 2), sitp, 2.3, 2)
+end
 end

@@ -44,7 +44,7 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
     gradient_exprs = Expr(:block, exs...)
     quote
         $meta
-        length(g) == $n || throw(DimensionMismatch("Gradient has wrong number of components"))
+        length(g) == $n || throw(ArgumentError(string("The length of the provided gradient vector (", length(g), ") did not match the number of interpolating dimensions (", n, ")")))
         @nexprs $N d->(x_d = xs[d])
 
         # Calculate the indices of all coefficients that will be used

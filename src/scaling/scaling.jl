@@ -26,7 +26,7 @@ function scale{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, ranges::Range..
     ScaledInterpolation(T,N,itp,IT,GT,ranges)
 end
 
-@generated function getindex{T,N,ITPT,IT<:DimSpec}(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs...)
+@generated function getindex{T,N,ITPT,IT<:DimSpec}(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...)
     length(xs) == N || throw(ArgumentError("Must index into $N-dimensional scaled interpolation object with exactly $N indices (you used $(length(xs)))"))
     interp_types = length(IT.parameters) == N ? IT.parameters : tuple([IT.parameters[1] for _ in 1:N]...)
     interp_dimens = map(it -> interp_types[it] != NoInterp, 1:N)
@@ -59,17 +59,17 @@ coordlookup(r::StepRange, x) = (x - r.start) / r.step + one(eltype(r))
 coordlookup(r::UnitRange, x) = x - r.start + one(eltype(r))
 coordlookup(i::Bool, r::Range, x) = i ? coordlookup(r, x) : convert(typeof(coordlookup(r,x)), x)
 
-gradient{T,N}(sitp::ScaledInterpolation{T,N}, xs...) = gradient!(Array(T,N), sitp, xs...)
-@generated function gradient!{T,N,ITPT,IT}(g, sitp::ScaledInterpolation{T,N,ITPT,IT}, xs...)
-    ndims(g) == 1 || throw(ArgumentError("g must be a vector (but had $(ndims(g)) dimensions)"))
-    length(xs) == count_interp_dims(IT, N) || throw(ArgumentError("Must index into $N-dimensional scaled interpolation object with exactly $N indices (you used $(length(xs)))"))
+gradient{T,N,ITPT,IT<:DimSpec}(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...) = gradient!(Array(T,count_interp_dims(IT,N)), sitp, xs...)
+@generated function gradient!{T,N,ITPT,IT}(g, sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...)
+    ndims(g) == 1 || throw(DimensionMismatch("g must be a vector (but had $(ndims(g)) dimensions)"))
+    length(xs) == N || throw(DimensionMismatch("Must index into $N-dimensional scaled interpolation object with exactly $N indices (you used $(length(xs)))"))
 
     interp_types = length(IT.parameters) == N ? IT.parameters : tuple([IT.parameters[1] for _ in 1:N]...)
     interp_dimens = map(it -> interp_types[it] != NoInterp, 1:N)
     interp_indices = map(i -> interp_dimens[i] ? :(coordlookup(sitp.ranges[$i], xs[$i])) : :(xs[$i]), 1:N)
 
     quote
-        length(g) == N || throw(ArgumentError(string("g must be a vector of length ", N, " (was ", length(g), ")")))
+        length(g) == $(count_interp_dims(IT, N)) || throw(ArgumentError(string("The length of the provided gradient vector (", length(g), ") did not match the number of interpolating dimensions (", $(count_interp_dims(IT, N)), ")")))
         gradient!(g, sitp.itp, $(interp_indices...))
         for i in eachindex(g)
             g[i] = rescale_gradient(sitp.ranges[i], g[i])
