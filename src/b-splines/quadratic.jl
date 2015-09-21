@@ -24,7 +24,7 @@ function define_indices_d(::Type{BSpline{Quadratic{Periodic}}}, d, pad)
         $symixm = mod1($symix - 1, size(itp,$d))
     end
 end
-function define_indices_d{BC<:Union(InPlace,InPlaceQ)}(::Type{BSpline{Quadratic{BC}}}, d, pad)
+function define_indices_d{BC<:Union{InPlace,InPlaceQ}}(::Type{BSpline{Quadratic{BC}}}, d, pad)
     symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
     symx, symfx = symbol("x_",d), symbol("fx_",d)
     pad == 0 || error("Use $BC only with interpolate!")
@@ -83,7 +83,7 @@ function inner_system_diags{T,Q<:Quadratic}(::Type{T}, n::Int, ::Type{Q})
     (dl,d,du)
 end
 
-function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnCell})
+function prefiltering_system{T,TCoefs,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnCell})
     dl,d,du = inner_system_diags(T,n,Quadratic{BC})
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
@@ -111,7 +111,7 @@ function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
-function prefiltering_system{T,TCoefs,BC<:Union(Flat,Reflect)}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnGrid})
+function prefiltering_system{T,TCoefs,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnGrid})
     dl,d,du = inner_system_diags(T,n,Quadratic{BC})
     d[1] = d[end] = -1
     du[1] = dl[end] = 0

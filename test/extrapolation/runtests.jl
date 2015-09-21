@@ -27,7 +27,7 @@ etpf = @inferred(extrapolate(itpg, NaN))
 @test_throws BoundsError etpf[2.5,2]
 @test_throws ErrorException etpf[2.5,2,1]  # this will probably become a BoundsError someday
 
-etpf = @inferred(FilledInterpolation(itpg, 'x'))
+etpf = @inferred(FilledExtrapolation(itpg, 'x'))
 @test_approx_eq etpf[2] f(2)
 @test etpf[-1.5] == 'x'
 
