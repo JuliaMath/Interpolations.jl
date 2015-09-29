@@ -1,7 +1,7 @@
 export Gridded
 
 immutable Gridded{D<:Degree} <: InterpolationType end
-Gridded{D<:Degree}(::Type{D}) = Gridded{D}
+Gridded{D<:Degree}(::D) = Gridded{D}()
 
 griddedtype{D<:Degree}(::Type{Gridded{D}}) = D
 
@@ -13,7 +13,7 @@ immutable GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{V
     knots::K
     coefs::Array{TCoefs,N}
 end
-function GriddedInterpolation{N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{TCoefs,N}, ::Type{IT}, ::Val{pad})
+function GriddedInterpolation{N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{TCoefs,N}, ::IT, ::Val{pad})
     isleaftype(IT) || error("The b-spline type must be a leaf type (was $IT)")
     isleaftype(TCoefs) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
 
@@ -48,16 +48,16 @@ iextract{T<:GridType}(::Type{T}, d) = T
     end
 end
 
-function interpolate{TWeights,TCoefs,Tel,N,IT<:DimSpec{Gridded}}(::Type{TWeights}, ::Type{TCoefs}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, ::Type{IT})
-    GriddedInterpolation(TWeights, knots, A, IT, Val{0}())
+function interpolate{TWeights,TCoefs,Tel,N,IT<:DimSpec{Gridded}}(::Type{TWeights}, ::Type{TCoefs}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT)
+    GriddedInterpolation(TWeights, knots, A, it, Val{0}())
 end
-function interpolate{Tel,N,IT<:DimSpec{Gridded}}(knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, ::Type{IT})
-    interpolate(tweight(A), tcoef(A), knots, A, IT)
+function interpolate{Tel,N,IT<:DimSpec{Gridded}}(knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT)
+    interpolate(tweight(A), tcoef(A), knots, A, it)
 end
 
-interpolate!{TWeights,Tel,N,IT<:DimSpec{Gridded}}(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, ::Type{IT}) = GriddedInterpolation(TWeights, knots, A, IT, Val{0}())
-function interpolate!{Tel,N,IT<:DimSpec{Gridded}}(knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, ::Type{IT})
-    interpolate!(tweight(A), tcoef(A), knots, A, IT)
+interpolate!{TWeights,Tel,N,IT<:DimSpec{Gridded}}(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) = GriddedInterpolation(TWeights, knots, A, it, Val{0}())
+function interpolate!{Tel,N,IT<:DimSpec{Gridded}}(knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT)
+    interpolate!(tweight(A), tcoef(A), knots, A, it)
 end
 
 include("constant.jl")

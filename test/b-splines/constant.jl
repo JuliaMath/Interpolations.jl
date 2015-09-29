@@ -10,12 +10,12 @@ A2 = rand(Float64, N1, N1) * 100
 A3 = rand(Float64, N1, N1, N1) * 100
 
 for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
-    itp1c = @inferred(constructor(copier(A1), BSpline(Constant), OnCell))
-    itp1g = @inferred(constructor(copier(A1), BSpline(Constant), OnGrid))
-    itp2c = @inferred(constructor(copier(A2), BSpline(Constant), OnCell))
-    itp2g = @inferred(constructor(copier(A2), BSpline(Constant), OnGrid))
-    itp3c = @inferred(constructor(copier(A3), BSpline(Constant), OnCell))
-    itp3g = @inferred(constructor(copier(A3), BSpline(Constant), OnGrid))
+    itp1c = @inferred(constructor(copier(A1), BSpline(Constant()), OnCell()))
+    itp1g = @inferred(constructor(copier(A1), BSpline(Constant()), OnGrid()))
+    itp2c = @inferred(constructor(copier(A2), BSpline(Constant()), OnCell()))
+    itp2g = @inferred(constructor(copier(A2), BSpline(Constant()), OnGrid()))
+    itp3c = @inferred(constructor(copier(A3), BSpline(Constant()), OnCell()))
+    itp3g = @inferred(constructor(copier(A3), BSpline(Constant()), OnGrid()))
 
     # Evaluation on provided data points
     # 1D

@@ -7,8 +7,8 @@ N = 10
 for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
     A2 = rand(Float64, N, N) * 100
     for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
-        itp_a = @inferred(constructor(copier(A2), Tuple{BSpline(Linear), BSpline(Quadratic(BC))}, GT))
-        itp_b = @inferred(constructor(copier(A2), Tuple{BSpline(Quadratic(BC)), BSpline(Linear)}, GT))
+        itp_a = @inferred(constructor(copier(A2), (BSpline(Linear()), BSpline(Quadratic(BC()))), GT()))
+        itp_b = @inferred(constructor(copier(A2), (BSpline(Quadratic(BC())), BSpline(Linear())), GT()))
         @test @inferred(size(itp_a)) == size(A2)
         @test @inferred(size(itp_b)) == size(A2)
 

@@ -6,7 +6,7 @@ xs = -pi:(2pi/10):pi-2pi/10
 ys = -2:.1:2
 f(x,y) = sin(x) * y^2
 
-itp = interpolate(Float64[f(x,y) for x in xs, y in ys], Tuple{BSpline(Quadratic(Periodic)), BSpline(Linear)}, OnGrid)
+itp = interpolate(Float64[f(x,y) for x in xs, y in ys], (BSpline(Quadratic(Periodic())), BSpline(Linear())), OnGrid())
 sitp = scale(itp, xs, ys)
 
 for (ix,x) in enumerate(xs), (iy,y) in enumerate(ys)

@@ -6,7 +6,7 @@ using Base.Test, Interpolations, DualNumbers
 f(x) = sin((x-3)*2pi/9 - 1)
 xmax = 10
 A = Float64[f(x) for x in 1:xmax]
-itpg = interpolate(A, BSpline(Linear), OnGrid)
+itpg = interpolate(A, BSpline(Linear()), OnGrid())
 
 schemes = (
     Flat,
@@ -15,7 +15,7 @@ schemes = (
     Periodic
 )
 
-for etp in map(E -> extrapolate(itpg, E), schemes),
+for etp in map(E -> extrapolate(itpg, E()), schemes),
     x in [
         # In-bounds evaluation
         3.4, 3, dual(3.1),
@@ -30,9 +30,9 @@ end
 g(y) = (y/100)^3
 ymax = 4
 A = Float64[f(x)*g(y) for x in 1:xmax, y in 1:ymax]
-itp2 = interpolate(A, BSpline(Linear), OnGrid)
+itp2 = interpolate(A, BSpline(Linear()), OnGrid())
 
-for (etp2,E) in map(E -> (extrapolate(itp2, E), E), schemes),
+for (etp2,E) in map(E -> (extrapolate(itp2, E()), E), schemes),
     x in (
         # In-bounds evaluation
         3.4, 3, dual(3.1),

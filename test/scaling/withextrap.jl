@@ -24,16 +24,16 @@ function run_tests{T,N,IT}(sut::Interpolations.AbstractInterpolation{T,N,IT,OnCe
 end
 
 for GT in (OnGrid, OnCell)
-    itp = interpolate(ys, BSpline(Quadratic(Flat)), GT)
+    itp = interpolate(ys, BSpline(Quadratic(Flat())), GT())
 
     # Test extrapolating, then scaling
-    eitp = extrapolate(itp, Flat)
+    eitp = extrapolate(itp, Flat())
     seitp = scale(eitp, xs)
     run_tests(seitp, itp)
 
     # Test scaling, then extrapolating
     sitp = scale(itp, xs)
-    esitp = extrapolate(sitp, Flat)
+    esitp = extrapolate(sitp, Flat())
     run_tests(esitp, itp)
 end
 

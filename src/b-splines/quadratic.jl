@@ -1,5 +1,5 @@
 immutable Quadratic{BC<:BoundaryCondition} <: Degree{2} end
-Quadratic{BC<:BoundaryCondition}(::Type{BC}) = Quadratic{BC}
+Quadratic{BC<:BoundaryCondition}(::BC) = Quadratic{BC}()
 
 function define_indices_d{BC}(::Type{BSpline{Quadratic{BC}}}, d, pad)
     symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)

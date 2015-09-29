@@ -8,7 +8,7 @@ g1(x) = 2pi/(nx-1) * cos((x-3)*2pi/(nx-1) - 1)
 
 # Gradient of Constant should always be 0
 itp1 = interpolate(Float64[f1(x) for x in 1:nx-1],
-            BSpline(Constant), OnGrid)
+            BSpline(Constant()), OnGrid())
 
 g = Array(Float64, 1)
 
@@ -20,7 +20,7 @@ end
 
 # Since Linear is OnGrid in the domain, check the gradients between grid points
 itp1 = interpolate(Float64[f1(x) for x in 1:nx-1],
-            BSpline(Linear), OnGrid)
+            BSpline(Linear()), OnGrid())
 for x in 2.5:nx-1.5
     @test_approx_eq_eps g1(x) gradient(itp1, x)[1] abs(.1*g1(x))
     @test_approx_eq_eps g1(x) gradient!(g, itp1, x)[1] abs(.1*g1(x))
@@ -36,7 +36,7 @@ end
 
 # Since Quadratic is OnCell in the domain, check gradients at grid points
 itp1 = interpolate(Float64[f1(x) for x in 1:nx-1],
-            BSpline(Quadratic(Periodic)), OnCell)
+            BSpline(Quadratic(Periodic())), OnCell())
 for x in 2:nx-1
     @test_approx_eq_eps g1(x) gradient(itp1, x)[1] abs(.05*g1(x))
     @test_approx_eq_eps g1(x) gradient!(g, itp1, x)[1] abs(.05*g1(x))
@@ -61,7 +61,7 @@ dqfunc = x -> 2*a*(x-c)
 xg = Float64[1:5;]
 y = qfunc(xg)
 
-iq = interpolate(y, BSpline(Quadratic(Free)), OnCell)
+iq = interpolate(y, BSpline(Quadratic(Free())), OnCell())
 x = 1.8
 @test_approx_eq iq[x] qfunc(x)
 @test_approx_eq gradient(iq, x)[1] dqfunc(x)
@@ -69,14 +69,14 @@ x = 1.8
 # 2d (biquadratic)
 p = [(x-1.75)^2 for x = 1:7]
 A = p*p'
-iq = interpolate(A, BSpline(Quadratic(Free)), OnCell)
+iq = interpolate(A, BSpline(Quadratic(Free())), OnCell())
 @test_approx_eq iq[4,4] (4-1.75)^4
 @test_approx_eq iq[4,3] (4-1.75)^2*(3-1.75)^2
 g = gradient(iq, 4, 3)
 @test_approx_eq g[1] 2*(4-1.75)*(3-1.75)^2
 @test_approx_eq g[2] 2*(4-1.75)^2*(3-1.75)
 
-iq = interpolate!(copy(A), BSpline(Quadratic(InPlace)), OnCell)
+iq = interpolate!(copy(A), BSpline(Quadratic(InPlace())), OnCell())
 @test_approx_eq iq[4,4] (4-1.75)^4
 @test_approx_eq iq[4,3] (4-1.75)^2*(3-1.75)^2
 g = gradient(iq, 4, 3)
@@ -84,7 +84,7 @@ g = gradient(iq, 4, 3)
 @test_approx_eq_eps g[2] 2*(4-1.75)^2*(3-1.75) 0.2
 
 # InPlaceQ is exact for an underlying quadratic
-iq = interpolate!(copy(A), BSpline(Quadratic(InPlaceQ)), OnCell)
+iq = interpolate!(copy(A), BSpline(Quadratic(InPlaceQ())), OnCell())
 @test_approx_eq iq[4,4] (4-1.75)^4
 @test_approx_eq iq[4,3] (4-1.75)^2*(3-1.75)^2
 g = gradient(iq, 4, 3)
@@ -93,10 +93,10 @@ g = gradient(iq, 4, 3)
 
 A2 = rand(Float64, nx, nx) * 100
 for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
-    itp_a = interpolate(A2, Tuple{BSpline(Linear), BSpline(Quadratic(BC))}, GT)
-    itp_b = interpolate(A2, Tuple{BSpline(Quadratic(BC)), BSpline(Linear)}, GT)
-    itp_c = interpolate(A2, Tuple{NoInterp, BSpline(Quadratic(BC))}, GT)
-    itp_d = interpolate(A2, Tuple{BSpline(Quadratic(BC)), NoInterp}, GT)
+    itp_a = interpolate(A2, (BSpline(Linear()), BSpline(Quadratic(BC()))), GT())
+    itp_b = interpolate(A2, (BSpline(Quadratic(BC())), BSpline(Linear())), GT())
+    itp_c = interpolate(A2, (NoInterp(), BSpline(Quadratic(BC()))), GT())
+    itp_d = interpolate(A2, (BSpline(Quadratic(BC())), NoInterp()), GT())
 
     for i = 1:10
         x = rand()*(nx-2)+1.5

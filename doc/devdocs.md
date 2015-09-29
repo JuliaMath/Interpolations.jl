@@ -18,7 +18,7 @@ First let's create an interpolation object:
     0.134746
     0.430876
 
-    julia> yitp = interpolate(A, BSpline{Linear}, OnGrid)
+    julia> yitp = interpolate(A, BSpline(Linear()), OnGrid())
     5-element Interpolations.BSplineInterpolation{Float64,1,Float64,Interpolations.BSpline{Interpolations.Linear},Interpolations.OnGrid}:
     0.74838
     0.995383
