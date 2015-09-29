@@ -1,6 +1,6 @@
 module ExtrapTests
 
-using Base.Test
+using Base.Test, DualNumbers
 using Interpolations
 
 f(x) = sin((x-3)*2pi/9 - 1)
@@ -31,4 +31,34 @@ etpf = @inferred(FilledExtrapolation(itpg, 'x'))
 @test_approx_eq etpf[2] f(2)
 @test etpf[-1.5] == 'x'
 
+etpl = extrapolate(itpg, Linear)
+k_lo = A[2] - A[1]
+x_lo = -3.2
+@test_approx_eq etpl[x_lo] A[1]+k_lo*(x_lo-1)
+k_hi = A[end] - A[end-1]
+x_hi = xmax + 5.7
+@test_approx_eq etpl[x_hi] A[end]+k_hi*(x_hi-xmax)
+
+
+xmax, ymax = 8,8
+g(x, y) = (x^2 + 3x - 8) * (-2y^2 + y + 1)
+
+itp2g = interpolate(Float64[g(x,y) for x in 1:xmax, y in 1:ymax], Tuple{BSpline(Quadratic(Free)), BSpline(Linear)}, OnGrid)
+etp2g = extrapolate(itp2g, Tuple{Linear, Flat})
+
+@test_approx_eq @inferred(getindex(etp2g, -.5, 4)) itp2g[1,4]-1.5*epsilon(etp2g[dual(1,1),4])
+@test_approx_eq @inferred(getindex(etp2g, 5, 100)) itp2g[5,ymax]
+
+etp2ud = extrapolate(itp2g, Tuple{Tuple{Linear, Flat}, Flat})
+@test_approx_eq @inferred(getindex(etp2ud, -.5, 4)) itp2g[1,4] - 1.5*epsilon(etp2g[dual(1,1),4])
+@test @inferred(getindex(etp2ud, 5, -4)) == etp2ud[5,1]
+@test @inferred(getindex(etp2ud, 100, 4)) == etp2ud[8,4]
+@test @inferred(getindex(etp2ud, -.5, 100)) == itp2g[1,8] - 1.5 * epsilon(etp2g[dual(1,1),8])
+
+etp2ll = extrapolate(itp2g, Linear)
+@test_approx_eq @inferred(getindex(etp2ll, -.5, 100)) itp2g[1,8]-1.5*epsilon(etp2ll[dual(1,1),8]) + (100-8) * epsilon(etp2ll[1,dual(8,1)])
+
+
 end
+
+include("type-stability.jl")

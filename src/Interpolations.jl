@@ -67,8 +67,14 @@ lbound{T,N}(itp::AbstractInterpolation{T,N}, d) = convert(T, 1)
 ubound{T,N}(itp::AbstractInterpolation{T,N}, d) = convert(T, size(itp, d))
 itptype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = IT
 gridtype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = GT
+count_interp_dims{T<:AbstractInterpolation}(::Type{T}, N) = N
 
-@inline gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...) = gradient!(Array(T,N), itp, xs...)
+@generated function gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...)
+    n = count_interp_dims(itp, N)
+    Tg = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
+    xargs = [:(xs[$d]) for d in 1:length(xs)]
+    :(gradient!(Array($Tg,$n), itp, $(xargs...)))
+end
 
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
