@@ -34,6 +34,14 @@ include("periodic.jl")
 include("extrap_prep.jl")
 include("extrap_prep_gradient.jl")
 
+"""
+`getindex_impl(::Type{E<:Extrapolation}, xs...)`
+
+Generates an expression to be used
+as the function body of the getindex method for the given type of extrapolation
+and indices. The heavy lifting is done by the `extrap_prep` function; see
+`?extrap_prep` for details.
+"""
 function getindex_impl{T,N,ITPT,IT,GT,ET}(etp::Type{Extrapolation{T,N,ITPT,IT,GT,ET}}, xs...)
     coords = [symbol("xs_",d) for d in 1:N]
     quote
