@@ -72,7 +72,8 @@ count_interp_dims{T<:AbstractInterpolation}(::Type{T}, N) = N
 @generated function gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...)
     n = count_interp_dims(itp, N)
     Tg = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
-    :(gradient!(Array($Tg,$n), itp, xs...))
+    xargs = [:(xs[$d]) for d in 1:length(xs)]
+    :(gradient!(Array($Tg,$n), itp, $(xargs...)))
 end
 
 include("nointerp/nointerp.jl")
