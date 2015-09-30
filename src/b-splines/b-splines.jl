@@ -6,7 +6,7 @@ export
     Linear,
     Quadratic
 
-abstract Degree{N}
+abstract Degree{N} <: Flag
 
 immutable BSpline{D<:Degree} <: InterpolationType end
 BSpline{D<:Degree}(::D) = BSpline{D}()

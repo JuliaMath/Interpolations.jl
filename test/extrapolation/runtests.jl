@@ -14,7 +14,7 @@ etpg = extrapolate(itpg, Flat())
 @test etpg[-3] == etpg[-4.5] == etpg[0.9] == etpg[1.0] == A[1]
 @test etpg[10.1] == etpg[11] == etpg[148.298452] == A[end]
 
-etpf = @inferred(extrapolate(itpg, FillValue(NaN)))
+etpf = @inferred(extrapolate(itpg, NaN))
 
 @test @inferred(size(etpf)) == (xmax,)
 @test isnan(@inferred(getindex(etpf, -2.5)))

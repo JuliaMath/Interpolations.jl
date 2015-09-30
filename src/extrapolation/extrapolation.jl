@@ -1,10 +1,14 @@
-export Throw
-
 type Extrapolation{T,N,ITPT,IT,GT,ET} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
     itp::ITPT
 end
 Extrapolation{T,ITPT,IT,GT,ET}(::Type{T}, N, itp::ITPT, ::Type{IT}, ::Type{GT}, et::ET) =
     Extrapolation{T,N,ITPT,IT,GT,ET}(itp)
+
+# DimSpec{Flag} is not enough for extrapolation dispatch, since we allow nested tuples
+# However, no tuples should be nested deeper than this; the first level is for different
+# schemes in different dimensions, and the second level is for different schemes in
+# different directions.
+typealias ExtrapDimSpec Union{Flag,Tuple{Vararg{Union{Flag,NTuple{2,Flag}}}}}
 
 """
 `extrapolate(itp, scheme)` adds extrapolation behavior to an interpolation object, according to the provided scheme.
@@ -21,7 +25,7 @@ You can also combine schemes in tuples. For example, the scheme `(Linear(), Flat
 
 Finally, you can specify different extrapolation behavior in different direction. `((Linear(),Flat()), Flat())` will extrapolate linearly in the first dimension if the index is too small, but use constant etrapolation if it is too large, and always use constant extrapolation in the second dimension.
 """
-extrapolate{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, et) =
+extrapolate{T,N,IT,GT,ET<:ExtrapDimSpec}(itp::AbstractInterpolation{T,N,IT,GT}, et::ET) =
     Extrapolation(T,N,itp,IT,GT,et)
 
 include("throw.jl")
