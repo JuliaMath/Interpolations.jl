@@ -69,6 +69,15 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
     end
 end
 
+function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes)
+    Tret = TCoefs
+    for a in argtypes
+        Tret = Base.promote_op(Base.MulFun, Tret, a)
+    end
+    Tret
+end
+
+
 @generated function gradient!{T,N}(g::AbstractVector, itp::BSplineInterpolation{T,N}, xs::Number...)
     length(xs) == N || error("Can only be called with $N indexes")
     gradient_impl(itp)

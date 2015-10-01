@@ -86,3 +86,11 @@ function getindex{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::GriddedInterpolation
     dest = Array(T, map(length, x))::Array{T,N}
     getindex!(dest, itp, x...)
 end
+
+function getindex_return_type{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}}, argtypes)
+    Tret = TCoefs
+    for a in argtypes
+        Tret = Base.promote_op(Base.MulFun, Tret, a)
+    end
+    Tret
+end

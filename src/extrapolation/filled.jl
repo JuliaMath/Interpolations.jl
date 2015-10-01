@@ -5,11 +5,7 @@ type FilledExtrapolation{T,N,ITP<:AbstractInterpolation,IT,GT,FT} <: AbstractExt
     itp::ITP
     fillvalue::FT
 end
-"""
-`FilledExtrapolation(itp, fillvalue)` creates an extrapolation object that returns the `fillvalue` any time the indexes in `itp[x1,x2,...]` are out-of-bounds.
 
-By comparison with `extrapolate`, this version lets you control the `fillvalue`'s type directly.  It's important for the `fillvalue` to be of the same type as returned by `itp[x1,x2,...]` for in-bounds regions for the index types you are using; otherwise, indexing will be type-unstable (and slow).
-"""
 function FilledExtrapolation{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue)
     FilledExtrapolation{T,N,typeof(itp),IT,GT,typeof(fillvalue)}(itp, fillvalue)
 end
@@ -19,15 +15,16 @@ end
 """
 extrapolate{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue) = FilledExtrapolation(itp, convert(eltype(itp), fillvalue))
 
-@generated function getindex{T,N}(fitp::FilledExtrapolation{T,N}, args::Number...)
+@generated function getindex{T,N,ITP,IT,GT,FT}(fitp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, args::Number...)
     n = length(args)
     n == N || return error("Must index $(N)-dimensional interpolation objects with $(nindexes(N))")
+    Tret = FT<:Number ? getindex_return_type(ITP, args) : FT
     meta = Expr(:meta, :inline)
     quote
         $meta
         # Check to see if we're in the extrapolation region, i.e.,
         # out-of-bounds in an index
-        @nexprs $N d->((args[d] < lbound(fitp,d) || args[d] > ubound(fitp, d)) && return fitp.fillvalue)
+        @nexprs $N d->((args[d] < lbound(fitp,d) || args[d] > ubound(fitp, d)) && return convert($Tret, fitp.fillvalue))
         # In the interpolation region
         return getindex(fitp.itp,args...)
     end
