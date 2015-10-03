@@ -1,5 +1,4 @@
-export Throw,
-       FilledExtrapolation   # for direct control over typeof(fillvalue)
+export Throw
 
 type Extrapolation{T,N,ITPT,IT,GT,ET} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
     itp::ITPT

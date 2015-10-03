@@ -27,9 +27,7 @@ etpf = @inferred(extrapolate(itpg, NaN))
 @test_throws BoundsError etpf[2.5,2]
 @test_throws ErrorException etpf[2.5,2,1]  # this will probably become a BoundsError someday
 
-etpf = @inferred(FilledExtrapolation(itpg, 'x'))
-@test_approx_eq etpf[2] f(2)
-@test etpf[-1.5] == 'x'
+@test isa(@inferred(getindex(etpf, dual(-2.5,1))), Dual)
 
 etpl = extrapolate(itpg, Linear)
 k_lo = A[2] - A[1]
