@@ -16,7 +16,7 @@ For every `NoInterp` dimension of the interpolation object, the range must be ex
 function scale{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, ranges::Range...)
     length(ranges) == N || throw(ArgumentError("Must scale $N-dimensional interpolation object with exactly $N ranges (you used $(length(ranges)))"))
     for d in 1:N
-        if iextract(IT,d) != NoInterp 
+        if iextract(IT,d) != NoInterp
             length(ranges[d]) == size(itp,d) || throw(ArgumentError("The length of the range in dimension $d ($(length(ranges[d]))) did not equal the size of the interpolation object in that direction ($(size(itp,d)))"))
         elseif ranges[d] != 1:size(itp,d)
             throw(ArgumentError("NoInterp dimension $d must be scaled with unit range 1:$(size(itp,d))"))
@@ -31,7 +31,7 @@ end
     interp_types = length(IT.parameters) == N ? IT.parameters : tuple([IT.parameters[1] for _ in 1:N]...)
     interp_dimens = map(it -> interp_types[it] != NoInterp, 1:N)
     interp_indices = map(i -> interp_dimens[i] ? :(coordlookup(sitp.ranges[$i], xs[$i])) : :(xs[$i]), 1:N)
-    return :(getindex(sitp.itp, $(interp_indices...)))
+    return :($(Expr(:meta,:inline)); getindex(sitp.itp, $(interp_indices...)))
 end
 
 getindex{T}(sitp::ScaledInterpolation{T,1}, x::Number, y::Int) = y == 1 ? sitp[x] : throw(BoundsError())
