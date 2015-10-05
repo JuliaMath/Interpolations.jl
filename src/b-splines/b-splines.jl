@@ -43,10 +43,8 @@ ubound{T,N,TCoefs,IT}(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d) = conv
 
 count_interp_dims{T,N,TCoefs,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType},pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,pad}}, n) = count_interp_dims(IT, n)
 
-@generated function size{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d)
-    quote
-        d <= $N ? size(itp.coefs, d) - 2*padextract($pad, d) : 1
-    end
+function size{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d)
+    d <= N ? size(itp.coefs, d) - 2*padextract(pad, d) : 1
 end
 
 function interpolate{TWeights,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(::Type{TWeights}, ::Type{TCoefs}, A, ::Type{IT}, ::Type{GT})
