@@ -13,8 +13,8 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
         @test @inferred(size(itp_b)) == size(A2)
 
         for j = 2:N-1, i = 2:N-1
-            @test_approx_eq itp_a[i,j] A2[i,j]
-            @test_approx_eq itp_b[i,j] A2[i,j]
+            @test_approx_eq_eps itp_a[i,j] A2[i,j] sqrt(eps(A2[i,j]))
+            @test_approx_eq_eps itp_b[i,j] A2[i,j] sqrt(eps(A2[i,j]))
         end
 
         for i = 1:10
