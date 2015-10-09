@@ -99,25 +99,25 @@ B-splines of quadratic or higher degree require solving an equation system to ob
 Some examples:
 ```jl
 # Nearest-neighbor interpolation
-itp = interpolate(a, BSpline{Constant}, OnCell)
+itp = interpolate(a, BSpline(Constant()), OnCell())
 v = itp[5.4]   # returns a[5]
 
 # (Multi)linear interpolation
-itp = interpolate(A, BSpline{Linear}, OnGrid)
+itp = interpolate(A, BSpline(Linear()), OnGrid())
 v = itp[3.2, 4.1]  # returns 0.9*(0.8*A[3,4]+0.2*A[4,4]) + 0.1*(0.8*A[3,5]+0.2*A[4,5])
 
 # Quadratic interpolation with reflecting boundary conditions
 # Quadratic is the lowest order that has continuous gradient
-itp = interpolate(A, BSpline{Quadratic{Reflect}}, OnCell)
+itp = interpolate(A, BSpline(Quadratic(Reflect())), OnCell())
 
 # Linear interpolation in the first dimension, and no interpolation (just lookup) in the second
-itp = interpolate(A, Tuple{BSpline{Linear}, BSpline{NoInterp}}, OnGrid)
+itp = interpolate(A, (BSpline(Linear()), NoInterp()), OnGrid())
 v = itp[3.65, 5]  # returns  0.35*A[3,5] + 0.65*A[4,5]
 ```
 There are more options available, for example:
 ```jl
 # In-place interpolation
-itp = interpolate!(A, BSpline{Quadratic{InPlace}}, OnCell)
+itp = interpolate!(A, BSpline(Quadratic(InPlace())), OnCell())
 ```
 which destroys the input `A` but also does not need to allocate as much memory.
 
@@ -133,7 +133,7 @@ In 1D
 A = rand(20)
 A_x = collect(1.:40.)
 knots = (a,)
-itp = interpolate(knots,A, Gridded{Linear})
+itp = interpolate(knots,A, Gridded(Linear()))
 itp[2.0] 
 ```
 
@@ -148,22 +148,22 @@ For example:
 ```jl
 A = rand(8,20)
 knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
-itp = interpolate(knots, A, Gridded{Linear})
+itp = interpolate(knots, A, Gridded(Linear()))
 itp[4,1.2]  # approximately A[2,6]
 ```
 One may also mix modes, by specifying a mode vector in the form of an explicit tuple:
 ```jl
-itp = interpolate(knots, A, Tuple{Gridded{Linear},Gridded{Constant}})
+itp = interpolate(knots, A, (Gridded(Linear()),Gridded(Constant())))
 ```
 
 
 Presently there are only three modes for gridded:
 ```jl
-Gridded{Linear}
+Gridded(Linear())
 ```
 whereby a linear interpolation is applied between knots,
 ```jl
-Gridded{Constant}
+Gridded(Constant())
 ```
 whereby nearest neighbor interpolation is used on the applied axis,
 ```jl
@@ -174,11 +174,7 @@ coordinates results in the throwing of an error.
 
 ## Extrapolation
 
-The call to `extrapolate` defines what happens if you try to index into the interpolation object with coordinates outside of `[1, size(data,d)]` in any dimension `d`. The implemented boundary conditions are `Throw` and `Flat`, with more options planned.
-
-## More examples
-
-There's an [IJulia notebook](http://nbviewer.ipython.org/github/tlycken/Interpolations.jl/blob/master/doc/Interpolations.jl.ipynb) that shows off some of the current functionality, and outlines where we're headed. I try to keep it up to date when I make any significant improvements and/or breaking changes, but if it's not, do file a PR.
+The call to `extrapolate` defines what happens if you try to index into the interpolation object with coordinates outside of `[1, size(data,d)]` in any dimension `d`. The implemented boundary conditions are `Throw`, `Flat`, `Linear`, `Periodic` and `Reflect`, with more options planned. `Periodic` and `Reflect` require that there is a method of `Base.mod` that can handle the indices used.
 
 ## Performance shootout
 

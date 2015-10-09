@@ -32,9 +32,10 @@ using WoodburyMatrices, Ratios, AxisAlgorithms
 
 import Base: convert, size, getindex, gradient, scale, promote_rule
 
-abstract InterpolationType
+abstract Flag
+abstract InterpolationType <: Flag
 immutable NoInterp <: InterpolationType end
-abstract GridType
+abstract GridType <: Flag
 immutable OnGrid <: GridType end
 immutable OnCell <: GridType end
 
@@ -44,16 +45,16 @@ abstract AbstractInterpolation{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{Gr
 abstract AbstractInterpolationWrapper{T,N,ITPT,IT,GT} <: AbstractInterpolation{T,N,IT,GT}
 abstract AbstractExtrapolation{T,N,ITPT,IT,GT} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
 
-abstract BoundaryCondition
-immutable Flat <: BoundaryCondition end
-immutable Line <: BoundaryCondition end
-immutable Free <: BoundaryCondition end
-immutable Periodic <: BoundaryCondition end
-immutable Reflect <: BoundaryCondition end
-immutable InPlace <: BoundaryCondition end
+immutable Throw <: Flag end
+immutable Flat <: Flag end
+immutable Line <: Flag end
+immutable Free <: Flag end
+immutable Periodic <: Flag end
+immutable Reflect <: Flag end
+immutable InPlace <: Flag end
 # InPlaceQ is exact for an underlying quadratic. This is nice for ground-truth testing
 # of in-place (unpadded) interpolation.
-immutable InPlaceQ <: BoundaryCondition end
+immutable InPlaceQ <: Flag end
 typealias Natural Line
 
 # TODO: size might have to be faster?

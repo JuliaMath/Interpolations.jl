@@ -1,6 +1,5 @@
 nindexes(N::Int) = N == 1 ? "1 index" : "$N indexes"
 
-
 type FilledExtrapolation{T,N,ITP<:AbstractInterpolation,IT,GT,FT} <: AbstractExtrapolation{T,N,ITP,IT,GT}
     itp::ITP
     fillvalue::FT

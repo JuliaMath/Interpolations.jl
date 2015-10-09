@@ -23,20 +23,20 @@ Base.promote_rule{T1,T2<:Number}(::Type{MyPair{T1}}, ::Type{T2}) = MyPair{promot
 
 # 1d
 A = reinterpret(MyPair{Float64}, rand(2, 10), (10,))
-itp = interpolate(A, BSpline(Constant), OnGrid)
+itp = interpolate(A, BSpline(Constant()), OnGrid())
 itp[3.2]
-itp = interpolate(A, BSpline(Linear), OnGrid)
+itp = interpolate(A, BSpline(Linear()), OnGrid())
 itp[3.2]
-itp = interpolate(A, BSpline(Quadratic(Flat)), OnGrid)
+itp = interpolate(A, BSpline(Quadratic(Flat())), OnGrid())
 itp[3.2]
 
 # 2d
 A = reinterpret(MyPair{Float64}, rand(2, 10, 5), (10,5))
-itp = interpolate(A, BSpline(Constant), OnGrid)
+itp = interpolate(A, BSpline(Constant()), OnGrid())
 itp[3.2,1.8]
-itp = interpolate(A, BSpline(Linear), OnGrid)
+itp = interpolate(A, BSpline(Linear()), OnGrid())
 itp[3.2,1.8]
-itp = interpolate(A, BSpline(Quadratic(Flat)), OnGrid)
+itp = interpolate(A, BSpline(Quadratic(Flat())), OnGrid())
 itp[3.2,1.8]
 
 end

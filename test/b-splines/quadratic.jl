@@ -7,7 +7,7 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
     xmax = 10
     A = Float64[f(x) for x in 1:xmax]
     for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
-        itp1 = @inferred(constructor(copier(A), BSpline(Quadratic(BC)), GT))
+        itp1 = @inferred(constructor(copier(A), BSpline(Quadratic(BC())), GT()))
         @test @inferred(size(itp1)) == size(A)
 
         # test that inner region is close to data
@@ -37,7 +37,7 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
 
     # test that inner region is close to data
     for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
-        itp2 = @inferred(constructor(copier(A), BSpline(Quadratic(BC)), GT))
+        itp2 = @inferred(constructor(copier(A), BSpline(Quadratic(BC())), GT()))
         @test @inferred(size(itp2)) == size(A)
 
         for x in 3.1:.2:xmax-3, y in 3.1:2:ymax-3
@@ -50,7 +50,7 @@ let
     f(x) = sin((x-3)*2pi/9 - 1)
     xmax = 10
     A = Float64[f(x) for x in 1:xmax]
-    itp1 = interpolate!(copy(A), BSpline(Quadratic(InPlace)), OnCell)
+    itp1 = interpolate!(copy(A), BSpline(Quadratic(InPlace())), OnCell())
     for i = 1:xmax
         @test_approx_eq itp1[i] A[i]
     end
@@ -58,7 +58,7 @@ let
     f(x,y) = sin(x/10)*cos(y/6)
     xmax, ymax = 30,10
     A = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
-    itp2 = interpolate!(copy(A), BSpline(Quadratic(InPlace)), OnCell)
+    itp2 = interpolate!(copy(A), BSpline(Quadratic(InPlace())), OnCell())
     for j = 1:ymax, i = 1:xmax
         @test_approx_eq itp2[i,j] A[i,j]
     end

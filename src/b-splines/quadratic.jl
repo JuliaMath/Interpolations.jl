@@ -1,5 +1,5 @@
-immutable Quadratic{BC<:BoundaryCondition} <: Degree{2} end
-Quadratic{BC<:BoundaryCondition}(::Type{BC}) = Quadratic{BC}
+immutable Quadratic{BC<:Flag} <: Degree{2} end
+Quadratic{BC<:Flag}(::BC) = Quadratic{BC}()
 
 function define_indices_d{BC}(::Type{BSpline{Quadratic{BC}}}, d, pad)
     symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
@@ -73,7 +73,7 @@ function index_gen{Q<:Quadratic,IT<:DimSpec{BSpline}}(::Type{BSpline{Q}}, ::Type
     end
 end
 
-padding{BC<:BoundaryCondition}(::Type{BSpline{Quadratic{BC}}}) = Val{1}()
+padding{BC<:Flag}(::Type{BSpline{Quadratic{BC}}}) = Val{1}()
 padding(::Type{BSpline{Quadratic{Periodic}}}) = Val{0}()
 
 function inner_system_diags{T,Q<:Quadratic}(::Type{T}, n::Int, ::Type{Q})

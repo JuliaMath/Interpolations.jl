@@ -11,7 +11,7 @@ ys = 1:3
 
 A = hcat(f1(xs), f2(xs), f3(xs))
 
-itp = interpolate(A, Tuple{BSpline(Quadratic(Periodic)), NoInterp}, OnGrid)
+itp = interpolate(A, (BSpline(Quadratic(Periodic())), NoInterp()), OnGrid())
 sitp = scale(itp, xs, ys)
 
 for (ix,x0) in enumerate(xs[1:end-1]), y0 in ys

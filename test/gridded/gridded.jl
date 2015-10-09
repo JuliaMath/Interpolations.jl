@@ -6,7 +6,7 @@ for (D,G) in ((Constant,OnCell),(Linear,OnGrid))
     ## 1D
     a = rand(5)
     knots = (collect(linspace(1,length(a),length(a))),)
-    itp = @inferred(interpolate(knots, a, Gridded{D}))
+    itp = @inferred(interpolate(knots, a, Gridded(D())))
     @inferred(getindex(itp, 2))
     @inferred(getindex(itp, CartesianIndex((2,))))
     for i = 2:length(a)-1
@@ -28,7 +28,7 @@ for (D,G) in ((Constant,OnCell),(Linear,OnGrid))
         @test_approx_eq v[i] itp[x[i]]
     end
     # compare against BSpline
-    itpb = @inferred(interpolate(a, BSpline{D}, G))
+    itpb = @inferred(interpolate(a, BSpline(D()), G()))
     for x in linspace(1.1,4.9,101)
         @test_approx_eq itp[x] itpb[x]
     end
@@ -36,7 +36,7 @@ for (D,G) in ((Constant,OnCell),(Linear,OnGrid))
     ## 2D
     A = rand(6,5)
     knots = (collect(linspace(1,size(A,1),size(A,1))),collect(linspace(1,size(A,2),size(A,2))))
-    itp = @inferred(interpolate(knots, A, Gridded{D}))
+    itp = @inferred(interpolate(knots, A, Gridded(D())))
     @inferred(getindex(itp, 2, 2))
     @inferred(getindex(itp, CartesianIndex((2,2))))
     for j = 2:size(A,2)-1, i = 2:size(A,1)-1
@@ -59,14 +59,14 @@ for (D,G) in ((Constant,OnCell),(Linear,OnGrid))
         @test_approx_eq v[i,j] itp[x[i],y[j]]
     end
     # compare against BSpline
-    itpb = @inferred(interpolate(A, BSpline{D}, G))
+    itpb = @inferred(interpolate(A, BSpline(D()), G()))
     for y in linspace(1.1,5.9,101), x in linspace(1.1,4.9,101)
         @test_approx_eq itp[x,y] itpb[x,y]
     end
 
     A = rand(8,20)
     knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
-    itp = interpolate(knots, A, Gridded{D})
+    itp = interpolate(knots, A, Gridded(D()))
     @test_approx_eq itp[4,1.2] A[2,6]
 end
 
