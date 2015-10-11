@@ -28,9 +28,7 @@ end
 
 @generated function getindex{T,N,ITPT,IT<:DimSpec}(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...)
     length(xs) == N || throw(ArgumentError("Must index into $N-dimensional scaled interpolation object with exactly $N indices (you used $(length(xs)))"))
-    interp_types = length(IT.parameters) == N ? IT.parameters : tuple([IT.parameters[1] for _ in 1:N]...)
-    interp_dimens = map(it -> interp_types[it] != NoInterp, 1:N)
-    interp_indices = map(i -> interp_dimens[i] ? :(coordlookup(sitp.ranges[$i], xs[$i])) : :(xs[$i]), 1:N)
+    interp_indices = map(i -> iextract(IT, i) != NoInterp ? :(coordlookup(sitp.ranges[$i], xs[$i])) : :(xs[$i]), 1:N)
     return :($(Expr(:meta,:inline)); getindex(sitp.itp, $(interp_indices...)))
 end
 
@@ -58,6 +56,9 @@ coordlookup(r::FloatRange, x) = (r.divisor * x - r.start) / r.step + one(eltype(
 coordlookup(r::StepRange, x) = (x - r.start) / r.step + one(eltype(r))
 coordlookup(r::UnitRange, x) = x - r.start + one(eltype(r))
 coordlookup(i::Bool, r::Range, x) = i ? coordlookup(r, x) : convert(typeof(coordlookup(r,x)), x)
+
+basetype{T,N,ITPT,IT,GT,RT}(::Type{ScaledInterpolation{T,N,ITPT,IT,GT,RT}}) = ITPT
+basetype(sitp::ScaledInterpolation) = basetype(typeof(sitp))
 
 gradient{T,N,ITPT,IT<:DimSpec}(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...) = gradient!(Array(T,count_interp_dims(IT,N)), sitp, xs...)
 @generated function gradient!{T,N,ITPT,IT}(g, sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...)
