@@ -49,4 +49,28 @@ end
 sitp32 = scale(interpolate(Float32[testfunction(x,y) for x in -5:.5:5, y in -4:.2:4], BSpline(Quadratic(Flat())), OnGrid()), -5f0:.5f0:5f0, -4f0:.2f0:4f0)
 @test typeof(@inferred(getindex(sitp32, -3.4f0, 1.2f0))) == Float32
 
+# Iteration
+itp = interpolate(rand(3,3,3), BSpline(Quadratic(Flat())), OnCell())
+knots = map(d->1:100:201, 1:3)
+sitp = scale(itp, knots...)
+function foo!(dest, sitp)
+    i = 0
+    for s in eachvalue(sitp)
+        dest[i+=1] = s
+    end
+    dest
+end
+function bar!(dest, sitp)
+    for I in CartesianRange(size(dest))
+        dest[I] = sitp[I]
+    end
+    dest
+end
+rfoo = Array(Float64, Interpolations.ssize(sitp))
+rbar = similar(rfoo)
+foo!(rfoo, sitp)
+bar!(rbar, sitp)
+@test_approx_eq rfoo rbar
+@test (@elapsed foo!(rfoo, sitp)) < (@elapsed bar!(rbar, sitp))
+
 end
