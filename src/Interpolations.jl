@@ -66,8 +66,12 @@ lbounds{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->lbound(itp,i), N)::NTu
 ubounds{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->ubound(itp,i), N)::NTuple{N,T}
 lbound{T,N}(itp::AbstractInterpolation{T,N}, d) = convert(T, 1)
 ubound{T,N}(itp::AbstractInterpolation{T,N}, d) = convert(T, size(itp, d))
-itptype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = IT
-gridtype{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}) = GT
+itptype{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(::Type{AbstractInterpolation{T,N,IT,GT}}) = IT
+itptype{ITP<:AbstractInterpolation}(::Type{ITP}) = itptype(super(ITP))
+itptype(itp::AbstractInterpolation ) = itptype(typeof(itp))
+gridtype{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(::Type{AbstractInterpolation{T,N,IT,GT}}) = GT
+gridtype{ITP<:AbstractInterpolation}(::Type{ITP}) = gridtype(super(ITP))
+gridtype(itp::AbstractInterpolation) = gridtype(typeof(itp))
 count_interp_dims{T<:AbstractInterpolation}(::Type{T}, N) = N
 
 @generated function gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...)
