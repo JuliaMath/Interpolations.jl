@@ -21,7 +21,7 @@ function copy_with_padding{TCoefs,IT<:DimSpec{InterpolationType}}(::Type{TCoefs}
     Pad = padding(IT)
     ind,sz = padded_index(size(A), Pad)
     if sz == size(A)
-        coefs = copy!(similar(A,TCoefs), A)
+        coefs = copy!(Array(TCoefs, size(A)), A)
     else
         coefs = zeros(TCoefs, sz...)
         coefs[ind...] = A
@@ -30,7 +30,7 @@ function copy_with_padding{TCoefs,IT<:DimSpec{InterpolationType}}(::Type{TCoefs}
 end
 
 prefilter!{TWeights, IT<:BSpline, GT<:GridType}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = A
-prefilter{TWeights, TCoefs, IT<:BSpline, GT<:GridType}(::Type{TWeights}, ::Type{TCoefs}, A, ::Type{IT}, ::Type{GT}) = prefilter!(TWeights, copy!(similar(A,TCoefs), A), IT, GT), Val{0}()
+prefilter{TWeights, TCoefs, IT<:BSpline, GT<:GridType}(::Type{TWeights}, ::Type{TCoefs}, A, ::Type{IT}, ::Type{GT}) = prefilter!(TWeights, copy!(Array(TCoefs, size(A)), A), IT, GT), Val{0}()
 
 function prefilter{TWeights,TCoefs,TSrc,N,IT<:Quadratic,GT<:GridType}(
     ::Type{TWeights}, ::Type{TCoefs}, A::Array{TSrc,N}, ::Type{BSpline{IT}}, ::Type{GT}
