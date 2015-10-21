@@ -6,12 +6,12 @@ function define_indices_d(::Type{BSpline{Constant}}, d, pad)
 end
 
 function coefficients(::Type{BSpline{Constant}}, N, d)
-    sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
+    sym, symx = symbol("c_",d), symbol("x_",d)
     :($sym = 1)
 end
 
 function gradient_coefficients(::Type{BSpline{Constant}}, d)
-    sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
+    sym, symx = symbol("c_",d), symbol("x_",d)
     :($sym = 0)
 end
 

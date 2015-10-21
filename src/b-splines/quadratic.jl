@@ -40,8 +40,8 @@ function define_indices_d{BC<:Union{InPlace,InPlaceQ}}(::Type{BSpline{Quadratic{
 end
 
 function coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, N, d)
-    symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
-    symfx = symbol(string("fx_",d))
+    symm, sym, symp =  symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
+    symfx = symbol("fx_",d)
     quote
         $symm = sqr($symfx - SimpleRatio(1,2))/2
         $sym  = SimpleRatio(3,4) - sqr($symfx)
@@ -50,8 +50,8 @@ function coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, N, d)
 end
 
 function gradient_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
-    symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
-    symfx = symbol(string("fx_",d))
+    symm, sym, symp =  symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
+    symfx = symbol("fx_",d)
     quote
         $symm = $symfx - SimpleRatio(1,2)
         $sym = -2 * $symfx
@@ -64,7 +64,7 @@ end
 function index_gen{Q<:Quadratic,IT<:DimSpec{BSpline}}(::Type{BSpline{Q}}, ::Type{IT}, N::Integer, offsets...)
     if length(offsets) < N
         d = length(offsets)+1
-        symm, sym, symp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d))
+        symm, sym, symp =  symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
         return :($symm * $(index_gen(IT, N, offsets...,-1)) + $sym * $(index_gen(IT, N, offsets..., 0)) +
                  $symp * $(index_gen(IT, N, offsets..., 1)))
     else

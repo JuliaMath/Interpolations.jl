@@ -11,7 +11,7 @@ function define_indices_d(::Type{Gridded{Constant}}, d, pad)
 end
 
 function coefficients(::Type{Gridded{Constant}}, N, d)
-    sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
+    sym, symx = symbol("c_",d), symbol("x_",d)
     :($sym = 1)
 end
 

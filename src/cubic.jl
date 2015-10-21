@@ -3,7 +3,7 @@
 function index_gen(::Type{Cubic}, N::Integer, offsets...)
     if length(offsets) < N
         d = length(offsets)+1
-        symm, sym, symp, sympp =  symbol(string("cm_",d)), symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("cpp_",d))
+        symm, sym, symp, sympp =  symbol("cm_",d), symbol("c_",d), symbol("cp_",d), symbol("cpp_",d)
         return :($symm * $(index_gen(Cubic, N, offsets...,-1)) + $sym * $(index_gen(Cubic, N, offsets..., 0)) +
                  $symp * $(index_gen(Cubic, N, offsets..., 1)) + $sympp * $(index_gen(Cubic, N, offsets..., 2)))
     else

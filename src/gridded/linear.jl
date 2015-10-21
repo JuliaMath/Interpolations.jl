@@ -8,7 +8,7 @@ end
 
 function coefficients(::Type{Gridded{Linear}}, N, d)
     symix, symixp, symx = symbol("ix_",d), symbol("ixp_",d), symbol("x_",d)
-    sym, symp, symfx = symbol(string("c_",d)), symbol(string("cp_",d)), symbol(string("fx_",d))
+    sym, symp, symfx = symbol("c_",d), symbol("cp_",d), symbol("fx_",d)
     symk, symkix = symbol("k_",d), symbol("kix_",d)
     quote
         $symkix = $symk[$symix]
