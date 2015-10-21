@@ -16,7 +16,7 @@ make_knots(A) = ntuple(d->collect(linspace(1,size(A,d),size(A,d))), ndims(A))
 make_xi(A)    = ntuple(d->collect(linspace(2,size(A,d)-1,size(A,d)-2)), ndims(A))
 
 ## Interpolations and Grid
-function evaluate_grid(itp::Union{Array,Interpolations.AbstractInterpolation,Grid.InterpGrid), A}
+function evaluate_grid(itp::Union{Array,Interpolations.AbstractInterpolation,Grid.InterpGrid}, A)
     s = zero(eltype(itp)) + zero(eltype(itp))
     for I in iterrange(itp)
         s += itp[I]
@@ -58,7 +58,7 @@ function evaluate_grid(itp::Dierckx.Spline2D, A)
 end
 
 # Slow approach for Dierckx
-function evaluate_grid_scalar(itp::Union{Dierckx.Spline1D,Dierckx.Spline2D), A}
+function evaluate_grid_scalar(itp::Union{Dierckx.Spline1D,Dierckx.Spline2D}, A)
     T = eltype(A)
     s = zero(T) + zero(T)
     for I in iterrange(A)
@@ -132,16 +132,16 @@ const npoints = 10^6
 const maxdims = 4
 # const eltypes = (Float64,Float32, RGB{Float32})
 const eltypes = (Float64,)
-constr_eval_name_ord = ((A -> Interpolations.interpolate(A, Interpolations.BSpline{Interpolations.Constant}, Interpolations.OnCell),evaluate_grid,"IBSpline",0),
-                    (A -> Interpolations.interpolate(A, Interpolations.BSpline{Interpolations.Linear}, Interpolations.OnGrid),evaluate_grid,"IBSpline",1),
-                    (A -> Interpolations.interpolate(A, Interpolations.BSpline{Interpolations.Quadratic{Interpolations.Flat}}, Interpolations.OnCell),evaluate_grid,"IBSpline",2),
+constr_eval_name_ord = ((A -> Interpolations.interpolate(A, Interpolations.BSpline(Interpolations.Constant()), Interpolations.OnCell()),evaluate_grid,"IBSpline",0),
+                    (A -> Interpolations.interpolate(A, Interpolations.BSpline(Interpolations.Linear()), Interpolations.OnGrid()),evaluate_grid,"IBSpline",1),
+                    (A -> Interpolations.interpolate(A, Interpolations.BSpline(Interpolations.Quadratic(Interpolations.Flat())), Interpolations.OnCell()),evaluate_grid,"IBSpline",2),
                     (A -> Grid.InterpGrid(A, Grid.BCnil, Grid.InterpNearest),evaluate_grid,"Grid",0),
                     (A -> Grid.InterpGrid(A, Grid.BCnil, Grid.InterpLinear),evaluate_grid,"Grid",1),
                     (A -> Grid.InterpGrid(A, Grid.BCnil, Grid.InterpQuadratic),evaluate_grid,"Grid",2),
-                    (A -> Interpolations.interpolate(make_knots(A), A, Interpolations.Gridded{Interpolations.Constant}),evaluate_grid,"IGridded vec",0),
-                    (A -> Interpolations.interpolate(make_knots(A), A, Interpolations.Gridded{Interpolations.Constant}),evaluate_grid_scalar,"IGridded scalar",0),
-                    (A -> Interpolations.interpolate(make_knots(A), A, Interpolations.Gridded{Interpolations.Linear}),evaluate_grid,"IGridded vec",1),
-                    (A -> Interpolations.interpolate(make_knots(A), A, Interpolations.Gridded{Interpolations.Linear}),evaluate_grid_scalar,"IGridded scalar",1),
+                    (A -> Interpolations.interpolate(make_knots(A), A, Interpolations.Gridded(Interpolations.Constant())),evaluate_grid,"IGridded vec",0),
+                    (A -> Interpolations.interpolate(make_knots(A), A, Interpolations.Gridded(Interpolations.Constant())),evaluate_grid_scalar,"IGridded scalar",0),
+                    (A -> Interpolations.interpolate(make_knots(A), A, Interpolations.Gridded(Interpolations.Linear())),evaluate_grid,"IGridded vec",1),
+                    (A -> Interpolations.interpolate(make_knots(A), A, Interpolations.Gridded(Interpolations.Linear())),evaluate_grid_scalar,"IGridded scalar",1),
                     (A -> dierckx_constr(A, 0),evaluate_grid,"Dierckx vec",0),
                     (A -> dierckx_constr(A, 1),evaluate_grid,"Dierckx vec",1),
                     (A -> dierckx_constr(A, 1),evaluate_grid_scalar,"Dierckx scalar",1),
@@ -182,4 +182,3 @@ for ieltype = 1:length(eltypes)
         end
     end
 end
-
