@@ -88,7 +88,7 @@ end
     :(gradient!(g, itp, $(args...)))
 end
 
-offsetsym(off, d) = off == -1 ? symbol(string("ixm_", d)) :
-                    off ==  0 ? symbol(string("ix_", d)) :
-                    off ==  1 ? symbol(string("ixp_", d)) :
-                    off ==  2 ? symbol(string("ixpp_", d)) : error("offset $off not recognized")
+offsetsym(off, d) = off == -1 ? symbol("ixm_", d) :
+                    off ==  0 ? symbol("ix_", d) :
+                    off ==  1 ? symbol("ixp_", d) :
+                    off ==  2 ? symbol("ixpp_", d) : error("offset $off not recognized")

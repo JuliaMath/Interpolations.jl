@@ -11,14 +11,14 @@ function define_indices_d(::Type{Gridded{Constant}}, d, pad)
 end
 
 function coefficients(::Type{Gridded{Constant}}, N, d)
-    sym, symx = symbol(string("c_",d)), symbol(string("x_",d))
+    sym, symx = symbol("c_",d), symbol("x_",d)
     :($sym = 1)
 end
 
 function index_gen{IT<:DimSpec{Gridded}}(::Type{Gridded{Constant}}, ::Type{IT}, N::Integer, offsets...)
     if (length(offsets) < N)
         d = length(offsets)+1
-        sym = symbol("c_"*string(d))
+        sym = symbol("c_", d)
         return :($sym * $(index_gen(IT, N, offsets..., 0)))
     else
         indices = [offsetsym(offsets[d], d) for d = 1:N]
