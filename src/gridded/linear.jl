@@ -23,8 +23,8 @@ end
 function index_gen{IT<:DimSpec{Gridded}}(::Type{Gridded{Linear}}, ::Type{IT}, N::Integer, offsets...)
     if length(offsets) < N
         d = length(offsets)+1
-        sym = symbol("c_"*string(d))
-        symp = symbol("cp_"*string(d))
+        sym = symbol("c_", d)
+        symp = symbol("cp_", d)
         return :($sym * $(index_gen(IT, N, offsets..., 0)) + $symp * $(index_gen(IT, N, offsets..., 1)))
     else
         indices = [offsetsym(offsets[d], d) for d = 1:N]

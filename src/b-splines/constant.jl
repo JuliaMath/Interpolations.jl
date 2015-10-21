@@ -18,7 +18,7 @@ end
 function index_gen{IT<:DimSpec{BSpline}}(::Type{BSpline{Constant}}, ::Type{IT}, N::Integer, offsets...)
     if (length(offsets) < N)
         d = length(offsets)+1
-        sym = symbol("c_"*string(d))
+        sym = symbol("c_", d)
         return :($sym * $(index_gen(IT, N, offsets..., 0)))
     else
         indices = [offsetsym(offsets[d], d) for d = 1:N]
