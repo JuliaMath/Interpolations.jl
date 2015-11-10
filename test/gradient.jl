@@ -21,17 +21,32 @@ end
 # Since Linear is OnGrid in the domain, check the gradients between grid points
 itp1 = interpolate(Float64[f1(x) for x in 1:nx-1],
             BSpline(Linear()), OnGrid())
-for x in 2.5:nx-1.5
-    @test_approx_eq_eps g1(x) gradient(itp1, x)[1] abs(.1*g1(x))
-    @test_approx_eq_eps g1(x) gradient!(g, itp1, x)[1] abs(.1*g1(x))
-    @test_approx_eq_eps g1(x) g[1] abs(.1*g1(x))
+itp2 = interpolate((1:nx-1,), Float64[f1(x) for x in 1:nx-1],
+            Gridded(Linear()))
+for itp in (itp1, itp2)
+    for x in 2.5:nx-1.5
+        @test_approx_eq_eps g1(x) gradient(itp, x)[1] abs(.1*g1(x))
+        @test_approx_eq_eps g1(x) gradient!(g, itp, x)[1] abs(.1*g1(x))
+        @test_approx_eq_eps g1(x) g[1] abs(.1*g1(x))
+    end
+
+    for i = 1:10
+        x = rand()*(nx-2)+1.5
+        gtmp = gradient(itp, x)[1]
+        xd = dual(x, 1)
+        @test_approx_eq epsilon(itp[xd]) gtmp
+    end
 end
 
-for i = 1:10
-    x = rand()*(nx-2)+1.5
-    gtmp = gradient(itp1, x)[1]
-    xd = dual(x, 1)
-    @test_approx_eq epsilon(itp1[xd]) gtmp
+# test gridded on a non-uniform grid
+knots = (1.0:0.3:nx-1,)
+itp_grid = interpolate(knots, Float64[f1(x) for x in knots[1]],
+                       Gridded(Linear()))
+
+for x in 1.5:0.5:nx-1.5
+    @test_approx_eq_eps g1(x) gradient(itp_grid, x)[1] abs(.5*g1(x))
+    @test_approx_eq_eps g1(x) gradient!(g, itp_grid, x)[1] abs(.5*g1(x))
+    @test_approx_eq_eps g1(x) g[1] abs(.5*g1(x))
 end
 
 # Since Quadratic is OnCell in the domain, check gradients at grid points
