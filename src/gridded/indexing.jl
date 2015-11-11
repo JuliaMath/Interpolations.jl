@@ -2,9 +2,15 @@ using Base.Cartesian
 
 import Base.getindex
 
+function gradient_coefficients(::Type{Gridded{Linear}}, N, dim)
+    exs = Expr[d==dim ? gradient_coefficients(iextract(Gridded{Linear}, dim), d) :
+                        coefficients(iextract(Gridded{Linear}, d), N, d) for d = 1:N]
+    Expr(:block, exs...)
+end
+
+
 # Indexing at a point
-@generated function getindex{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::GriddedInterpolation{T,N,TCoefs,IT,K,P}, x::Number...)
-    length(x) == N || error("Can only be called with $N indexes")
+function getindex_impl{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}})
     meta = Expr(:meta, :inline)
     quote
         $meta
@@ -18,6 +24,10 @@ import Base.getindex
         @inbounds ret = $(index_gen(IT, N))
         ret
     end
+end
+
+@generated function getindex{T,N}(itp::GriddedInterpolation{T,N}, x::Number...)
+    getindex_impl(itp)
 end
 
 # Because of the "vectorized" definition below, we need a definition for CartesianIndex
@@ -85,6 +95,49 @@ end
 function getindex{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::GriddedInterpolation{T,N,TCoefs,IT,K,P}, x...)
     dest = Array(T, map(length, x))::Array{T,N}
     getindex!(dest, itp, x...)
+end
+
+function gradient_impl{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}})
+    meta = Expr(:meta, :inline)
+    # For each component of the gradient, alternately calculate
+    # coefficients and set component
+    n = count_interp_dims(IT, N)
+    exs = Array(Expr, 2n)
+    cntr = 0
+    for d = 1:N
+        if count_interp_dims(iextract(IT, d), 1) > 0
+            cntr += 1
+            exs[2cntr-1] = gradient_coefficients(IT, N, d)
+            exs[2cntr] = :(@inbounds g[$cntr] = $(index_gen(IT, N)))
+        end
+    end
+    gradient_exprs = Expr(:block, exs...)
+    quote
+        $meta
+        length(g) == $n || throw(ArgumentError(string("The length of the provided gradient vector (", length(g), ") did not match the number of interpolating dimensions (", n, ")")))
+        @nexprs $N d->begin
+            x_d = x[d]
+            k_d = itp.knots[d]
+            ix_d = searchsortedfirst(k_d, x_d, 1, length(k_d), Base.Order.ForwardOrdering()) - 1
+        end
+        # Calculate the indices of all coefficients that will be used
+        # and define fx = x - xi in each dimension
+        $(define_indices(IT, N, P))
+
+        $gradient_exprs
+
+        g
+    end
+end
+
+@generated function gradient!{T,N}(g::AbstractVector, itp::GriddedInterpolation{T,N}, x::Number...)
+    length(x) == N || error("Can only be called with $N indexes")
+    gradient_impl(itp)
+end
+
+@generated function gradient!{T,N}(g::AbstractVector, itp::GriddedInterpolation{T,N}, index::CartesianIndex{N})
+    args = [:(index[$d]) for d = 1:N]
+    :(gradient!(g, itp, $(args...)))
 end
 
 function getindex_return_type{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}}, argtypes)

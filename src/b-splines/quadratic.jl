@@ -183,4 +183,25 @@ function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
 end
 
+
+"""
+    prefiltering_system{T,TCoefs,GT<:GridType,D<:Degree}m(::T, ::Type{TCoefs}, n::Int, ::Type{D}, ::Type{GT})
+
+Given type information for the data (`T`, `TCoefs`) and interpolation scheme
+(`GT`, `D`) as well the number of rows in the data input (`n`), compute the
+system used to prefilter spline coefficients
+
+For quadratic and cubic splines this system is tridagonal for all interior rows.
+
+Boundary conditions determine the number of non zero elements on the first
+and last rows. Some of these boundary conditions require that these rows have
+off tri-diagonal elements (e.g the `[1,3]` element of the matrix).
+
+To maintain the efficiency of using solving tridiagonal systems, the
+[Woodbury matrix identity](https://en.wikipedia.org/wiki/Woodbury_matrix_identity)
+is used to add additional elements off the main 3 diagonals.
+"""
+prefiltering_system
+
+
 sqr(x) = x*x

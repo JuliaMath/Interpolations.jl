@@ -15,6 +15,11 @@ function coefficients(::Type{Gridded{Constant}}, N, d)
     :($sym = 1)
 end
 
+function gradient_coefficients(::Type{Gridded{Constant}}, N, d)
+    sym, symx = symbol("c_",d), symbol("x_",d)
+    :($sym = 0)
+end
+
 function index_gen{IT<:DimSpec{Gridded}}(::Type{Gridded{Constant}}, ::Type{IT}, N::Integer, offsets...)
     if (length(offsets) < N)
         d = length(offsets)+1
