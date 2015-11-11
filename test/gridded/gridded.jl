@@ -2,7 +2,7 @@ module LinearTests
 
 using Interpolations, Base.Test
 
-for (D,G) in ((Constant,OnCell),(Linear,OnGrid))
+for D in (Constant, Linear), G in (OnCell, OnGrid)
     ## 1D
     a = rand(5)
     knots = (collect(linspace(1,length(a),length(a))),)
