@@ -56,6 +56,20 @@ etp2ud = extrapolate(itp2g, ((Linear(), Flat()), Flat()))
 etp2ll = extrapolate(itp2g, Linear())
 @test_approx_eq @inferred(getindex(etp2ll, -.5, 100)) itp2g[1,8]-1.5*epsilon(etp2ll[dual(1,1),8]) + (100-8) * epsilon(etp2ll[1,dual(8,1)])
 
+# Allow element types that don't support conversion to Int (#87):
+etp87g = extrapolate(interpolate([1.0im, 2.0im, 3.0im], BSpline(Linear()), OnGrid()), 0.0im)
+@test @inferred(getindex(etp87g, 1)) == 1.0im
+@test @inferred(getindex(etp87g, 1.5)) == 1.5im
+@test @inferred(getindex(etp87g, 0.75)) == 0.0im
+@test @inferred(getindex(etp87g, 3.25)) == 0.0im
+
+etp87c = extrapolate(interpolate([1.0im, 2.0im, 3.0im], BSpline(Linear()), OnCell()), 0.0im)
+@test @inferred(getindex(etp87c, 1)) == 1.0im
+@test @inferred(getindex(etp87c, 1.5)) == 1.5im
+@test @inferred(getindex(etp87c, 0.75)) == 0.75im
+@test @inferred(getindex(etp87c, 3.25)) == 3.25im
+@test @inferred(getindex(etp87g, 0)) == 0.0im
+@test @inferred(getindex(etp87g, 3.7)) == 0.0im
 
 end
 
