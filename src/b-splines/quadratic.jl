@@ -83,21 +83,21 @@ function inner_system_diags{T,Q<:Quadratic}(::Type{T}, n::Int, ::Type{Q})
     (dl,d,du)
 end
 
-function prefiltering_system{T,TCoefs,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnCell})
+function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnCell})
     dl,d,du = inner_system_diags(T,n,Quadratic{BC})
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
-    lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TCoefs, n)
+    lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TC, n)
 end
 
-function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{InPlace}}, ::Type{OnCell})
+function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{InPlace}}, ::Type{OnCell})
     dl,d,du = inner_system_diags(T,n,Quadratic{InPlace})
     d[1] = d[end] = convert(T, SimpleRatio(7,8))
-    lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TCoefs, n)
+    lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TC, n)
 end
 
 # InPlaceQ continues the quadratic at 2 all the way down to 1 (rather than 1.5)
-function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{InPlaceQ}}, ::Type{OnCell})
+function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{InPlaceQ}}, ::Type{OnCell})
     dl,d,du = inner_system_diags(T,n,Quadratic{InPlaceQ})
     d[1] = d[end] = SimpleRatio(9,8)
     dl[end] = du[1] = SimpleRatio(-1,4)
@@ -108,10 +108,10 @@ function prefiltering_system{T,TCoefs}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type
     valspec[1,1] = valspec[2,2] = SimpleRatio(1,8)
     rowspec[1,1] = rowspec[n,2] = 1
     colspec[1,3] = colspec[2,n-2] = 1
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
 end
 
-function prefiltering_system{T,TCoefs,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnGrid})
+function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnGrid})
     dl,d,du = inner_system_diags(T,n,Quadratic{BC})
     d[1] = d[end] = -1
     du[1] = dl[end] = 0
@@ -126,10 +126,10 @@ function prefiltering_system{T,TCoefs,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type
     # [1,3]         [n,n-2]
     valspec[1,1] = valspec[2,2] = 1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
 end
 
-function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{Line}}, ::Type{GT})
+function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Line}}, ::Type{GT})
     dl,d,du = inner_system_diags(T,n,Quadratic{Line})
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
@@ -144,10 +144,10 @@ function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n
     # [1,3]         [n,n-2]
     valspec[1,1] = valspec[2,2] = 1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
 end
 
-function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{Free}}, ::Type{GT})
+function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Free}}, ::Type{GT})
     dl,d,du = inner_system_diags(T,n,Quadratic{Free})
     d[1] = d[end] = 1
     du[1] = dl[end] = -3
@@ -164,10 +164,10 @@ function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n
     # [1,4]          [n,n-3]
     valspec[2,2] = valspec[4,4] = -1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
 end
 
-function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n::Int, ::Type{Quadratic{Periodic}}, ::Type{GT})
+function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Periodic}}, ::Type{GT})
     dl,d,du = inner_system_diags(T,n,Quadratic{Periodic})
 
     rowspec = spzeros(T,n,2)
@@ -180,16 +180,16 @@ function prefiltering_system{T,TCoefs,GT<:GridType}(::Type{T}, ::Type{TCoefs}, n
     # [1,n]            [n,1]
     valspec[1,1] = valspec[2,2] = SimpleRatio(1,8)
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TCoefs, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
 end
 
 
 """
-    prefiltering_system{T,TCoefs,GT<:GridType,D<:Degree}m(::T, ::Type{TCoefs}, n::Int, ::Type{D}, ::Type{GT})
+    prefiltering_system{T,TC,GT<:GridType,D<:Degree}m(::T, ::Type{TC}, n::Int, ::Type{D}, ::Type{GT})
 
-Given type information for the data (`T`, `TCoefs`) and interpolation scheme
+Given element types (`T`, `TC`) and interpolation scheme
 (`GT`, `D`) as well the number of rows in the data input (`n`), compute the
-system used to prefilter spline coefficients
+system used to prefilter spline coefficients.
 
 For quadratic and cubic splines this system is tridagonal for all interior rows.
 

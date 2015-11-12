@@ -70,7 +70,7 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
 end
 
 function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes)
-    Tret = TCoefs
+    Tret = eltype(TCoefs)
     for a in argtypes
         Tret = Base.promote_op(Base.MulFun, Tret, a)
     end
