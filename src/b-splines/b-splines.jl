@@ -13,20 +13,20 @@ BSpline{D<:Degree}(::D) = BSpline{D}()
 
 bsplinetype{D<:Degree}(::Type{BSpline{D}}) = D
 
-immutable BSplineInterpolation{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},pad} <: AbstractInterpolation{T,N,IT,GT}
-    coefs::Array{TCoefs,N}
+immutable BSplineInterpolation{T,N,TCoefs<:AbstractArray,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},pad} <: AbstractInterpolation{T,N,IT,GT}
+    coefs::TCoefs
 end
-function BSplineInterpolation{N,TCoefs,TWeights<:Real,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},pad}(::Type{TWeights}, A::AbstractArray{TCoefs,N}, ::IT, ::GT, ::Val{pad})
+function BSplineInterpolation{N,Tel,TWeights<:Real,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},pad}(::Type{TWeights}, A::AbstractArray{Tel,N}, ::IT, ::GT, ::Val{pad})
     isleaftype(IT) || error("The b-spline type must be a leaf type (was $IT)")
-    isleaftype(TCoefs) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
+    isleaftype(typeof(A)) || warn("For performance reasons, consider using an array of a concrete type (typeof(A) == $(typeof(A)))")
 
     c = one(TWeights)
     for _ in 2:N
         c *= c
     end
-    T = typeof(c * one(TCoefs))
+    T = typeof(c * one(Tel))
 
-    BSplineInterpolation{T,N,TCoefs,IT,GT,pad}(A)
+    BSplineInterpolation{T,N,typeof(A),IT,GT,pad}(A)
 end
 
 # Utilities for working either with scalars or tuples/tuple-types
@@ -49,8 +49,8 @@ function size{T,N,TCoefs,IT,GT,pad}(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,p
     d <= N ? size(itp.coefs, d) - 2*padextract(pad, d) : 1
 end
 
-function interpolate{TWeights,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(::Type{TWeights}, ::Type{TCoefs}, A, it::IT, gt::GT)
-    Apad, Pad = prefilter(TWeights, TCoefs, A, IT, GT)
+function interpolate{TWeights,TC,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(::Type{TWeights}, ::Type{TC}, A, it::IT, gt::GT)
+    Apad, Pad = prefilter(TWeights, TC, A, IT, GT)
     BSplineInterpolation(TWeights, Apad, it, gt, Pad)
 end
 function interpolate{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArray, it::IT, gt::GT)
