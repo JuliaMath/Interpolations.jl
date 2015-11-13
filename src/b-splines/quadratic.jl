@@ -1,6 +1,3 @@
-immutable Quadratic{BC<:Flag} <: Degree{2} end
-Quadratic{BC<:Flag}(::BC) = Quadratic{BC}()
-
 function define_indices_d{BC}(::Type{BSpline{Quadratic{BC}}}, d, pad)
     symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
     symx, symfx = symbol("x_",d), symbol("fx_",d)
@@ -129,42 +126,46 @@ function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
 end
 
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Line}}, ::Type{GT})
-    dl,d,du = inner_system_diags(T,n,Quadratic{Line})
-    d[1] = d[end] = 1
-    du[1] = dl[end] = -2
+# quadratic and cubic share the same woodbury correction for `Line` type. No need
+# to re-implement
+for BST in (Quadratic, Cubic)
+    @eval function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{$BST{Line}}, ::Type{GT})
+        dl,d,du = inner_system_diags(T,n,$BST{Line})
+        d[1] = d[end] = 1
+        du[1] = dl[end] = -2
 
-    rowspec = spzeros(T,n,2)
-    # first row     last row
-    rowspec[1,1] = rowspec[n,2] = 1
-    colspec = spzeros(T,2,n)
-    # third col     third-to-last col
-    colspec[1,3] = colspec[2,n-2] = 1
-    valspec = zeros(T,2,2)
-    # [1,3]         [n,n-2]
-    valspec[1,1] = valspec[2,2] = 1
+        rowspec = spzeros(T,n,2)
+        # first row     last row
+        rowspec[1,1] = rowspec[n,2] = 1
+        colspec = spzeros(T,2,n)
+        # third col     third-to-last col
+        colspec[1,3] = colspec[2,n-2] = 1
+        valspec = zeros(T,2,2)
+        # [1,3]         [n,n-2]
+        valspec[1,1] = valspec[2,2] = 1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
-end
+        Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
+    end
 
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Free}}, ::Type{GT})
-    dl,d,du = inner_system_diags(T,n,Quadratic{Free})
-    d[1] = d[end] = 1
-    du[1] = dl[end] = -3
+    @eval function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{$BST{Free}}, ::Type{GT})
+        dl,d,du = inner_system_diags(T,n,$BST{Free})
+        d[1] = d[end] = 1
+        du[1] = dl[end] = -3
 
-    rowspec = spzeros(T,n,4)
-    # first row     first row       last row       last row
-    rowspec[1,1] = rowspec[1,2] = rowspec[n,3] = rowspec[n,4] = 1
-    colspec = spzeros(T,4,n)
-    # third col     fourth col     third-to-last col  fourth-to-last col
-    colspec[1,3] = colspec[2,4] = colspec[3,n-2] = colspec[4,n-3] = 1
-    valspec = zeros(T,4,4)
-    # [1,3]          [n,n-2]
-    valspec[1,1] = valspec[3,3] = 3
-    # [1,4]          [n,n-3]
-    valspec[2,2] = valspec[4,4] = -1
+        rowspec = spzeros(T,n,4)
+        # first row     first row       last row       last row
+        rowspec[1,1] = rowspec[1,2] = rowspec[n,3] = rowspec[n,4] = 1
+        colspec = spzeros(T,4,n)
+        # third col     fourth col     third-to-last col  fourth-to-last col
+        colspec[1,3] = colspec[2,4] = colspec[3,n-2] = colspec[4,n-3] = 1
+        valspec = zeros(T,4,4)
+        # [1,3]          [n,n-2]
+        valspec[1,1] = valspec[3,3] = 3
+        # [1,4]          [n,n-3]
+        valspec[2,2] = valspec[4,4] = -1
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
+        Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
+    end
 end
 
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Periodic}}, ::Type{GT})

@@ -1,0 +1,48 @@
+# module CubicTests
+
+using Base.Test
+# using Interpolations
+
+for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
+    f(x) = sin((x-3)*2pi/9 - 1)
+    xmax = 10
+    A = Float64[f(x) for x in 1:xmax]
+
+    f2(x, y) = sin(x/10)*cos(y/6)
+    xmax2, ymax2 = 30, 10
+    A2 = Float64[f2(x, y) for x in 1:xmax2, y in 1:ymax2]
+
+    for BC in (Line, Flat, Free, Periodic), GT in (OnGrid, OnCell)
+        itp1 = @inferred(constructor(copier(A), BSpline(Cubic(BC())), GT()))
+        @test @inferred(size(itp1)) == size(A)
+
+        # test that inner region is close to data
+        for x in 3.1:.2:8.1
+            @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
+        end
+
+        # test that we can evaluate close to, and at, boundaries
+        if GT == OnGrid
+            itp1[1.]
+            itp1[1.0]
+            itp1[1.2]
+            itp1[9.8]
+            itp1[10.]
+            itp1[10]
+        else
+            itp1[0.5]
+            itp1[0.6]
+            itp1[10.4]
+            itp1[10.5]
+        end
+
+        itp2 = @inferred(constructor(copier(A2), BSpline(Cubic(BC())), GT()))
+        @test @inferred(size(itp2)) == size(A2)
+
+        for x in 3.1:.2:xmax2-3, y in 3.1:2:ymax2-3
+            @test_approx_eq_eps f2(x,y) itp2[x,y] abs(.1*f2(x,y))
+        end
+    end
+end
+
+# end
