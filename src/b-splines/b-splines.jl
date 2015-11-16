@@ -74,12 +74,6 @@ function interpolate!{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArr
     interpolate!(tweight(A), A, it, gt)
 end
 
-immutable Cubic{BC<:Flag} <: Degree{3} end
-Cubic{BC<:Flag}(::BC) = Cubic{BC}()
-
-immutable Quadratic{BC<:Flag} <: Degree{2} end
-Quadratic{BC<:Flag}(::BC) = Quadratic{BC}()
-
 include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")
