@@ -4,7 +4,8 @@ export
     NoInterp,
     Constant,
     Linear,
-    Quadratic
+    Quadratic,
+    Cubic
 
 abstract Degree{N} <: Flag
 
@@ -76,6 +77,7 @@ end
 include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")
+include("cubic.jl")
 include("indexing.jl")
 include("prefiltering.jl")
 include("../filter1d.jl")
