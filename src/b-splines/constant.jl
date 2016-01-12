@@ -2,7 +2,7 @@ immutable Constant <: Degree{0} end
 
 function define_indices_d(::Type{BSpline{Constant}}, d, pad)
     symix, symx = symbol("ix_",d), symbol("x_",d)
-    :($symix = clamp(round(Int, real($symx)), 1, size(itp, $d)))
+    :($symix = clamp(round(Int, $symx), 1, size(itp, $d)))
 end
 
 function coefficients(::Type{BSpline{Constant}}, N, d)

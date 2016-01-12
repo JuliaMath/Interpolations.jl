@@ -7,7 +7,7 @@ function define_indices_d{BC}(::Type{BSpline{Quadratic{BC}}}, d, pad)
     quote
         # ensure that all three ix_d, ixm_d, and ixp_d are in-bounds no matter
         # the value of pad
-        $symix = clamp(round(Int, real($symx)), 2-$pad, size(itp,$d)+$pad-1)
+        $symix = clamp(round(Int, $symx), 2-$pad, size(itp,$d)+$pad-1)
         $symfx = $symx - $symix
         $symix += $pad # padding for oob coefficient
         $symixp = $symix + 1
@@ -18,7 +18,7 @@ function define_indices_d(::Type{BSpline{Quadratic{Periodic}}}, d, pad)
     symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
     symx, symfx = symbol("x_",d), symbol("fx_",d)
     quote
-        $symix = clamp(round(Int, real($symx)), 1, size(itp,$d))
+        $symix = clamp(round(Int, $symx), 1, size(itp,$d))
         $symfx = $symx - $symix
         $symixp = mod1($symix + 1, size(itp,$d))
         $symixm = mod1($symix - 1, size(itp,$d))
@@ -31,7 +31,7 @@ function define_indices_d{BC<:Union{InPlace,InPlaceQ}}(::Type{BSpline{Quadratic{
     quote
         # ensure that all three ix_d, ixm_d, and ixp_d are in-bounds no matter
         # the value of pad
-        $symix = clamp(round(Int, real($symx)), 1, size(itp,$d))
+        $symix = clamp(round(Int, $symx), 1, size(itp,$d))
         $symfx = $symx - $symix
         $symix += $pad # padding for oob coefficient
         $symixp = min(size(itp,$d), $symix + 1)

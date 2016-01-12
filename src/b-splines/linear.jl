@@ -3,7 +3,7 @@ immutable Linear <: Degree{1} end
 function define_indices_d(::Type{BSpline{Linear}}, d, pad)
     symix, symixp, symfx, symx = symbol("ix_",d), symbol("ixp_",d), symbol("fx_",d), symbol("x_",d)
     quote
-        $symix = clamp(floor(Int, real($symx)), 1, size(itp, $d)-1)
+        $symix = clamp(floor(Int, $symx), 1, size(itp, $d)-1)
         $symixp = $symix + 1
         $symfx = $symx - $symix
     end
