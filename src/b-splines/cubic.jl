@@ -81,6 +81,33 @@ function coefficients{C<:Cubic}(::Type{BSpline{C}}, N, d)
     end
 end
 
+"""
+In this function we assume that `fx_d = x-ix_d` and we produce `cX_d` for
+`X ⋹ {m, _, p, pp}` such that
+
+    cm_d  = p'(fx_d)
+    c_d   = q'(fx_d)
+    cp_d  = q'(1-fx_d)
+    cpp_d = p'(1-fx_d)
+
+where `p` and `q` are defined in the docstring for `Cubic`.
+"""
+function gradient_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
+    symm, sym, symp, sympp = symbol("cm_",d), symbol("c_",d), symbol("cp_",d), symbol("cpp_",d)
+    symfx = symbol("fx_",d)
+    symfx_sqr = symbol("fx_sqr_", d)
+    sym_1m_fx_sqr = symbol("one_m_fx_sqr_", d)
+    quote
+        $symfx_sqr = sqr($symfx)
+        $sym_1m_fx_sqr = sqr(1 - $symfx)
+
+        $symm  = -SimpleRatio(1,2) * $sym_1m_fx_sqr
+        $sym   =  SimpleRatio(3,2) * $symfx_sqr     - 2 * $symfx
+        $symp  = -SimpleRatio(3,2) * $sym_1m_fx_sqr + 2 * (1 - $symfx)
+        $sympp =  SimpleRatio(1,2) * $symfx_sqr
+    end
+end
+
 function index_gen{C<:Cubic,IT<:DimSpec{BSpline}}(::Type{BSpline{C}}, ::Type{IT}, N::Integer, offsets...)
     if length(offsets) < N
         d = length(offsets)+1
