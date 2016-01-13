@@ -86,5 +86,6 @@ include("b-splines/b-splines.jl")
 include("gridded/gridded.jl")
 include("extrapolation/extrapolation.jl")
 include("scaling/scaling.jl")
+include("utils.jl")
 
 end # module

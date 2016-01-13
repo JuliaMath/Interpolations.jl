@@ -202,6 +202,3 @@ To maintain the efficiency of using solving tridiagonal systems, the
 is used to add additional elements off the main 3 diagonals.
 """
 prefiltering_system
-
-
-sqr(x) = x*x
