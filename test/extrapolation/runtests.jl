@@ -71,6 +71,11 @@ etp87c = extrapolate(interpolate([1.0im, 2.0im, 3.0im], BSpline(Linear()), OnCel
 @test @inferred(getindex(etp87g, 0)) == 0.0im
 @test @inferred(getindex(etp87g, 3.7)) == 0.0im
 
+# Make sure it works with Gridded too
+etp100g = extrapolate(interpolate(([10;20],),[100;110], Gridded(Linear())), Flat())
+@test @inferred(getindex(etp100g, 5)) == 100
+@test @inferred(getindex(etp100g, 15)) == 105
+@test @inferred(getindex(etp100g, 25)) == 110
 end
 
 include("type-stability.jl")
