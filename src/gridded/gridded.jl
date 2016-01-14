@@ -60,6 +60,9 @@ function interpolate!{Tel,N,IT<:DimSpec{Gridded}}(knots::NTuple{N,GridIndex}, A:
     interpolate!(tweight(A), tcoef(A), knots, A, it)
 end
 
+lbound(itp::GriddedInterpolation, d) = itp.knots[d][1]
+ubound(itp::GriddedInterpolation, d) = itp.knots[d][end]
+
 include("constant.jl")
 include("linear.jl")
 include("indexing.jl")
