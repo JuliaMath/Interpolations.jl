@@ -1,6 +1,33 @@
 immutable Quadratic{BC<:Flag} <: Degree{2} end
 Quadratic{BC<:Flag}(::BC) = Quadratic{BC}()
 
+"""
+Assuming uniform knots with spacing 1, the `i`th piece of quadratic spline
+implemented here is defined as follows:
+
+    y_i(x) = cm p(x-i) + c q(x) + cp(1-(x-i))
+
+where
+
+    p(δx) = (δx - 1)^2 / 2
+    q(δx) = 3/4 - δx^2
+
+and the values for `cX` for `X ∈ {m,_,p}` are the pre-filtered coefficients.
+
+For future reference, this expands to the following polynomial:
+
+    y_i(x) = cm * 1/2 * (x-i-1)^2 + c * (3/4 - x + i)^2 + cp * 1/2 * (x-i)^2
+
+When we derive boundary conditions we will use derivatives `y_1'(x-1)` and
+`y_1''(x-1)`
+"""
+Quadratic
+
+"""
+`define_indices_d` for a quadratic b-spline calculates `ix_d = floor(x_d)` and
+`fx_d = x_d - ix_d` (corresponding to `i` `and `δx` in the docstring for
+`Quadratic`), as well as auxiliary quantities `ixm_d` and `ixp_d`
+"""
 function define_indices_d{BC}(::Type{BSpline{Quadratic{BC}}}, d, pad)
     symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
     symx, symfx = symbol("x_",d), symbol("fx_",d)
@@ -39,6 +66,17 @@ function define_indices_d{BC<:Union{InPlace,InPlaceQ}}(::Type{BSpline{Quadratic{
     end
 end
 
+"""
+In `coefficients` for a quadratic b-spline we assume that `fx_d = x-ix_d`
+and we define `cX_d` for `X ⋹ {m, _, p}` such that
+
+    cm_d  = p(fx_d)
+    c_d   = q(fx_d)
+    cp_d  = p(1-fx_d)
+
+where `p` and `q` are defined in the docstring entry for `Quadratic`, and
+`fx_d` in the docstring entry for `define_indices_d`.
+"""
 function coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, N, d)
     symm, sym, symp =  symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
     symfx = symbol("fx_",d)
@@ -49,6 +87,17 @@ function coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, N, d)
     end
 end
 
+"""
+In `gradient_coefficients` for a quadratic b-spline we assume that `fx_d = x-ix_d`
+and we define `cX_d` for `X ⋹ {m, _, p}` such that
+
+    cm_d  = p'(fx_d)
+    c_d   = q'(fx_d)
+    cp_d  = p'(1-fx_d)
+
+where `p` and `q` are defined in the docstring entry for `Quadratic`, and
+`fx_d` in the docstring entry for `define_indices_d`.
+"""
 function gradient_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
     symm, sym, symp =  symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
     symfx = symbol("fx_",d)
@@ -103,6 +152,12 @@ function inner_system_diags{T,Q<:Quadratic}(::Type{T}, n::Int, ::Type{Q})
     (dl,d,du)
 end
 
+"""
+`Quadratic{Flat}` `OnCell` and `Quadratic{Reflect}` `OnCell` amounts to setting
+`y_1'(x) = 0` at x=1/2. Applying this condition yields
+
+    -cm + c = 0
+"""
 function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnCell})
     dl,d,du = inner_system_diags(T,n,Quadratic{BC})
     d[1] = d[end] = -1
@@ -131,6 +186,12 @@ function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadrat
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
 end
 
+"""
+`Quadratic{Flat}` `OnGrid` and `Quadratic{Reflect}` `OnGrid` amount to setting
+`y_1'(x) = 0` at `x=1`. Applying this condition yields
+
+    -cm + cp = 0
+"""
 function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnGrid})
     dl,d,du = inner_system_diags(T,n,Quadratic{BC})
     d[1] = d[end] = -1
@@ -144,6 +205,13 @@ function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
 
+"""
+`Quadratic{Line}` `OnGrid` and `Quadratic{Line}` `OnCell` amount to setting
+`y_1''(x) = 0` at `x=1` and `x=1/2` respectively. Since `y_i''(x)` is independent
+of `x` for a quadratic b-spline, these both yield
+
+    1 cm -2 c + 1 cp = 0
+"""
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Line}}, ::Type{GT})
     dl,d,du = inner_system_diags(T,n,Quadratic{Line})
     d[1] = d[end] = 1
@@ -157,6 +225,13 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, :
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
 
+"""
+`Quadratic{Free}` `OnGrid` and `Quadratic{Free}` `OnCell` amount to requiring
+an extra continuous derivative at the second-to-last cell boundary; this means
+that `y_1''(3/2) = y_2''(3/2)`, yielding
+
+    1 cm -3 c + 3 cp - cpp = 0
+"""
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Free}}, ::Type{GT})
     dl,d,du = inner_system_diags(T,n,Quadratic{Free})
     d[1] = d[end] = 1
@@ -171,6 +246,14 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, :
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
 
+"""
+`Quadratic{Periodic}` `OnGrid` and `Quadratic{Periodic}` `OnCell` close the system
+by looking at the coefficients themselves as periodic, yielding
+
+    c0 = c(N+1)
+
+where `N` is the number of data points.
+"""
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Periodic}}, ::Type{GT})
     dl,d,du = inner_system_diags(T,n,Quadratic{Periodic})
 
@@ -181,23 +264,3 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, :
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
-
-
-"""
-    prefiltering_system{T,TC,GT<:GridType,D<:Degree}m(::T, ::Type{TC}, n::Int, ::Type{D}, ::Type{GT})
-
-Given element types (`T`, `TC`) and interpolation scheme
-(`GT`, `D`) as well the number of rows in the data input (`n`), compute the
-system used to prefilter spline coefficients.
-
-For quadratic and cubic splines this system is tridagonal for all interior rows.
-
-Boundary conditions determine the number of non zero elements on the first
-and last rows. Some of these boundary conditions require that these rows have
-off tri-diagonal elements (e.g the `[1,3]` element of the matrix).
-
-To maintain the efficiency of using solving tridiagonal systems, the
-[Woodbury matrix identity](https://en.wikipedia.org/wiki/Woodbury_matrix_identity)
-is used to add additional elements off the main 3 diagonals.
-"""
-prefiltering_system
