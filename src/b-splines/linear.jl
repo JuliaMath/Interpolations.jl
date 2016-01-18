@@ -25,6 +25,13 @@ function gradient_coefficients(::Type{BSpline{Linear}}, d)
     end
 end
 
+function hessian_coefficients(::Type{BSpline{Linear}}, d)
+    sym, symp = symbol("c_",d), symbol("cp_",d)
+    quote
+        $sym = $symp = 0
+    end
+end
+
 # This assumes fractional values 0 <= fx_d <= 1, integral values ix_d and ixp_d (typically ixp_d = ix_d+1,
 #except at boundaries), and an array itp.coefs
 function index_gen{IT<:DimSpec{BSpline}}(::Type{BSpline{Linear}}, ::Type{IT}, N::Integer, offsets...)

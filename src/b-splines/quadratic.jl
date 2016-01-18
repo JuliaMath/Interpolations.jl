@@ -59,6 +59,26 @@ function gradient_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
     end
 end
 
+"""
+In `hessian_coefficients` for a quadratic b-spline we assume that `fx_d = x-ix_d`
+and we define `cX_d` for `X ⋹ {m, _, p}` such that
+
+    cm_d  = p''(fx_d)
+    c_d   = q''(fx_d)
+    cp_d  = p''(1-fx_d)
+
+where `p` and `q` are defined in the docstring entry for `Quadratic`, and
+`fx_d` in the docstring entry for `define_indices_d`.
+"""
+function hessian_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
+    symm, sym, symp = symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
+    quote
+        $symm = 1
+        $sym  = -2
+        $symp = 1
+    end
+end
+
 # This assumes integral values ixm_d, ix_d, and ixp_d,
 # coefficients cm_d, c_d, and cp_d, and an array itp.coefs
 function index_gen{Q<:Quadratic,IT<:DimSpec{BSpline}}(::Type{BSpline{Q}}, ::Type{IT}, N::Integer, offsets...)

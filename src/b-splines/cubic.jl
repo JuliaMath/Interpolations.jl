@@ -108,6 +108,29 @@ function gradient_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
     end
 end
 
+"""
+In `hessian_coefficients` for a cubic b-spline we assume that `fx_d = x-ix_d`
+and we define `cX_d` for `X ⋹ {m, _, p, pp}` such that
+
+    cm_d  = p''(fx_d)
+    c_d   = q''(fx_d)
+    cp_d  = q''(1-fx_d)
+    cpp_d = p''(1-fx_d)
+
+where `p` and `q` are defined in the docstring entry for `Cubic`, and
+`fx_d` in the docstring entry for `define_indices_d`.
+"""
+function hessian_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
+    symm, sym, symp, sympp = symbol("cm_",d), symbol("c_",d), symbol("cp_",d), symbol("cpp_",d)
+    symfx = symbol("fx_",d)
+    quote
+        $symm  = 1 - $symfx
+        $sym   = 3 * $symfx - 2
+        $symp  = 1 - 3 * $symfx
+        $sympp = $symfx
+    end
+end
+
 function index_gen{C<:Cubic,IT<:DimSpec{BSpline}}(::Type{BSpline{C}}, ::Type{IT}, N::Integer, offsets...)
     if length(offsets) < N
         d = length(offsets)+1

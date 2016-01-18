@@ -1,4 +1,4 @@
-# module CubicTests
+module CubicTests
 
 using Base.Test
 using Interpolations
@@ -50,4 +50,36 @@ for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
     end
 end
 
-# end
+end
+
+module CubicGradientTests
+
+using Interpolations, Base.Test
+
+ix = 1:15
+f(x) = cos((x-1)*2pi/(length(ix)-1))
+g(x) = -2pi/14 * sin((x-1)*2pi/(length(ix)-1))
+
+A = f(ix)
+
+for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
+
+    for BC in (Line, Flat, Free, Periodic), GT in (OnGrid,OnCell)
+
+        itp = constructor(copier(A), BSpline(Cubic(BC())), GT())
+        # test that inner region is close to data
+        for x in linspace(ix[5],ix[end-4],100)
+            @test_approx_eq_eps g(x) gradient(itp,x)[1] cbrt(cbrt(eps(g(x))))
+        end
+    end
+end
+itp_flat_g = interpolate(A, BSpline(Cubic(Flat())), OnGrid())
+@test_approx_eq_eps gradient(itp_flat_g, 1)[1] 0 eps()
+@test_approx_eq_eps gradient(itp_flat_g, ix[end])[1] 0 eps()
+
+itp_flat_c = interpolate(A, BSpline(Cubic(Flat())), OnCell())
+@test_approx_eq_eps gradient(itp_flat_c, .5)[1] 0 eps()
+@test_approx_eq_eps gradient(itp_flat_c, ix[end]+.5)[1] 0 eps()
+
+
+end

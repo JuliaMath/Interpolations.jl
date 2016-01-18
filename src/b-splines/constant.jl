@@ -15,6 +15,11 @@ function gradient_coefficients(::Type{BSpline{Constant}}, d)
     :($sym = 0)
 end
 
+function hessian_coefficients(::Type{BSpline{Constant}}, d)
+    sym = symbol("c_",d)
+    :($sym = 0)
+end
+
 function index_gen{IT<:DimSpec{BSpline}}(::Type{BSpline{Constant}}, ::Type{IT}, N::Integer, offsets...)
     if (length(offsets) < N)
         d = length(offsets)+1
