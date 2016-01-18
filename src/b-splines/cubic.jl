@@ -205,7 +205,7 @@ condition gives:
 """
 function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
                                    ::Type{Cubic{Line}}, ::Type{OnCell})
-    dl,d,du = inner_system_diags(T,n,Cubic{Flat})
+    dl,d,du = inner_system_diags(T,n,Cubic{Line})
     d[1] = d[end] = 3
     du[1] = dl[end] = -7
 
@@ -231,9 +231,20 @@ condition gives:
 This is the same system as `Quadratic{Line}`, `OnGrid` so we reuse the
 implementation
 """
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
-                                                ::Type{Cubic{Line}}, ::Type{GT})
-    prefiltering_system(T, TC, n, Quadratic{Line}, OnGrid)
+function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
+                                   ::Type{Cubic{Line}}, ::Type{OnGrid})
+    dl,d,du = inner_system_diags(T,n,Cubic{Line})
+    d[1] = d[end] = 1
+    du[1] = dl[end] = -2
+
+    # now need Woodbury correction to set :
+    #    - [1, 3] and [n, n-2] ==> 1
+    specs = _build_woodbury_specs(T, n,
+                                  (1, 3, one(T)),
+                                  (n, n-2, one(T)),
+                                  )
+
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
 
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
@@ -241,8 +252,8 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
     dl, d, du = inner_system_diags(T,n,Cubic{Periodic})
 
     specs = _build_woodbury_specs(T, n,
-                                  (1, n, SimpleRatio(1, 6)),
-                                  (n, 1, SimpleRatio(1, 6))
+                                  (1, n, du[1]),
+                                  (n, 1, dl[end])
                                   )
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
@@ -260,5 +271,12 @@ This is the same system as `Quadratic{Free}` so we reuse the implementation
 """
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
                                                 ::Type{Cubic{Free}}, ::Type{GT})
-    prefiltering_system(T, TC, n, Quadratic{Free}, GT)
+    dl, d, du = inner_system_diags(T,n,Cubic{Periodic})
+
+    specs = _build_woodbury_specs(T, n,
+                                  (1, n, du[1]),
+                                  (n, 1, dl[end])
+                                  )
+
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
 end
