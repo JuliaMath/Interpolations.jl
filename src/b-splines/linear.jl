@@ -1,5 +1,31 @@
 immutable Linear <: Degree{1} end
 
+"""
+Assuming uniform knots with spacing 1, the `i`th peice of linear b-spline
+implemented here is defined as follows.
+
+    y_i(x) = c p(x) + cp p(1-x)
+
+where
+
+    p(δx) = x
+
+and the values `cX` for `X ∈ {_, p}` are the coefficients.
+
+Linear b-splines are naturally interpolating, and require no prefiltering;
+there is therefore no need for boundary conditions to be provided.
+
+Also, although the implementation is slightly different in order to re-use
+the framework built for general b-splines, the resulting interpolant is just
+a piecewise linear function connecting each pair of neighboring data points.
+"""
+Linear
+
+"""
+`define_indices_d` for a linear b-spline calculates `ix_d = floor(x_d)` and
+`fx_d = x_d - ix_d` (corresponding to `i` and `δx` in the docstring for
+`Linear`), as well as the auxiliary quantity `ixp_d`
+"""
 function define_indices_d(::Type{BSpline{Linear}}, d, pad)
     symix, symixp, symfx, symx = symbol("ix_",d), symbol("ixp_",d), symbol("fx_",d), symbol("x_",d)
     quote
@@ -9,6 +35,16 @@ function define_indices_d(::Type{BSpline{Linear}}, d, pad)
     end
 end
 
+"""
+In `coefficients` for a linear b-spline we assume that `fx_d = x-ix-d` and
+we define `cX_d` for `X ∈ {_, p}` such that
+
+    c_d = p(fx_d)
+    cp_d = p(1-fx_d)
+
+where `p` is defined in the docstring entry for `Linear` and `fx_d` in the
+docstring entry for `define_indices_d`.
+"""
 function coefficients(::Type{BSpline{Linear}}, N, d)
     sym, symp, symfx = symbol("c_",d), symbol("cp_",d), symbol("fx_",d)
     quote
@@ -17,6 +53,16 @@ function coefficients(::Type{BSpline{Linear}}, N, d)
     end
 end
 
+"""
+In `gradient_coefficients` for a linear b-spline we assume that `fx_d = x-ix_d`
+and we define `cX_d` for `X ⋹ {_, p}` such that
+
+    c_d  = p'(fx_d)
+    cp_d = p'(1-fx_d)
+
+where `p` is defined in the docstring entry for `Linear`, and `fx_d` in the
+docstring entry for `define_indices_d`.
+"""
 function gradient_coefficients(::Type{BSpline{Linear}}, d)
     sym, symp, symfx = symbol("c_",d), symbol("cp_",d), symbol("fx_",d)
     quote
@@ -25,6 +71,16 @@ function gradient_coefficients(::Type{BSpline{Linear}}, d)
     end
 end
 
+"""
+In `hessian_coefficients` for a linear b-spline we assume that `fx_d = x-ix_d`
+and we define `cX_d` for `X ⋹ {_, p}` such that
+
+    c_d  = p''(fx_d)
+    cp_d = p''(1-fx_d)
+
+where `p` is defined in the docstring entry for `Linear`, and `fx_d` in the
+docstring entry for `define_indices_d`. (These are both ≡ 0.)
+"""
 function hessian_coefficients(::Type{BSpline{Linear}}, d)
     sym, symp = symbol("c_",d), symbol("cp_",d)
     quote
