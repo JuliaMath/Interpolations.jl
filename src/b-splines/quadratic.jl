@@ -5,7 +5,7 @@ Quadratic{BC<:Flag}(::BC) = Quadratic{BC}()
 Assuming uniform knots with spacing 1, the `i`th piece of quadratic spline
 implemented here is defined as follows:
 
-    y_i(x) = cm p(x-i) + c q(x) + cp(1-(x-i))
+    y_i(x) = cm p(x-i) + c q(x) + cp p(1-(x-i))
 
 where
 

@@ -3,10 +3,6 @@ immutable Constant <: Degree{0} end
 """
 Constant b-splines are *nearest-neighbor* interpolations, and effectively
 return `A[round(Int,x)]` when interpolating
-
-Also, although the implementation is slightly different in order to re-use
-the framework built for general b-splines, the resulting interpolant is just
-a piecewise linear function connecting each pair of neighboring data points.
 """
 Constant
 
