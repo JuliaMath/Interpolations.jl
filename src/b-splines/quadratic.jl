@@ -59,6 +59,26 @@ function gradient_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
     end
 end
 
+"""
+In `hessian_coefficients` for a quadratic b-spline we assume that `fx_d = x-ix_d`
+and we define `cX_d` for `X ⋹ {m, _, p}` such that
+
+    cm_d  = p''(fx_d)
+    c_d   = q''(fx_d)
+    cp_d  = p''(1-fx_d)
+
+where `p` and `q` are defined in the docstring entry for `Quadratic`, and
+`fx_d` in the docstring entry for `define_indices_d`.
+"""
+function hessian_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
+    symm, sym, symp = symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
+    quote
+        $symm = 1
+        $sym  = -2
+        $symp = 1
+    end
+end
+
 # This assumes integral values ixm_d, ix_d, and ixp_d,
 # coefficients cm_d, c_d, and cp_d, and an array itp.coefs
 function index_gen{Q<:Quadratic,IT<:DimSpec{BSpline}}(::Type{BSpline{Q}}, ::Type{IT}, N::Integer, offsets...)
@@ -116,17 +136,12 @@ function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}
     d[1] = d[end] = -1
     du[1] = dl[end] = 0
 
-    rowspec = spzeros(T,n,2)
-    # first row     last row
-    rowspec[1,1] = rowspec[n,2] = 1
-    colspec = spzeros(T,2,n)
-    # third col     third-to-last col
-    colspec[1,3] = colspec[2,n-2] = 1
-    valspec = zeros(T,2,2)
-    # [1,3]         [n,n-2]
-    valspec[1,1] = valspec[2,2] = 1
+    specs = _build_woodbury_specs(T, n,
+                                  (1, 3, one(T)),
+                                  (n, n-2, one(T))
+                                 )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
 
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Line}}, ::Type{GT})
@@ -134,17 +149,12 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, :
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
 
-    rowspec = spzeros(T,n,2)
-    # first row     last row
-    rowspec[1,1] = rowspec[n,2] = 1
-    colspec = spzeros(T,2,n)
-    # third col     third-to-last col
-    colspec[1,3] = colspec[2,n-2] = 1
-    valspec = zeros(T,2,2)
-    # [1,3]         [n,n-2]
-    valspec[1,1] = valspec[2,2] = 1
+    specs = _build_woodbury_specs(T, n,
+                                  (1, 3, one(T)),
+                                  (n, n-2, one(T)),
+                                  )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
 
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Free}}, ::Type{GT})
@@ -152,35 +162,24 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, :
     d[1] = d[end] = 1
     du[1] = dl[end] = -3
 
-    rowspec = spzeros(T,n,4)
-    # first row     first row       last row       last row
-    rowspec[1,1] = rowspec[1,2] = rowspec[n,3] = rowspec[n,4] = 1
-    colspec = spzeros(T,4,n)
-    # third col     fourth col     third-to-last col  fourth-to-last col
-    colspec[1,3] = colspec[2,4] = colspec[3,n-2] = colspec[4,n-3] = 1
-    valspec = zeros(T,4,4)
-    # [1,3]          [n,n-2]
-    valspec[1,1] = valspec[3,3] = 3
-    # [1,4]          [n,n-3]
-    valspec[2,2] = valspec[4,4] = -1
+    specs = _build_woodbury_specs(T, n,
+                                    (1, 3, 3),
+                                    (1, 4, -1),
+                                    (n, n-2, 3),
+                                    (n, n-3, -1))
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
 
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Periodic}}, ::Type{GT})
     dl,d,du = inner_system_diags(T,n,Quadratic{Periodic})
 
-    rowspec = spzeros(T,n,2)
-    # first row       last row
-    rowspec[1,1] = rowspec[n,2] = 1
-    colspec = spzeros(T,2,n)
-    # last col         first col
-    colspec[1,n] = colspec[2,1] = 1
-    valspec = zeros(T,2,2)
-    # [1,n]            [n,1]
-    valspec[1,1] = valspec[2,2] = SimpleRatio(1,8)
+    specs = _build_woodbury_specs(T, n,
+                                  (1, n, du[1]),
+                                  (n, 1, dl[end])
+                                  )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
 
 
@@ -202,6 +201,3 @@ To maintain the efficiency of using solving tridiagonal systems, the
 is used to add additional elements off the main 3 diagonals.
 """
 prefiltering_system
-
-
-sqr(x) = x*x

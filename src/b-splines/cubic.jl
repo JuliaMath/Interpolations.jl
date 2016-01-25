@@ -81,6 +81,56 @@ function coefficients{C<:Cubic}(::Type{BSpline{C}}, N, d)
     end
 end
 
+"""
+In this function we assume that `fx_d = x-ix_d` and we produce `cX_d` for
+`X ⋹ {m, _, p, pp}` such that
+
+    cm_d  = p'(fx_d)
+    c_d   = q'(fx_d)
+    cp_d  = q'(1-fx_d)
+    cpp_d = p'(1-fx_d)
+
+where `p` and `q` are defined in the docstring for `Cubic`.
+"""
+function gradient_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
+    symm, sym, symp, sympp = symbol("cm_",d), symbol("c_",d), symbol("cp_",d), symbol("cpp_",d)
+    symfx = symbol("fx_",d)
+    symfx_sqr = symbol("fx_sqr_", d)
+    sym_1m_fx_sqr = symbol("one_m_fx_sqr_", d)
+    quote
+        $symfx_sqr = sqr($symfx)
+        $sym_1m_fx_sqr = sqr(1 - $symfx)
+
+        $symm  = -SimpleRatio(1,2) * $sym_1m_fx_sqr
+        $sym   =  SimpleRatio(3,2) * $symfx_sqr     - 2 * $symfx
+        $symp  = -SimpleRatio(3,2) * $sym_1m_fx_sqr + 2 * (1 - $symfx)
+        $sympp =  SimpleRatio(1,2) * $symfx_sqr
+    end
+end
+
+"""
+In `hessian_coefficients` for a cubic b-spline we assume that `fx_d = x-ix_d`
+and we define `cX_d` for `X ⋹ {m, _, p, pp}` such that
+
+    cm_d  = p''(fx_d)
+    c_d   = q''(fx_d)
+    cp_d  = q''(1-fx_d)
+    cpp_d = p''(1-fx_d)
+
+where `p` and `q` are defined in the docstring entry for `Cubic`, and
+`fx_d` in the docstring entry for `define_indices_d`.
+"""
+function hessian_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
+    symm, sym, symp, sympp = symbol("cm_",d), symbol("c_",d), symbol("cp_",d), symbol("cpp_",d)
+    symfx = symbol("fx_",d)
+    quote
+        $symm  = 1 - $symfx
+        $sym   = 3 * $symfx - 2
+        $symp  = 1 - 3 * $symfx
+        $sympp = $symfx
+    end
+end
+
 function index_gen{C<:Cubic,IT<:DimSpec{BSpline}}(::Type{BSpline{C}}, ::Type{IT}, N::Integer, offsets...)
     if length(offsets) < N
         d = length(offsets)+1
@@ -155,7 +205,7 @@ condition gives:
 """
 function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
                                    ::Type{Cubic{Line}}, ::Type{OnCell})
-    dl,d,du = inner_system_diags(T,n,Cubic{Flat})
+    dl,d,du = inner_system_diags(T,n,Cubic{Line})
     d[1] = d[end] = 3
     du[1] = dl[end] = -7
 
@@ -181,9 +231,20 @@ condition gives:
 This is the same system as `Quadratic{Line}`, `OnGrid` so we reuse the
 implementation
 """
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
-                                                ::Type{Cubic{Line}}, ::Type{GT})
-    prefiltering_system(T, TC, n, Quadratic{Line}, OnGrid)
+function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
+                                   ::Type{Cubic{Line}}, ::Type{OnGrid})
+    dl,d,du = inner_system_diags(T,n,Cubic{Line})
+    d[1] = d[end] = 1
+    du[1] = dl[end] = -2
+
+    # now need Woodbury correction to set :
+    #    - [1, 3] and [n, n-2] ==> 1
+    specs = _build_woodbury_specs(T, n,
+                                  (1, 3, one(T)),
+                                  (n, n-2, one(T)),
+                                  )
+
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
 
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
@@ -191,8 +252,8 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
     dl, d, du = inner_system_diags(T,n,Cubic{Periodic})
 
     specs = _build_woodbury_specs(T, n,
-                                  (1, n, SimpleRatio(1, 6)),
-                                  (n, 1, SimpleRatio(1, 6))
+                                  (1, n, du[1]),
+                                  (n, 1, dl[end])
                                   )
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
@@ -210,38 +271,12 @@ This is the same system as `Quadratic{Free}` so we reuse the implementation
 """
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
                                                 ::Type{Cubic{Free}}, ::Type{GT})
-    prefiltering_system(T, TC, n, Quadratic{Free}, GT)
-end
+    dl, d, du = inner_system_diags(T,n,Cubic{Periodic})
 
-@inline cub(x) = x*x*x
+    specs = _build_woodbury_specs(T, n,
+                                  (1, n, du[1]),
+                                  (n, 1, dl[end])
+                                  )
 
-"""
-Build `rowspec`, `valspec`, `colspec` such that the product
-
-`out = rowspec * valspec * colspec` will be equivalent to:
-
-```julia
-out = zeros(n, n)
-
-for (i, j, v) in args
-    out[i, j] = v
-end
-```
-
-"""
-function _build_woodbury_specs{T}(::Type{T}, n::Int, args::Tuple{Int, Int, Any}...)
-    m = length(args)
-    rowspec = spzeros(T, n, m)
-    colspec = spzeros(T, m, n)
-    valspec = zeros(T, m, m)
-
-    ix = 1
-    for (i, (row, col, val)) in enumerate(args)
-        rowspec[row, ix] = 1
-        colspec[ix, col] = 1
-        valspec[ix, ix] = val
-        ix += 1
-    end
-
-    rowspec, valspec, colspec
+    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end

@@ -7,6 +7,10 @@ export
     scale,
 
     gradient!,
+    gradient1,
+    hessian!,
+    hessian,
+    hessian1,
 
     AbstractInterpolation,
     AbstractExtrapolation,
@@ -74,17 +78,11 @@ gridtype{ITP<:AbstractInterpolation}(::Type{ITP}) = gridtype(super(ITP))
 gridtype(itp::AbstractInterpolation) = gridtype(typeof(itp))
 count_interp_dims{T<:AbstractInterpolation}(::Type{T}, N) = N
 
-@generated function gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...)
-    n = count_interp_dims(itp, N)
-    Tg = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
-    xargs = [:(xs[$d]) for d in 1:length(xs)]
-    :(gradient!(Array($Tg,$n), itp, $(xargs...)))
-end
-
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
 include("gridded/gridded.jl")
 include("extrapolation/extrapolation.jl")
 include("scaling/scaling.jl")
+include("utils.jl")
 
 end # module
