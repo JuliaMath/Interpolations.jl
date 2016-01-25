@@ -136,7 +136,7 @@ function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}
     d[1] = d[end] = -1
     du[1] = dl[end] = 0
 
-    specs = _build_woodbury_specs(T, n,
+    specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, 3, one(T)),
                                   (n, n-2, one(T))
                                  )
@@ -149,7 +149,7 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, :
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
 
-    specs = _build_woodbury_specs(T, n,
+    specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, 3, one(T)),
                                   (n, n-2, one(T)),
                                   )
@@ -162,7 +162,7 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, :
     d[1] = d[end] = 1
     du[1] = dl[end] = -3
 
-    specs = _build_woodbury_specs(T, n,
+    specs = WoodburyMatrices.sparse_factors(T, n,
                                     (1, 3, 3),
                                     (1, 4, -1),
                                     (n, n-2, 3),
@@ -174,7 +174,7 @@ end
 function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Periodic}}, ::Type{GT})
     dl,d,du = inner_system_diags(T,n,Quadratic{Periodic})
 
-    specs = _build_woodbury_specs(T, n,
+    specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, n, du[1]),
                                   (n, 1, dl[end])
                                   )

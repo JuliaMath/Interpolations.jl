@@ -167,7 +167,7 @@ function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
     du[1] = dl[end] = zero(T)
 
     # Now Woodbury correction to set `[1, 3], [n, n-2] ==> 1`
-    specs = _build_woodbury_specs(T, n, (1, 3, one(T)), (n, n-2, one(T)))
+    specs = WoodburyMatrices.sparse_factors(T, n, (1, 3, one(T)), (n, n-2, one(T)))
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
@@ -187,7 +187,7 @@ function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
     # now need Woodbury correction to set :
     #    - [1, 3] and [n, n-2] ==> -3
     #    - [1, 4] and [n, n-3] ==> 1
-    specs = _build_woodbury_specs(T, n,
+    specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, 3, T(-3)),
                                   (n, n-2, T(-3)),
                                   (1, 4, one(T)),
@@ -212,7 +212,7 @@ function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
     # now need Woodbury correction to set :
     #    - [1, 3] and [n, n-2] ==> -3
     #    - [1, 4] and [n, n-3] ==> 1
-    specs = _build_woodbury_specs(T, n,
+    specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, 3, T(5)),
                                   (n, n-2, T(5)),
                                   (1, 4, -one(T)),
@@ -239,7 +239,7 @@ function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
 
     # now need Woodbury correction to set :
     #    - [1, 3] and [n, n-2] ==> 1
-    specs = _build_woodbury_specs(T, n,
+    specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, 3, one(T)),
                                   (n, n-2, one(T)),
                                   )
@@ -251,7 +251,7 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
                                                 ::Type{Cubic{Periodic}}, ::Type{GT})
     dl, d, du = inner_system_diags(T,n,Cubic{Periodic})
 
-    specs = _build_woodbury_specs(T, n,
+    specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, n, du[1]),
                                   (n, 1, dl[end])
                                   )
@@ -273,7 +273,7 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
                                                 ::Type{Cubic{Free}}, ::Type{GT})
     dl, d, du = inner_system_diags(T,n,Cubic{Periodic})
 
-    specs = _build_woodbury_specs(T, n,
+    specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, n, du[1]),
                                   (n, 1, dl[end])
                                   )

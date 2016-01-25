@@ -81,5 +81,4 @@ itp_flat_c = interpolate(A, BSpline(Cubic(Flat())), OnCell())
 @test_approx_eq_eps gradient(itp_flat_c, .5)[1] 0 eps()
 @test_approx_eq_eps gradient(itp_flat_c, ix[end]+.5)[1] 0 eps()
 
-
 end
