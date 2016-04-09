@@ -68,7 +68,7 @@ can be obtained as
 ```jl
 h = hessian(itp, x, y, ...)
 ```
-or, if you're evaluating the gradient repeatedly, a somewhat more
+or, if you're evaluating the hessian repeatedly, a somewhat more
 efficient option is
 ```jl
 hessian!(h, itp, x, y, ...)
