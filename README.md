@@ -63,6 +63,18 @@ gradient!(g, itp, x, y, ...)
 ```
 where `g` is a pre-allocated vector.
 
+Some interpolation objects support computation of the hessian, which
+can be obtained as
+```jl
+h = hessian(itp, x, y, ...)
+```
+or, if you're evaluating the hessian repeatedly, a somewhat more
+efficient option is
+```jl
+hessian!(h, itp, x, y, ...)
+```
+where `h` is a pre-allocated matrix.
+
 `A` may have any element type that supports the operations of addition
 and multiplication.  Examples include scalars like `Float64`, `Int`,
 and `Rational`, but also multi-valued types like `RGB` color vectors.
@@ -91,7 +103,7 @@ fine = itp[linspace(1,10,1001), linspace(1,15,201)]
 
 ### BSplines
 
-The interpolation type is described in terms of *degree*, *grid behavior* and, if necessary, *boundary conditions*. There are currently three degrees available: `Constant`, `Linear` and `Quadratic`, corresponding to B-splines of degree 0, 1 and 2, respectively.
+The interpolation type is described in terms of *degree*, *grid behavior* and, if necessary, *boundary conditions*. There are currently three degrees available: `Constant`, `Linear`, `Quadratic`,  and `Cubic` corresponding to B-splines of degree 0, 1, 2, and 3 respectively.
 
 You also have to specify what *grid representation* you want. There are currently two choices: `OnGrid`, in which the supplied data points are assumed to lie *on* the boundaries of the interpolation interval, and `OnCell` in which the data points are assumed to lie on half-intervals between cell boundaries.
 
@@ -132,9 +144,9 @@ defining the knots of the array.
 In 1D
 ```jl
 A = rand(20)
-A_x = collect(1.:40.)
-knots = (a,)
-itp = interpolate(knots,A, Gridded(Linear()))
+A_x = collect(1.0:2.0:40.0)
+knots = (A_x,)
+itp = interpolate(knots, A, Gridded(Linear()))
 itp[2.0] 
 ```
 
@@ -156,7 +168,6 @@ One may also mix modes, by specifying a mode vector in the form of an explicit t
 ```jl
 itp = interpolate(knots, A, (Gridded(Linear()),Gridded(Constant())))
 ```
-
 
 Presently there are only three modes for gridded:
 ```jl
