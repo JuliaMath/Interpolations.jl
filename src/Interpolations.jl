@@ -34,7 +34,7 @@ export
 
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
-import Base: convert, size, getindex, gradient, scale, promote_rule
+import Base: convert, size, getindex, gradient, scale, promote_rule, ndims, eltype
 
 abstract Flag
 abstract InterpolationType <: Flag
@@ -76,6 +76,12 @@ itptype(itp::AbstractInterpolation ) = itptype(typeof(itp))
 gridtype{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(::Type{AbstractInterpolation{T,N,IT,GT}}) = GT
 gridtype{ITP<:AbstractInterpolation}(::Type{ITP}) = gridtype(super(ITP))
 gridtype(itp::AbstractInterpolation) = gridtype(typeof(itp))
+ndims{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(::Type{AbstractInterpolation{T,N,IT,GT}}) = N
+ndims{ITP<:AbstractInterpolation}(::Type{ITP}) = ndims(super(ITP))
+ndims(itp::AbstractInterpolation) = ndims(typeof(itp))
+eltype{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(::Type{AbstractInterpolation{T,N,IT,GT}}) = T
+eltype{ITP<:AbstractInterpolation}(::Type{ITP}) = eltype(super(ITP))
+eltype(itp::AbstractInterpolation) = eltype(typeof(itp))
 count_interp_dims{T<:AbstractInterpolation}(::Type{T}, N) = N
 
 include("nointerp/nointerp.jl")

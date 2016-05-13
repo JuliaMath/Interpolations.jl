@@ -6,10 +6,16 @@ immutable ScaledInterpolation{T,N,ITPT,IT,GT,RT} <: AbstractInterpolationWrapper
     itp::ITPT
     ranges::RT
 end
-ScaledInterpolation{T,ITPT,IT,GT,RT}(::Type{T}, N, itp::ITPT, ::Type{IT}, ::Type{GT}, ranges::RT) =
-    ScaledInterpolation{T,N,ITPT,IT,GT,RT}(itp, ranges)
+@generated function ScaledInterpolation{ITPT,RT}(itp::ITPT, ranges::RT)
+    T = eltype(itp)
+    N = ndims(itp)
+    IT = itptype(itp)
+    GT = gridtype(itp)
+    :(ScaledInterpolation{$T,$N,$ITPT,$IT,$GT,$RT}(itp, ranges))
+end
+
 """
-`scale(itp, xs, ys, ...)` scales an existing interpolation object to allow for indexing using other coordinate axes than unit ranges, by wrapping the interpolation object and transforming the indices from the provided axes onto unit ranges upon indexing.
+`scale(itp, xs, ys, ...)` scales an existing interpolation object to allow for indexing using other coordinate axes than unit ranges, by wrapping the interpolation object and transforming the indices from the provided axes onto unit ranges upon indexing.a
 
 The parameters `xs` etc must be either ranges or linspaces, and there must be one coordinate range/linspace for each dimension of the interpolation object.
 
@@ -25,7 +31,7 @@ function scale{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, ranges::Range..
         end
     end
 
-    ScaledInterpolation(T,N,itp,IT,GT,ranges)
+    ScaledInterpolation(itp, ranges)
 end
 
 @generated function getindex{T,N,ITPT,IT<:DimSpec}(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...)

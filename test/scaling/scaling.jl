@@ -8,7 +8,7 @@ using Base.Test
 
 itp = interpolate(1:1.0:10, BSpline(Linear()), OnGrid())
 
-sitp = scale(itp, -3:.5:1.5)
+sitp = @inferred(scale(itp, -3:.5:1.5))
 
 for (x,y) in zip(-3:.05:1.5, 1:.1:10)
     @test_approx_eq sitp[x] y
@@ -24,7 +24,7 @@ ys = -4:.2:4
 zs = Float64[testfunction(x,y) for x in xs, y in ys]
 
 itp2 = interpolate(zs, BSpline(Quadratic(Flat())), OnGrid())
-sitp2 = scale(itp2, xs, ys)
+sitp2 = @inferred scale(itp2, xs, ys)
 
 for x in xs, y in ys
     @test_approx_eq testfunction(x,y) sitp2[x,y]
@@ -34,7 +34,7 @@ end
 xs = -pi:.1:pi
 ys = sin(xs)
 itp = interpolate(ys, BSpline(Linear()), OnGrid())
-sitp = scale(itp, xs)
+sitp = @inferred scale(itp, xs)
 
 for x in -pi:.1:pi
     g = @inferred(gradient(sitp, x))[1]
@@ -46,13 +46,13 @@ end
 @inferred(getindex(sitp2, -3, 1))
 @inferred(getindex(sitp2, -3.4, 1))
 
-sitp32 = scale(interpolate(Float32[testfunction(x,y) for x in -5:.5:5, y in -4:.2:4], BSpline(Quadratic(Flat())), OnGrid()), -5f0:.5f0:5f0, -4f0:.2f0:4f0)
+sitp32 = @inferred scale(interpolate(Float32[testfunction(x,y) for x in -5:.5:5, y in -4:.2:4], BSpline(Quadratic(Flat())), OnGrid()), -5f0:.5f0:5f0, -4f0:.2f0:4f0)
 @test typeof(@inferred(getindex(sitp32, -3.4f0, 1.2f0))) == Float32
 
 # Iteration
 itp = interpolate(rand(3,3,3), BSpline(Quadratic(Flat())), OnCell())
 knots = map(d->1:100:201, 1:3)
-sitp = scale(itp, knots...)
+sitp = @inferred scale(itp, knots...)
 function foo!(dest, sitp)
     i = 0
     for s in eachvalue(sitp)
