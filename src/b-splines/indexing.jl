@@ -98,11 +98,14 @@ end
     :(gradient!(g, itp, $(args...)))
 end
 
-@generated function gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...)
-    n = count_interp_dims(itp, N)
-    Tg = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
-    xargs = [:(xs[$d]) for d in 1:length(xs)]
-    :(gradient!(Array($Tg,$n), itp, $(xargs...)))
+# @eval uglyness required for disambiguation with method in Base
+for R in [:Real, :Any]
+    @eval @generated function gradient{T,N}(itp::AbstractInterpolation{T,N}, xs::$R...)
+        n = count_interp_dims(itp, N)
+        Tg = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
+        xargs = [:(xs[$d]) for d in 1:length(xs)]
+        :(gradient!(Array($Tg,$n), itp, $(xargs...)))
+    end
 end
 
 gradient1{T}(itp::AbstractInterpolation{T,1}, x) = gradient(itp, x)[1]
