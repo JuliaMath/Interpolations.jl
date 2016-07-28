@@ -32,7 +32,6 @@ end
 
 # Utilities for working either with scalars or tuples/tuple-types
 iextract{T<:BSpline}(::Type{T}, d) = T
-iextract{T<:GridType}(::Type{T}, d) = T
 iextract(t, d) = t.parameters[d]
 padding{T,N,TCoefs,IT,GT,pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,pad}}) = pad
 padding(itp::AbstractInterpolation) = padding(typeof(itp))
