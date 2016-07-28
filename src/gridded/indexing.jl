@@ -143,7 +143,7 @@ end
 function getindex_return_type{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}}, argtypes)
     Tret = TCoefs
     for a in argtypes
-        Tret = Base.promote_op(Base.MulFun, Tret, a)
+        Tret = Base.promote_op(@functorize(*), Tret, a) # the macro is used to support julia 0.4
     end
     Tret
 end

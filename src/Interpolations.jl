@@ -32,6 +32,7 @@ export
     # extrapolation/extrapolation.jl
     # scaling/scaling.jl
 
+using Compat
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
 import Base: convert, size, getindex, gradient, scale, promote_rule, ndims, eltype

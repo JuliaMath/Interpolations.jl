@@ -82,7 +82,7 @@ end
 function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes)
     Tret = eltype(TCoefs)
     for a in argtypes
-        Tret = Base.promote_op(Base.MulFun, Tret, a)
+        Tret = Base.promote_op(@functorize(*), Tret, a) # the macro is used to support julia 0.4
     end
     Tret
 end
