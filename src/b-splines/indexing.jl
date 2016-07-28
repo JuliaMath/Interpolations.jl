@@ -155,7 +155,7 @@ end
 
 hessian1{T}(itp::AbstractInterpolation{T,1}, x) = hessian(itp, x)[1,1]
 
-offsetsym(off, d) = off == -1 ? symbol("ixm_", d) :
-                    off ==  0 ? symbol("ix_", d) :
-                    off ==  1 ? symbol("ixp_", d) :
-                    off ==  2 ? symbol("ixpp_", d) : error("offset $off not recognized")
+offsetsym(off, d) = off == -1 ? Symbol("ixm_", d) :
+                    off ==  0 ? Symbol("ix_", d) :
+                    off ==  1 ? Symbol("ixp_", d) :
+                    off ==  2 ? Symbol("ixpp_", d) : error("offset $off not recognized")

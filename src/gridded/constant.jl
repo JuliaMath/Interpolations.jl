@@ -1,6 +1,6 @@
 function define_indices_d(::Type{Gridded{Constant}}, d, pad)
-    symix, symx = symbol("ix_",d), symbol("x_",d)
-    symk, symkix = symbol("k_",d), symbol("kix_",d)
+    symix, symx = Symbol("ix_",d), Symbol("x_",d)
+    symk, symkix = Symbol("k_",d), Symbol("kix_",d)
     # Choose the closer of k[ix] and k[ix+1]
     quote
         $symix = clamp($symix, 1, size(itp, $d)-1)
@@ -11,19 +11,19 @@ function define_indices_d(::Type{Gridded{Constant}}, d, pad)
 end
 
 function coefficients(::Type{Gridded{Constant}}, N, d)
-    sym, symx = symbol("c_",d), symbol("x_",d)
+    sym, symx = Symbol("c_",d), Symbol("x_",d)
     :($sym = 1)
 end
 
 function gradient_coefficients(::Type{Gridded{Constant}}, N, d)
-    sym, symx = symbol("c_",d), symbol("x_",d)
+    sym, symx = Symbol("c_",d), Symbol("x_",d)
     :($sym = 0)
 end
 
 function index_gen{IT<:DimSpec{Gridded}}(::Type{Gridded{Constant}}, ::Type{IT}, N::Integer, offsets...)
     if (length(offsets) < N)
         d = length(offsets)+1
-        sym = symbol("c_", d)
+        sym = Symbol("c_", d)
         return :($sym * $(index_gen(IT, N, offsets..., 0)))
     else
         indices = [offsetsym(offsets[d], d) for d = 1:N]

@@ -173,7 +173,7 @@ function next_gen{CR,SITPT,X1,Deg,T}(::Type{ScaledIterator{CR,SITPT,X1,Deg,T}})
     BS1 = iextract(IT, 1)
     BS1 == NoInterp && error("eachvalue is not implemented (and does not make sense) for NoInterp along the first dimension")
     pad = padding(ITPT)
-    x_syms = [symbol("x_", i) for i = 1:N]
+    x_syms = [Symbol("x_", i) for i = 1:N]
     interp_index(IT, i) = iextract(IT, i) != NoInterp ?
         :($(x_syms[i]) = coordlookup(sitp.ranges[$i], state[$i])) :
         :($(x_syms[i]) = state[$i])

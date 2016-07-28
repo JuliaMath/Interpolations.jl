@@ -1,5 +1,5 @@
 function define_indices_d(::Type{NoInterp}, d, pad)
-    symix, symx = symbol("ix_",d), symbol("x_",d)
+    symix, symx = Symbol("ix_",d), Symbol("x_",d)
     :($symix = convert(Int, $symx))
 end
 
