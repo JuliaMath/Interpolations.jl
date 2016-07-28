@@ -29,8 +29,8 @@ Quadratic
 `Quadratic`), as well as auxiliary quantities `ixm_d` and `ixp_d`
 """
 function define_indices_d{BC}(::Type{BSpline{Quadratic{BC}}}, d, pad)
-    symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
-    symx, symfx = symbol("x_",d), symbol("fx_",d)
+    symix, symixm, symixp = Symbol("ix_",d), Symbol("ixm_",d), Symbol("ixp_",d)
+    symx, symfx = Symbol("x_",d), Symbol("fx_",d)
     quote
         # ensure that all three ix_d, ixm_d, and ixp_d are in-bounds no matter
         # the value of pad
@@ -42,8 +42,8 @@ function define_indices_d{BC}(::Type{BSpline{Quadratic{BC}}}, d, pad)
     end
 end
 function define_indices_d(::Type{BSpline{Quadratic{Periodic}}}, d, pad)
-    symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
-    symx, symfx = symbol("x_",d), symbol("fx_",d)
+    symix, symixm, symixp = Symbol("ix_",d), Symbol("ixm_",d), Symbol("ixp_",d)
+    symx, symfx = Symbol("x_",d), Symbol("fx_",d)
     quote
         $symix = clamp(round(Int, $symx), 1, size(itp,$d))
         $symfx = $symx - $symix
@@ -52,8 +52,8 @@ function define_indices_d(::Type{BSpline{Quadratic{Periodic}}}, d, pad)
     end
 end
 function define_indices_d{BC<:Union{InPlace,InPlaceQ}}(::Type{BSpline{Quadratic{BC}}}, d, pad)
-    symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
-    symx, symfx = symbol("x_",d), symbol("fx_",d)
+    symix, symixm, symixp = Symbol("ix_",d), Symbol("ixm_",d), Symbol("ixp_",d)
+    symx, symfx = Symbol("x_",d), Symbol("fx_",d)
     pad == 0 || error("Use $BC only with interpolate!")
     quote
         # ensure that all three ix_d, ixm_d, and ixp_d are in-bounds no matter
@@ -78,8 +78,8 @@ where `p` and `q` are defined in the docstring entry for `Quadratic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
 function coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, N, d)
-    symm, sym, symp =  symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
-    symfx = symbol("fx_",d)
+    symm, sym, symp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d)
+    symfx = Symbol("fx_",d)
     quote
         $symm = sqr($symfx - SimpleRatio(1,2))/2
         $sym  = SimpleRatio(3,4) - sqr($symfx)
@@ -99,8 +99,8 @@ where `p` and `q` are defined in the docstring entry for `Quadratic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
 function gradient_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
-    symm, sym, symp =  symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
-    symfx = symbol("fx_",d)
+    symm, sym, symp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d)
+    symfx = Symbol("fx_",d)
     quote
         $symm = $symfx - SimpleRatio(1,2)
         $sym = -2 * $symfx
@@ -120,7 +120,7 @@ where `p` and `q` are defined in the docstring entry for `Quadratic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
 function hessian_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
-    symm, sym, symp = symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
+    symm, sym, symp = Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d)
     quote
         $symm = 1
         $sym  = -2
@@ -133,7 +133,7 @@ end
 function index_gen{Q<:Quadratic,IT<:DimSpec{BSpline}}(::Type{BSpline{Q}}, ::Type{IT}, N::Integer, offsets...)
     if length(offsets) < N
         d = length(offsets)+1
-        symm, sym, symp =  symbol("cm_",d), symbol("c_",d), symbol("cp_",d)
+        symm, sym, symp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d)
         return :($symm * $(index_gen(IT, N, offsets...,-1)) + $sym * $(index_gen(IT, N, offsets..., 0)) +
                  $symp * $(index_gen(IT, N, offsets..., 1)))
     else

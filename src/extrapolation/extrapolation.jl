@@ -46,7 +46,7 @@ and indices. The heavy lifting is done by the `extrap_prep` function; see
 `?extrap_prep` for details.
 """
 function getindex_impl{T,N,ITPT,IT,GT,ET}(etp::Type{Extrapolation{T,N,ITPT,IT,GT,ET}}, xs...)
-    coords = [symbol("xs_",d) for d in 1:N]
+    coords = [Symbol("xs_",d) for d in 1:N]
     quote
         @nexprs $N d->(xs_d = xs[d])
         $(extrap_prep(ET, Val{N}()))
@@ -60,7 +60,7 @@ end
 
 
 function gradient!_impl{T,N,ITPT,IT,GT,ET}(g, etp::Type{Extrapolation{T,N,ITPT,IT,GT,ET}}, xs...)
-    coords = [symbol("xs_", d) for d in 1:N]
+    coords = [Symbol("xs_", d) for d in 1:N]
     quote
         @nexprs $N d->(xs_d = xs[d])
         $(extrap_prep(Val{:gradient}(), ET, Val{N}()))

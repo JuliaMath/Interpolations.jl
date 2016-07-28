@@ -28,14 +28,14 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
 
     # 2D
     g2(y) = cos(y/6)
-    f(x,y) = g1(x)*g2(y)
+    h = (x,y) -> g1(x)*g2(y)
     ymax = 10
-    A2 = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
+    A2 = Float64[h(x,y) for x in 1:xmax, y in 1:ymax]
     itp2 = @inferred(constructor(copier(A2), BSpline(Linear()), OnGrid()))
     @test @inferred(size(itp2)) == size(A2)
 
     for x in 2.1:.2:xmax-1, y in 1.9:.2:ymax-.9
-        @test_approx_eq_eps f(x,y) itp2[x,y] abs(.25*f(x,y))
+        @test_approx_eq_eps h(x,y) itp2[x,y] abs(.25*h(x,y))
     end
 end
 

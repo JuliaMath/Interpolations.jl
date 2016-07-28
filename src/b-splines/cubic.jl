@@ -30,8 +30,8 @@ Cubic
 `Cubic`), as well as auxiliary quantities `ixm_d`, `ixp_d` and `ixpp_d`
 """
 function define_indices_d{BC}(::Type{BSpline{Cubic{BC}}}, d, pad)
-    symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
-    symixpp, symx, symfx = symbol("ixpp_",d), symbol("x_",d), symbol("fx_",d)
+    symix, symixm, symixp = Symbol("ix_",d), Symbol("ixm_",d), Symbol("ixp_",d)
+    symixpp, symx, symfx = Symbol("ixpp_",d), Symbol("x_",d), Symbol("fx_",d)
     quote
         # ensure that all of ix_d, ixm_d, ixp_d, and ixpp_d are in-bounds no
         # matter the value of pad
@@ -53,8 +53,8 @@ If any `ixX_d` for `x ∈ {m, p, pp}` (note: not `c_d`) should fall outside of
 the data interval, they wrap around.
 """
 function define_indices_d(::Type{BSpline{Cubic{Periodic}}}, d, pad)
-    symix, symixm, symixp = symbol("ix_",d), symbol("ixm_",d), symbol("ixp_",d)
-    symixpp, symx, symfx = symbol("ixpp_",d), symbol("x_",d), symbol("fx_",d)
+    symix, symixm, symixp = Symbol("ix_",d), Symbol("ixm_",d), Symbol("ixp_",d)
+    symixpp, symx, symfx = Symbol("ixpp_",d), Symbol("x_",d), Symbol("fx_",d)
     quote
         $symix = clamp(floor(Int, $symx), 1, size(itp,$d))
         $symfx = $symx - $symix
@@ -80,11 +80,11 @@ where `p` and `q` are defined in the docstring entry for `Cubic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
 function coefficients{C<:Cubic}(::Type{BSpline{C}}, N, d)
-    symm, sym =  symbol("cm_",d), symbol("c_",d)
-    symp, sympp = symbol("cp_",d) ,symbol("cpp_",d)
-    symfx = symbol("fx_",d)
-    symfx_cub = symbol("fx_cub_", d)
-    sym_1m_fx_cub = symbol("one_m_fx_cub_", d)
+    symm, sym =  Symbol("cm_",d), Symbol("c_",d)
+    symp, sympp = Symbol("cp_",d) ,Symbol("cpp_",d)
+    symfx = Symbol("fx_",d)
+    symfx_cub = Symbol("fx_cub_", d)
+    sym_1m_fx_cub = Symbol("one_m_fx_cub_", d)
     quote
         $symfx_cub = cub($symfx)
         $sym_1m_fx_cub = cub(1-$symfx)
@@ -108,10 +108,10 @@ where `p` and `q` are defined in the docstring entry for `Cubic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
 function gradient_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
-    symm, sym, symp, sympp = symbol("cm_",d), symbol("c_",d), symbol("cp_",d), symbol("cpp_",d)
-    symfx = symbol("fx_",d)
-    symfx_sqr = symbol("fx_sqr_", d)
-    sym_1m_fx_sqr = symbol("one_m_fx_sqr_", d)
+    symm, sym, symp, sympp = Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d), Symbol("cpp_",d)
+    symfx = Symbol("fx_",d)
+    symfx_sqr = Symbol("fx_sqr_", d)
+    sym_1m_fx_sqr = Symbol("one_m_fx_sqr_", d)
     quote
         $symfx_sqr = sqr($symfx)
         $sym_1m_fx_sqr = sqr(1 - $symfx)
@@ -136,8 +136,8 @@ where `p` and `q` are defined in the docstring entry for `Cubic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
 function hessian_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
-    symm, sym, symp, sympp = symbol("cm_",d), symbol("c_",d), symbol("cp_",d), symbol("cpp_",d)
-    symfx = symbol("fx_",d)
+    symm, sym, symp, sympp = Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d), Symbol("cpp_",d)
+    symfx = Symbol("fx_",d)
     quote
         $symm  = 1 - $symfx
         $sym   = 3 * $symfx - 2
@@ -149,7 +149,7 @@ end
 function index_gen{C<:Cubic,IT<:DimSpec{BSpline}}(::Type{BSpline{C}}, ::Type{IT}, N::Integer, offsets...)
     if length(offsets) < N
         d = length(offsets)+1
-        symm, sym, symp, sympp =  symbol("cm_",d), symbol("c_",d), symbol("cp_",d), symbol("cpp_",d)
+        symm, sym, symp, sympp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d), Symbol("cpp_",d)
         return :($symm * $(index_gen(IT, N, offsets...,-1)) + $sym * $(index_gen(IT, N, offsets..., 0)) +
                  $symp * $(index_gen(IT, N, offsets..., 1)) + $sympp * $(index_gen(IT, N, offsets..., 2)))
     else

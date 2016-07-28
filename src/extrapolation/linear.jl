@@ -1,5 +1,5 @@
 function extrap_prep{N,d}(::Type{Linear}, ::Val{N}, ::Val{d}, ::Val{:lo})
-    coords = [symbol("xs_", k) for k in 1:N]
+    coords = [Symbol("xs_", k) for k in 1:N]
     xs_d = coords[d]
     quote
         if $xs_d < lbound(etp.itp, $d)
@@ -9,7 +9,7 @@ function extrap_prep{N,d}(::Type{Linear}, ::Val{N}, ::Val{d}, ::Val{:lo})
     end
 end
 function extrap_prep{N,d}(::Type{Linear}, ::Val{N}, ::Val{d}, ::Val{:hi})
-    coords = [symbol("xs_", k) for k in 1:N]
+    coords = [Symbol("xs_", k) for k in 1:N]
     xs_d = coords[d]
     quote
         if $xs_d > ubound(etp, $d)

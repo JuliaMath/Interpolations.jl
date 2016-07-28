@@ -3,6 +3,7 @@ module NonNumeric
 # Test interpolation with a multi-valued type
 
 using Interpolations
+using Compat
 
 import Base: +, -, *, /
 
@@ -20,6 +21,8 @@ end
 Base.one{T}(::Type{MyPair{T}}) = MyPair(one(T),one(T))
 Base.zero{T}(::Type{MyPair{T}}) = MyPair(zero(T),zero(T))
 Base.promote_rule{T1,T2<:Number}(::Type{MyPair{T1}}, ::Type{T2}) = MyPair{promote_type(T1,T2)}
+Base.promote_op{T1,T2<:Number}(::typeof(@functorize(*)), ::Type{MyPair{T1}}, ::Type{T2}) = MyPair{promote_type(T1,T2)}
+Base.promote_op{T1<:Number,T2}(::typeof(@functorize(*)), ::Type{T1}, ::Type{MyPair{T2}}) = MyPair{promote_type(T1,T2)}
 
 # 1d
 A = reinterpret(MyPair{Float64}, rand(2, 10), (10,))

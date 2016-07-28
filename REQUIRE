@@ -3,3 +3,4 @@ julia 0.4
 WoodburyMatrices 0.1.5
 Ratios
 AxisAlgorithms
+Compat 0.8.0

@@ -82,7 +82,7 @@ end
 function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes)
     Tret = eltype(TCoefs)
     for a in argtypes
-        Tret = Base.promote_op(Base.MulFun, Tret, a)
+        Tret = Base.promote_op(@functorize(*), Tret, a) # the macro is used to support julia 0.4
     end
     Tret
 end
@@ -98,11 +98,14 @@ end
     :(gradient!(g, itp, $(args...)))
 end
 
-@generated function gradient{T,N}(itp::AbstractInterpolation{T,N}, xs...)
-    n = count_interp_dims(itp, N)
-    Tg = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
-    xargs = [:(xs[$d]) for d in 1:length(xs)]
-    :(gradient!(Array($Tg,$n), itp, $(xargs...)))
+# @eval uglyness required for disambiguation with method in Base
+for R in [:Real, :Any]
+    @eval @generated function gradient{T,N}(itp::AbstractInterpolation{T,N}, xs::$R...)
+        n = count_interp_dims(itp, N)
+        Tg = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
+        xargs = [:(xs[$d]) for d in 1:length(xs)]
+        :(gradient!(Array($Tg,$n), itp, $(xargs...)))
+    end
 end
 
 gradient1{T}(itp::AbstractInterpolation{T,1}, x) = gradient(itp, x)[1]
@@ -155,7 +158,7 @@ end
 
 hessian1{T}(itp::AbstractInterpolation{T,1}, x) = hessian(itp, x)[1,1]
 
-offsetsym(off, d) = off == -1 ? symbol("ixm_", d) :
-                    off ==  0 ? symbol("ix_", d) :
-                    off ==  1 ? symbol("ixp_", d) :
-                    off ==  2 ? symbol("ixpp_", d) : error("offset $off not recognized")
+offsetsym(off, d) = off == -1 ? Symbol("ixm_", d) :
+                    off ==  0 ? Symbol("ix_", d) :
+                    off ==  1 ? Symbol("ixp_", d) :
+                    off ==  2 ? Symbol("ixpp_", d) : error("offset $off not recognized")
