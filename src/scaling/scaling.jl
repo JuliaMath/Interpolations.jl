@@ -70,9 +70,10 @@ basetype(sitp::ScaledInterpolation) = basetype(typeof(sitp))
 
 # @eval uglyness required for disambiguation with method in b-splies/indexing.jl
 # also, GT is only specified to avoid disambiguation warnings on julia 0.4
-gradient{T,N,ITPT,IT<:DimSpec{InterpolationType}}(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Real...) = gradient!(Array(T,count_interp_dims(IT,N)), sitp, xs...)
-gradient{T,N,ITPT,IT<:DimSpec{InterpolationType}}(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs...) = gradient!(Array(T,count_interp_dims(IT,N)), sitp, xs...)
-
+gradient{T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs::Real...) =
+        gradient!(Array(T,count_interp_dims(IT,N)), sitp, xs...)
+gradient{T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs...) =
+        gradient!(Array(T,count_interp_dims(IT,N)), sitp, xs...)
 @generated function gradient!{T,N,ITPT,IT}(g, sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...)
     ndims(g) == 1 || throw(DimensionMismatch("g must be a vector (but had $(ndims(g)) dimensions)"))
     length(xs) == N || throw(DimensionMismatch("Must index into $N-dimensional scaled interpolation object with exactly $N indices (you used $(length(xs)))"))
