@@ -32,6 +32,7 @@ export
     # extrapolation/extrapolation.jl
     # scaling/scaling.jl
 
+using Compat
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
 import Base: convert, size, getindex, gradient, scale, promote_rule, ndims, eltype
@@ -71,16 +72,16 @@ ubounds{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->ubound(itp,i), N)::NTu
 lbound{T,N}(itp::AbstractInterpolation{T,N}, d) = 1
 ubound{T,N}(itp::AbstractInterpolation{T,N}, d) = size(itp, d)
 itptype{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(::Type{AbstractInterpolation{T,N,IT,GT}}) = IT
-itptype{ITP<:AbstractInterpolation}(::Type{ITP}) = itptype(super(ITP))
+itptype{ITP<:AbstractInterpolation}(::Type{ITP}) = itptype(supertype(ITP))
 itptype(itp::AbstractInterpolation ) = itptype(typeof(itp))
 gridtype{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(::Type{AbstractInterpolation{T,N,IT,GT}}) = GT
-gridtype{ITP<:AbstractInterpolation}(::Type{ITP}) = gridtype(super(ITP))
+gridtype{ITP<:AbstractInterpolation}(::Type{ITP}) = gridtype(supertype(ITP))
 gridtype(itp::AbstractInterpolation) = gridtype(typeof(itp))
 ndims{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(::Type{AbstractInterpolation{T,N,IT,GT}}) = N
-ndims{ITP<:AbstractInterpolation}(::Type{ITP}) = ndims(super(ITP))
+ndims{ITP<:AbstractInterpolation}(::Type{ITP}) = ndims(supertype(ITP))
 ndims(itp::AbstractInterpolation) = ndims(typeof(itp))
 eltype{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(::Type{AbstractInterpolation{T,N,IT,GT}}) = T
-eltype{ITP<:AbstractInterpolation}(::Type{ITP}) = eltype(super(ITP))
+eltype{ITP<:AbstractInterpolation}(::Type{ITP}) = eltype(supertype(ITP))
 eltype(itp::AbstractInterpolation) = eltype(typeof(itp))
 count_interp_dims{T<:AbstractInterpolation}(::Type{T}, N) = N
 

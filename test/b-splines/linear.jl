@@ -6,10 +6,15 @@ using Base.Test
 xmax = 10
 g1(x) = sin((x-3)*2pi/(xmax-1)-1)
 f(x) = g1(x)
-
 A1 = Float64[f(x) for x in 1:xmax]
+fr(x) = (x^2) // 40 + 2
 
-for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
+ymax = 10
+g2(y) = cos(y/6)
+f(x,y) = g1(x)*g2(y)
+A2 = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
+
+for (constructor, copier) in ((interpolate, _->_), (interpolate!, copy))
     itp1c = @inferred(constructor(copier(A1), BSpline(Linear()), OnCell()))
 
     # Just interpolation
@@ -17,8 +22,7 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
         @test_approx_eq_eps f(x) itp1c[x] abs(.1*f(x))
     end
 
-    # Rational element types
-    fr(x) = (x^2) // 40 + 2
+    # Rational element types    
     A1R = Rational{Int}[fr(x) for x in 1:10]
     itp1r = @inferred(constructor(copier(A1R), BSpline(Linear()), OnGrid()))
     @test @inferred(size(itp1r)) == size(A1R)
@@ -27,10 +31,6 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
     @test eltype(itp1r) == Rational{Int}
 
     # 2D
-    g2(y) = cos(y/6)
-    f(x,y) = g1(x)*g2(y)
-    ymax = 10
-    A2 = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
     itp2 = @inferred(constructor(copier(A2), BSpline(Linear()), OnGrid()))
     @test @inferred(size(itp2)) == size(A2)
 

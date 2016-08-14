@@ -46,7 +46,7 @@ end
     # A manual @nloops (the interaction of d with the two exprs above is tricky...)
     ex = :(@nref($N,dest,i) = $(index_gen(IT, N)))
     for d = 1:N
-        isym, xsym, xvsym, ixsym, ixvsym = symbol("i_",d), symbol("x_",d), symbol("xv_",d), symbol("ix_",d), symbol("ixv_",d)
+        isym, xsym, xvsym, ixsym, ixvsym = Symbol("i_",d), Symbol("x_",d), Symbol("xv_",d), Symbol("ix_",d), Symbol("ixv_",d)
         ex = quote
             for $isym = 1:length($xvsym)
                 $xsym  = $xvsym[$isym]
@@ -143,7 +143,7 @@ end
 function getindex_return_type{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}}, argtypes)
     Tret = TCoefs
     for a in argtypes
-        Tret = Base.promote_op(Base.MulFun, Tret, a)
+        Tret = Base.promote_op(@functorize(*), Tret, a) # the macro is used to support julia 0.4
     end
     Tret
 end

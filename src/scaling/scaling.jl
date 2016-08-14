@@ -68,7 +68,12 @@ coordlookup(i::Bool, r::Range, x) = i ? coordlookup(r, x) : convert(typeof(coord
 basetype{T,N,ITPT,IT,GT,RT}(::Type{ScaledInterpolation{T,N,ITPT,IT,GT,RT}}) = ITPT
 basetype(sitp::ScaledInterpolation) = basetype(typeof(sitp))
 
-gradient{T,N,ITPT,IT<:DimSpec}(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...) = gradient!(Array(T,count_interp_dims(IT,N)), sitp, xs...)
+# @eval uglyness required for disambiguation with method in b-splies/indexing.jl
+# also, GT is only specified to avoid disambiguation warnings on julia 0.4
+gradient{T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs::Real...) =
+        gradient!(Array(T,count_interp_dims(IT,N)), sitp, xs...)
+gradient{T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs...) =
+        gradient!(Array(T,count_interp_dims(IT,N)), sitp, xs...)
 @generated function gradient!{T,N,ITPT,IT}(g, sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...)
     ndims(g) == 1 || throw(DimensionMismatch("g must be a vector (but had $(ndims(g)) dimensions)"))
     length(xs) == N || throw(DimensionMismatch("Must index into $N-dimensional scaled interpolation object with exactly $N indices (you used $(length(xs)))"))
@@ -173,7 +178,7 @@ function next_gen{CR,SITPT,X1,Deg,T}(::Type{ScaledIterator{CR,SITPT,X1,Deg,T}})
     BS1 = iextract(IT, 1)
     BS1 == NoInterp && error("eachvalue is not implemented (and does not make sense) for NoInterp along the first dimension")
     pad = padding(ITPT)
-    x_syms = [symbol("x_", i) for i = 1:N]
+    x_syms = [Symbol("x_", i) for i = 1:N]
     interp_index(IT, i) = iextract(IT, i) != NoInterp ?
         :($(x_syms[i]) = coordlookup(sitp.ranges[$i], state[$i])) :
         :($(x_syms[i]) = state[$i])
