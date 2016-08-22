@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/tlycken/Interpolations.jl.svg?branch=master)](https://travis-ci.org/tlycken/Interpolations.jl)
 [![PkgEval Status](http://pkg.julialang.org/badges/Interpolations_0.4.svg)](http://pkg.julialang.org/?pkg=Interpolations)
+[![Interpolations](http://pkg.julialang.org/badges/Interpolations_0.5.svg)](http://pkg.julialang.org/?pkg=Interpolations)
 
 This package implements a variety of interpolation schemes for the
 Julia langauge.  It has the goals of ease-of-use, broad algorithmic
