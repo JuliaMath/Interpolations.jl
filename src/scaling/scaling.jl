@@ -48,8 +48,6 @@ lbound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d) = 1 <= d <
 ubound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnGrid}, d) = 1 <= d <= N ? sitp.ranges[d][end] : throw(BoundsError())
 ubound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d) = 1 <= d <= N ? sitp.ranges[d][end] + boundstep(sitp.ranges[d]) : throw(BoundsError())
 
-boundstep(r::LinSpace) = ((r.stop - r.start) / r.divisor) / 2
-boundstep(r::FloatRange) = r.step / 2
 boundstep(r::StepRange) = r.step / 2
 boundstep(r::UnitRange) = 1//2
 
@@ -59,8 +57,6 @@ Returns *half* the width of one step of the range.
 This function is used to calculate the upper and lower bounds of `OnCell` interpolation objects.
 """ boundstep
 
-coordlookup(r::LinSpace, x) = (r.divisor * x + r.stop - r.len * r.start) / (r.stop - r.start)
-coordlookup(r::FloatRange, x) = (r.divisor * x - r.start) / r.step + one(eltype(r))
 coordlookup(r::StepRange, x) = (x - r.start) / r.step + one(eltype(r))
 coordlookup(r::UnitRange, x) = x - r.start + one(eltype(r))
 coordlookup(i::Bool, r::Range, x) = i ? coordlookup(r, x) : convert(typeof(coordlookup(r,x)), x)
@@ -92,10 +88,18 @@ gradient{T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(sitp::Sc
     end
 end
 
-rescale_gradient(r::LinSpace, g) = g * r.divisor / (r.stop - r.start)
-rescale_gradient(r::FloatRange, g) = g * r.divisor / r.step
+
 rescale_gradient(r::StepRange, g) = g / r.step
 rescale_gradient(r::UnitRange, g) = g
+
+@static if isdefined(:FloatRange) & isa(:FloatRange, DataType)
+    rescale_gradient(r::LinSpace, g) = g * r.divisor / (r.stop - r.start)
+    rescale_gradient(r::FloatRange, g) = g * r.divisor / r.step
+    coordlookup(r::LinSpace, x) = (r.divisor * x + r.stop - r.len * r.start) / (r.stop - r.start)
+    coordlookup(r::FloatRange, x) = (r.divisor * x - r.start) / r.step + one(eltype(r))
+    boundstep(r::LinSpace) = ((r.stop - r.start) / r.divisor) / 3
+    boundstep(r::FloatRange) = r.step / 3
+end
 
 """
 `rescale_gradient(r::Range)`
