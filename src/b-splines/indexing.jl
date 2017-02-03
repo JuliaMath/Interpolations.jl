@@ -54,7 +54,7 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
     # For each component of the gradient, alternately calculate
     # coefficients and set component
     n = count_interp_dims(IT, N)
-    exs = Array(Expr, 2n)
+    exs = Array{Expr}(2n)
     cntr = 0
     for d = 1:N
         if count_interp_dims(iextract(IT, d), 1) > 0
@@ -104,7 +104,7 @@ for R in [:Real, :Any]
         n = count_interp_dims(itp, N)
         Tg = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
         xargs = [:(xs[$d]) for d in 1:length(xs)]
-        :(gradient!(Array($Tg,$n), itp, $(xargs...)))
+        :(gradient!(Array{$Tg}($n), itp, $(xargs...)))
     end
 end
 
@@ -153,12 +153,7 @@ end
     n = count_interp_dims(itp,N)
     TH = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
     xargs = [:(xs[$d]) for d in 1:length(xs)]
-    :(hessian!(Array($TH,$n,$n), itp, $(xargs...)))
+    :(hessian!(Array{TH}($n,$n), itp, $(xargs...)))
 end
 
 hessian1{T}(itp::AbstractInterpolation{T,1}, x) = hessian(itp, x)[1,1]
-
-offsetsym(off, d) = off == -1 ? Symbol("ixm_", d) :
-                    off ==  0 ? Symbol("ix_", d) :
-                    off ==  1 ? Symbol("ixp_", d) :
-                    off ==  2 ? Symbol("ixpp_", d) : error("offset $off not recognized")

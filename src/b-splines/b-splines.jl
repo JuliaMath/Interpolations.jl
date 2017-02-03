@@ -73,6 +73,11 @@ function interpolate!{IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}(A::AbstractArr
     interpolate!(tweight(A), A, it, gt)
 end
 
+offsetsym(off, d) = off == -1 ? Symbol("ixm_", d) :
+                    off ==  0 ? Symbol("ix_", d) :
+                    off ==  1 ? Symbol("ixp_", d) :
+                    off ==  2 ? Symbol("ixpp_", d) : error("offset $off not recognized")
+
 include("constant.jl")
 include("linear.jl")
 include("quadratic.jl")

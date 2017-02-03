@@ -35,7 +35,8 @@ export
 using Compat
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
-import Base: convert, size, getindex, gradient, scale, promote_rule, ndims, eltype
+import Base: convert, size, getindex, gradient, promote_rule, ndims, eltype
+if isdefined(:scaling) import Base.scaling end
 
 abstract Flag
 abstract InterpolationType <: Flag
