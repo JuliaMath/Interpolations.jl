@@ -66,7 +66,7 @@ function bar!(dest, sitp)
     end
     dest
 end
-rfoo = Array(Float64, Interpolations.ssize(sitp))
+rfoo = Array{Float64}( Interpolations.ssize(sitp))
 rbar = similar(rfoo)
 foo!(rfoo, sitp)
 bar!(rbar, sitp)

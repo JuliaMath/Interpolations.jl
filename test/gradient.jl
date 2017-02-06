@@ -10,7 +10,7 @@ g1(x) = 2pi/(nx-1) * cos((x-3)*2pi/(nx-1) - 1)
 itp1 = interpolate(Float64[f1(x) for x in 1:nx-1],
             BSpline(Constant()), OnGrid())
 
-g = Array(Float64, 1)
+g = Array{Float64}( 1)
 
 for x in 1:nx
     @test gradient(itp1, x)[1] == 0

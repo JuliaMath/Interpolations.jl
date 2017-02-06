@@ -43,7 +43,7 @@ if VERSION < v"0.5.0-dev" # Test.with_handler was removed in 0.5
         @test gradient(sitp, 2.3)
     end
     Test.with_handler(message_is("The length of the provided gradient vector (2) did not match the number of interpolating dimensions (1)")) do
-        @test gradient!(Array(Float64, 2), sitp, 2.3, 2)
+        @test gradient!(Array{Float64}( 2), sitp, 2.3, 2)
     end
 
 end

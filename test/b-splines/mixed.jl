@@ -27,12 +27,12 @@ end
 
 # AbstractArrays
 function copyshared(A)
-    B = SharedArray(eltype(A), size(A))
+    B = SharedArray{eltype(A)}( size(A))
     copy!(B, A)
 end
 
 for (constructor, copier) in ((interpolate, x->x), (interpolate!, copyshared))
-    A2 = SharedArray(Float64, (N,N), init=A->rand!(A))
+    A2 = SharedArray{Float64}( (N,N), init=A->rand!(A))
     for i = 1:length(A2)
         A2[i] *= 100
     end

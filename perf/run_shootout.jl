@@ -77,7 +77,7 @@ stuff!(x, index::CartesianIndex{4}) = (x[1] = index[1]; x[2] = index[2]; x[3] = 
 
 function evaluate_grid(grid::GridInterpolations.RectangleGrid, A)
     T = eltype(A)
-    x = Array(eltype(T), ndims(A))  # in case T is RGB{Float32}
+    x = Array{eltype(T)}( ndims(A))  # in case T is RGB{Float32}
     s = zero(T) + zero(T)
     vA = vec(A)
     for I in iterrange(A)
@@ -92,10 +92,10 @@ ax_constr(A) = ApproXD.Lininterp(A, Vector{Float64}[make_knots(A)...])
 
 function evaluate_grid(grid::ApproXD.Lininterp, A)
     T = eltype(A)
-    x = Array(eltype(T), ndims(A))  # in case T is RGB{Float32}
+    x = Array{eltype(T)}( ndims(A))  # in case T is RGB{Float32}
     s = zero(T) + zero(T)
     vA = vec(A)
-    result = Array(T,1)
+    result = Array{T}(1)
     which = [1]
     for I in iterrange(A)
         stuff!(x, I)
