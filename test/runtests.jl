@@ -3,11 +3,11 @@ module RunTests
 using Base.Test
 using Interpolations
 
-# b-spline interpolation tests
-include("b-splines/runtests.jl")
 
 # extrapolation tests
 include("extrapolation/runtests.jl")
+# b-spline interpolation tests
+include("b-splines/runtests.jl")
 
 # scaling tests
 include("scaling/runtests.jl")

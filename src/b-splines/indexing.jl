@@ -1,4 +1,5 @@
 using Base.Cartesian
+using DualNumbers
 
 import Base.getindex
 
@@ -79,14 +80,13 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
     end
 end
 
-function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes)
-    Tret = eltype(TCoefs)
-    for a in argtypes
-        Tret = Base.promote_op(@functorize(*), Tret, a) # the macro is used to support julia 0.4
-    end
-    Tret
-end
+# there is a Heisenbug, when Base.promote_op is inlined into getindex_return_type
+# thats why we use this @noinline fence
+@noinline _promote_mul(a,b) = Base.promote_op(@functorize(*), a, b)
 
+@noinline function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes)
+    reduce(_promote_mul, eltype(TCoefs), argtypes)
+end
 
 @generated function gradient!{T,N}(g::AbstractVector, itp::BSplineInterpolation{T,N}, xs::Number...)
     length(xs) == N || error("Can only be called with $N indexes")

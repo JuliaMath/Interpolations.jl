@@ -3,6 +3,7 @@ module ExtrapTests
 using Base.Test, DualNumbers
 using Interpolations
 
+
 f(x) = sin((x-3)*2pi/9 - 1)
 xmax = 10
 A = Float64[f(x) for x in 1:xmax]
@@ -27,7 +28,8 @@ etpf = @inferred(extrapolate(itpg, NaN))
 @test_throws BoundsError etpf[2.5,2]
 @test_throws ErrorException etpf[2.5,2,1]  # this will probably become a BoundsError someday
 
-@test_broken isa(@inferred(getindex(etpf, dual(-2.5,1))), Dual)
+x =  @inferred(getindex(etpf, dual(-2.5,1)))
+@test isa(x, Dual)
 
 etpl = extrapolate(itpg, Linear())
 k_lo = A[2] - A[1]
