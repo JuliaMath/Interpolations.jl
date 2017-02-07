@@ -22,7 +22,7 @@ for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
 
             # test that inner region is close to data
             for x in 3.1:.2:8.1
-                @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
+                @test ≈(f(x),itp1[x],atol=abs(0.1 * f(x)))
             end
 
             # test that we can evaluate close to, and at, boundaries
@@ -45,7 +45,7 @@ for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
         @test @inferred(size(itp2)) == size(A2)
 
         for x in 3.1:.2:xmax2-3, y in 3.1:2:ymax2-3
-            @test_approx_eq_eps f2(x,y) itp2[x,y] abs(.1*f2(x,y))
+            @test ≈(f2(x,y),itp2[x,y],atol=abs(0.1 * f2(x,y)))
         end
     end
 end
@@ -60,7 +60,7 @@ ix = 1:15
 f(x) = cos((x-1)*2pi/(length(ix)-1))
 g(x) = -2pi/14 * sin((x-1)*2pi/(length(ix)-1))
 
-A = f(ix)
+A = map(f, ix)
 
 for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
 
@@ -69,16 +69,16 @@ for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
         itp = constructor(copier(A), BSpline(Cubic(BC())), GT())
         # test that inner region is close to data
         for x in linspace(ix[5],ix[end-4],100)
-            @test_approx_eq_eps g(x) gradient(itp,x)[1] cbrt(cbrt(eps(g(x))))
+            @test ≈(g(x),(gradient(itp,x))[1],atol=cbrt(cbrt(eps(g(x)))))
         end
     end
 end
 itp_flat_g = interpolate(A, BSpline(Cubic(Flat())), OnGrid())
-@test_approx_eq_eps gradient(itp_flat_g, 1)[1] 0 eps()
-@test_approx_eq_eps gradient(itp_flat_g, ix[end])[1] 0 eps()
+@test ≈((gradient(itp_flat_g,1))[1],0,atol=eps())
+@test ≈((gradient(itp_flat_g,ix[end]))[1],0,atol=eps())
 
 itp_flat_c = interpolate(A, BSpline(Cubic(Flat())), OnCell())
-@test_approx_eq_eps gradient(itp_flat_c, .5)[1] 0 eps()
-@test_approx_eq_eps gradient(itp_flat_c, ix[end]+.5)[1] 0 eps()
+@test ≈((gradient(itp_flat_c,0.5))[1],0,atol=eps())
+@test ≈((gradient(itp_flat_c,ix[end] + 0.5))[1],0,atol=eps())
 
 end

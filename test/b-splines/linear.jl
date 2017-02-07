@@ -19,14 +19,14 @@ for (constructor, copier) in ((interpolate, _->_), (interpolate!, copy))
 
     # Just interpolation
     for x in 1:.2:xmax
-        @test_approx_eq_eps f(x) itp1c[x] abs(.1*f(x))
+        @test ≈(f(x),itp1c[x],atol=abs(0.1 * f(x)))
     end
 
     # Rational element types    
     A1R = Rational{Int}[fr(x) for x in 1:10]
     itp1r = @inferred(constructor(copier(A1R), BSpline(Linear()), OnGrid()))
     @test @inferred(size(itp1r)) == size(A1R)
-    @test_approx_eq_eps itp1r[23//10] fr(23//10) abs(.1*fr(23//10))
+    @test ≈(itp1r[23 // 10],fr(23 // 10),atol=abs(0.1 * fr(23 // 10)))
     @test typeof(itp1r[23//10]) == Rational{Int}
     @test eltype(itp1r) == Rational{Int}
 
@@ -35,7 +35,7 @@ for (constructor, copier) in ((interpolate, _->_), (interpolate!, copy))
     @test @inferred(size(itp2)) == size(A2)
 
     for x in 2.1:.2:xmax-1, y in 1.9:.2:ymax-.9
-        @test_approx_eq_eps f(x,y) itp2[x,y] abs(.25*f(x,y))
+        @test ≈(f(x,y),itp2[x,y],atol=abs(0.25 * f(x,y)))
     end
 end
 

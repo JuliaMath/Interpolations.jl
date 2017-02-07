@@ -12,7 +12,7 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
 
         # test that inner region is close to data
         for x in 3.1:.2:8.1
-            @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
+            @test ≈(f(x),itp1[x],atol=abs(0.1 * f(x)))
         end
 
         # test that we can evaluate close to, and at, boundaries
@@ -41,7 +41,7 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
         @test @inferred(size(itp2)) == size(A)
 
         for x in 3.1:.2:xmax-3, y in 3.1:2:ymax-3
-            @test_approx_eq_eps f(x,y) itp2[x,y] abs(.1*f(x,y))
+            @test ≈(f(x,y),itp2[x,y],atol=abs(0.1 * f(x,y)))
         end
     end
 end
@@ -52,7 +52,7 @@ let
     A = Float64[f(x) for x in 1:xmax]
     itp1 = interpolate!(copy(A), BSpline(Quadratic(InPlace())), OnCell())
     for i = 1:xmax
-        @test_approx_eq itp1[i] A[i]
+        @test itp1[i] ≈ A[i]
     end
 
     f(x,y) = sin(x/10)*cos(y/6)
@@ -60,7 +60,7 @@ let
     A = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
     itp2 = interpolate!(copy(A), BSpline(Quadratic(InPlace())), OnCell())
     for j = 1:ymax, i = 1:xmax
-        @test_approx_eq itp2[i,j] A[i,j]
+        @test itp2[i,j] ≈ A[i,j]
     end
 end
 

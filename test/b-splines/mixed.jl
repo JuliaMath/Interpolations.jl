@@ -13,14 +13,14 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
         @test @inferred(size(itp_b)) == size(A2)
 
         for j = 2:N-1, i = 2:N-1
-            @test_approx_eq_eps itp_a[i,j] A2[i,j] sqrt(eps(A2[i,j]))
-            @test_approx_eq_eps itp_b[i,j] A2[i,j] sqrt(eps(A2[i,j]))
+            @test ≈(itp_a[i,j],A2[i,j],atol=sqrt(eps(A2[i,j])))
+            @test ≈(itp_b[i,j],A2[i,j],atol=sqrt(eps(A2[i,j])))
         end
 
         for i = 1:10
             dx, dy = rand(), rand()
-            @test_approx_eq itp_a[2+dx,2] (1-dx)*A2[2,2]+dx*A2[3,2]
-            @test_approx_eq itp_b[2,2+dy] (1-dy)*A2[2,2]+dy*A2[2,3]
+            @test itp_a[2 + dx,2] ≈ (1 - dx) * A2[2,2] + dx * A2[3,2]
+            @test itp_b[2,2 + dy] ≈ (1 - dy) * A2[2,2] + dy * A2[2,3]
         end
     end
 end
@@ -47,14 +47,14 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copyshared))
         @test @inferred(size(itp_b)) == size(A2)
 
         for j = 2:N-1, i = 2:N-1
-            @test_approx_eq_eps itp_a[i,j] A2[i,j] sqrt(eps(A2[i,j]))
-            @test_approx_eq_eps itp_b[i,j] A2[i,j] sqrt(eps(A2[i,j]))
+            @test ≈(itp_a[i,j],A2[i,j],atol=sqrt(eps(A2[i,j])))
+            @test ≈(itp_b[i,j],A2[i,j],atol=sqrt(eps(A2[i,j])))
         end
 
         for i = 1:10
             dx, dy = rand(), rand()
-            @test_approx_eq itp_a[2+dx,2] (1-dx)*A2[2,2]+dx*A2[3,2]
-            @test_approx_eq itp_b[2,2+dy] (1-dy)*A2[2,2]+dy*A2[2,3]
+            @test itp_a[2 + dx,2] ≈ (1 - dx) * A2[2,2] + dx * A2[3,2]
+            @test itp_b[2,2 + dy] ≈ (1 - dy) * A2[2,2] + dy * A2[2,3]
         end
     end
 end

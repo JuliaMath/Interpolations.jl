@@ -11,7 +11,7 @@ itp = interpolate(1:1.0:10, BSpline(Linear()), OnGrid())
 sitp = @inferred(scale(itp, -3:.5:1.5))
 
 for (x,y) in zip(-3:.05:1.5, 1:.1:10)
-    @test_approx_eq sitp[x] y
+    @test sitp[x] ≈ y
 end
 
 # Verify that it works in >1D, with different types of ranges
@@ -27,18 +27,18 @@ itp2 = interpolate(zs, BSpline(Quadratic(Flat())), OnGrid())
 sitp2 = @inferred scale(itp2, xs, ys)
 
 for x in xs, y in ys
-    @test_approx_eq testfunction(x,y) sitp2[x,y]
+    @test testfunction(x,y) ≈ sitp2[x,y]
 end
 
 # Test gradients of scaled grids
 xs = -pi:.1:pi
-ys = sin(xs)
+ys = map(sin, xs)
 itp = interpolate(ys, BSpline(Linear()), OnGrid())
 sitp = @inferred scale(itp, xs)
 
 for x in -pi:.1:pi
     g = @inferred(gradient(sitp, x))[1]
-    @test_approx_eq_eps cos(x) g .05
+    @test ≈(cos(x),g,atol=0.05)
 end
 
 # Verify that return types are reasonable
@@ -70,7 +70,7 @@ rfoo = Array{Float64}( Interpolations.ssize(sitp))
 rbar = similar(rfoo)
 foo!(rfoo, sitp)
 bar!(rbar, sitp)
-@test_approx_eq rfoo rbar
+@test rfoo ≈ rbar
 @test (@elapsed foo!(rfoo, sitp)) < (@elapsed bar!(rbar, sitp))
 
 end
