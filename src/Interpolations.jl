@@ -36,7 +36,10 @@ using Compat
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
 import Base: convert, size, getindex, gradient, promote_rule, ndims, eltype
+
+# Julia v0.5 compatibility
 if isdefined(:scaling) import Base.scaling end
+if isdefined(:scale) import Base.scale end
 
 abstract Flag
 abstract InterpolationType <: Flag
