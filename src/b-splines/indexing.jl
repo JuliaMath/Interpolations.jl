@@ -1,4 +1,5 @@
 using Base.Cartesian
+using DualNumbers
 
 import Base.getindex
 
@@ -54,7 +55,7 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
     # For each component of the gradient, alternately calculate
     # coefficients and set component
     n = count_interp_dims(IT, N)
-    exs = Array(Expr, 2n)
+    exs = Array{Expr, 1}(2n)
     cntr = 0
     for d = 1:N
         if count_interp_dims(iextract(IT, d), 1) > 0
@@ -79,14 +80,13 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
     end
 end
 
-function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes)
-    Tret = eltype(TCoefs)
-    for a in argtypes
-        Tret = Base.promote_op(@functorize(*), Tret, a) # the macro is used to support julia 0.4
-    end
-    Tret
-end
+# there is a Heisenbug, when Base.promote_op is inlined into getindex_return_type
+# thats why we use this @noinline fence
+@noinline _promote_mul(a,b) = Base.promote_op(@functorize(*), a, b)
 
+@noinline function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes)
+    reduce(_promote_mul, eltype(TCoefs), argtypes)
+end
 
 @generated function gradient!{T,N}(g::AbstractVector, itp::BSplineInterpolation{T,N}, xs::Number...)
     length(xs) == N || error("Can only be called with $N indexes")
@@ -104,7 +104,7 @@ for R in [:Real, :Any]
         n = count_interp_dims(itp, N)
         Tg = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
         xargs = [:(xs[$d]) for d in 1:length(xs)]
-        :(gradient!(Array($Tg,$n), itp, $(xargs...)))
+        :(gradient!(Array{$Tg, 1}($n), itp, $(xargs...)))
     end
 end
 
@@ -153,12 +153,7 @@ end
     n = count_interp_dims(itp,N)
     TH = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
     xargs = [:(xs[$d]) for d in 1:length(xs)]
-    :(hessian!(Array($TH,$n,$n), itp, $(xargs...)))
+    :(hessian!(Array{TH, 2}($n,$n), itp, $(xargs...)))
 end
 
 hessian1{T}(itp::AbstractInterpolation{T,1}, x) = hessian(itp, x)[1,1]
-
-offsetsym(off, d) = off == -1 ? Symbol("ixm_", d) :
-                    off ==  0 ? Symbol("ix_", d) :
-                    off ==  1 ? Symbol("ixp_", d) :
-                    off ==  2 ? Symbol("ixpp_", d) : error("offset $off not recognized")

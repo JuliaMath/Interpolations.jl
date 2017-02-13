@@ -23,7 +23,7 @@ function OneD()
         itp = Interpolation(fg, deg(gb()), ExtrapError())
 
         for i in xg
-            @test_approx_eq_eps itp[i] fg[i] sqrt(eps())
+            @test ≈(itp[i],fg[i],atol=sqrt(eps()))
         end
 
         if gb == OnCell
@@ -39,7 +39,7 @@ function OneD()
         itp = Interpolation(fg, deg(bc(),gb()), ExtrapError())
 
         for i in xg
-            @test_approx_eq_eps itp[i] fg[i] sqrt(eps())
+            @test ≈(itp[i],fg[i],atol=sqrt(eps()))
         end
 
         if gb == OnCell
@@ -57,7 +57,7 @@ function TwoD()
         itp = Interpolation(fg, deg(gb()), ExtrapError())
 
         for i in xg, j in yg
-            @test_approx_eq_eps itp[i,j] fg[i,j] sqrt(eps())
+            @test ≈(itp[i,j],fg[i,j],atol=sqrt(eps()))
         end
 
         if gb == OnCell
@@ -72,7 +72,7 @@ function TwoD()
         itp = Interpolation(fg, deg(bc(),gb()), ExtrapError())
 
         for i in xg, j in yg
-            @test_approx_eq_eps itp[i,j] fg[i,j] sqrt(eps())
+            @test ≈(itp[i,j],fg[i,j],atol=sqrt(eps()))
         end
 
         if gb == OnCell
@@ -90,7 +90,7 @@ function ThreeD()
         itp = Interpolation(fg, deg(gb()), ExtrapError())
 
         for i in xg, j in yg, k in zg
-            @test_approx_eq_eps itp[i,j,k] fg[i,j,k] sqrt(eps())
+            @test ≈(itp[i,j,k],fg[i,j,k],atol=sqrt(eps()))
         end
 
         if gb == OnCell
@@ -105,7 +105,7 @@ function ThreeD()
         itp = Interpolation(fg, deg(bc(),gb()), ExtrapError())
 
         for i in xg, j in yg, k in zg
-            @test_approx_eq_eps itp[i,j,k] fg[i,j,k] sqrt(eps())
+            @test ≈(itp[i,j,k],fg[i,j,k],atol=sqrt(eps()))
         end
 
         if gb == OnCell

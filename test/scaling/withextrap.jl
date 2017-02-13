@@ -4,11 +4,11 @@ module ScalingWithExtrapTests
 using Interpolations, Base.Test
 
 xs = linspace(-5, 5, 10)
-ys = sin(xs)
+ys = map(sin, xs)
 
 function run_tests{T,N,IT}(sut::Interpolations.AbstractInterpolation{T,N,IT,OnGrid}, itp)
     for x in xs
-        @test_approx_eq_eps sut[x] sin(x) sqrt(eps(sin(x)))
+        @test ≈(sut[x],sin(x),atol=sqrt(eps(sin(x))))
     end
     @test sut[-5] == sut[-5.1] == sut[-15.8] == sut[-Inf] == itp[1]
     @test sut[5] == sut[5.1] == sut[15.8] == sut[Inf] == itp[end]

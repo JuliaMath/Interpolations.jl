@@ -10,7 +10,7 @@ for it in (Constant(OnCell()), Linear(OnGrid()), Quadratic(Free(),OnCell()))
         itp = Interpolation(A, it, eb)
         for i = 1:size(A,1)
             for j = 1:size(A,2)
-                @test_approx_eq_eps itp[i,j] A[i,j] EPS
+                @test ≈(itp[i,j],A[i,j],atol=EPS)
             end
         end
         # v = itp[1:size(A,1), 1:size(A,2)]
@@ -23,7 +23,7 @@ for it in (Constant(OnCell()), Linear(OnGrid()), Quadratic(Free(),OnCell()))
     for eb in (ExtrapNaN(), ExtrapError())
         itp = Interpolation(A, it, eb)
         for k = 1:size(A,3), j = 1:size(A,2), i = 1:size(A,1)
-            @test_approx_eq_eps itp[i,j,k] A[i,j,k] EPS
+            @test ≈(itp[i,j,k],A[i,j,k],atol=EPS)
         end
         # v = itp[1:size(A,1), 1:size(A,2), 1:size(A,3)]
         # @assert all(abs(v - A) .< EPS)
@@ -34,7 +34,7 @@ for it in (Constant(OnCell()), Linear(OnGrid()), Quadratic(Free(),OnCell()))
     for eb in (ExtrapNaN(), ExtrapError())
         itp = Interpolation(A, it, eb)
         for i = 1:size(A,1), j = 1:size(A,2), k = 1:size(A,3), l = 1:size(A,4)
-            @test_approx_eq_eps itp[i,j,k,l] A[i,j,k,l] EPS
+            @test ≈(itp[i,j,k,l],A[i,j,k,l],atol=EPS)
         end
         # v = itp[1:size(A,1), 1:size(A,2), 1:size(A,3), 1:size(A,4)]
         # @assert all(abs(v - A) .< EPS)

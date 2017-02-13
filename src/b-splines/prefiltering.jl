@@ -8,7 +8,7 @@ end
 
 function padded_index{N,pad}(sz::NTuple{N,Int}, ::Val{pad})
     szpad = ntuple(i->sz[i]+2padextract(pad,i), N)::NTuple{N,Int}
-    ind = Array(UnitRange{Int},N)
+    ind = Array{UnitRange{Int}}(N)
     for i in 1:N
         p = padextract(pad,i)
         ind[i] = 1+p:szpad[i]-p
@@ -21,7 +21,7 @@ function copy_with_padding{TC,IT<:DimSpec{InterpolationType}}(::Type{TC}, A, ::T
     Pad = padding(IT)
     ind,sz = padded_index(size(A), Pad)
     if sz == size(A)
-        coefs = copy!(Array(TC, size(A)), A)
+        coefs = copy!(Array{TC}(size(A)), A)
     else
         coefs = zeros(TC, sz...)
         coefs[ind...] = A
@@ -30,7 +30,7 @@ function copy_with_padding{TC,IT<:DimSpec{InterpolationType}}(::Type{TC}, A, ::T
 end
 
 prefilter!{TWeights, IT<:BSpline, GT<:GridType}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = A
-prefilter{TWeights, TC, IT<:BSpline, GT<:GridType}(::Type{TWeights}, ::Type{TC}, A, ::Type{IT}, ::Type{GT}) = prefilter!(TWeights, copy!(Array(TC, size(A)), A), IT, GT), Val{0}()
+prefilter{TWeights, TC, IT<:BSpline, GT<:GridType}(::Type{TWeights}, ::Type{TC}, A, ::Type{IT}, ::Type{GT}) = prefilter!(TWeights, copy!(Array{TC}(size(A)), A), IT, GT), Val{0}()
 
 function prefilter{TWeights,TC,IT<:Union{Cubic,Quadratic},GT<:GridType}(
     ::Type{TWeights}, ::Type{TC}, A::AbstractArray, ::Type{BSpline{IT}}, ::Type{GT}
