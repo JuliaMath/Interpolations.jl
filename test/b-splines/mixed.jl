@@ -26,13 +26,18 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
 end
 
 # AbstractArrays
+if VERSION < v"0.5.0"
+    makesharedarray{T}(::Type{T}, dims; kwargs...) = SharedArray(T, dims; kwargs...)
+else
+    makesharedarray{T}(::Type{T}, dims; kwargs...) = SharedArray{T}(dims; kwargs...)
+end
 function copyshared(A)
-    B = SharedArray{eltype(A)}( size(A))
+    B = makesharedarray(eltype(A), size(A))
     copy!(B, A)
 end
 
 for (constructor, copier) in ((interpolate, x->x), (interpolate!, copyshared))
-    A2 = SharedArray{Float64}( (N,N), init=A->rand!(A))
+    A2 = makesharedarray(Float64, (N,N), init=A->rand!(A))
     for i = 1:length(A2)
         A2[i] *= 100
     end
