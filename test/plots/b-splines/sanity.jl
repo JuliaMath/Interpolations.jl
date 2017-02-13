@@ -2,7 +2,7 @@ using Interpolations
 #using DataFrames, Gadfly
 
 f(x) = sin(2pi * (x-1) / 10)
-dfs = Array(DataFrame,0)
+dfs = Array{DataFrame}(0)
 xrange = .5:.1:11.5
 
 for (i,it) in enumerate((

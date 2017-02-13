@@ -16,13 +16,13 @@ itp = interpolate(A, BSpline(Quadratic(Flat())), OnCell())
 # ))
 
 for x in 3.1:.2:4.3
-    @test_approx_eq_eps float(f(x)) float(itp[x]) abs(.1*f(x))
+    @test ≈(float(f(x)),float(itp[x]),atol=abs(0.1 * f(x)))
 end
 
 @test typeof(itp[3.5f0]) == Float32
 
 for x in 3.1:.2:4.3
-    @test_approx_eq_eps g(x) gradient(itp, x) abs(.1*g(x))
+    @test ≈([g(x)], gradient(itp,x),atol=abs(0.1 * g(x)))
 end
 
 @test typeof(gradient(itp, 3.5f0)[1]) == Float32

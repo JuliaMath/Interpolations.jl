@@ -10,14 +10,14 @@ itp = interpolate(Float64[f(x,y) for x in xs, y in ys], (BSpline(Quadratic(Perio
 sitp = scale(itp, xs, ys)
 
 for (ix,x) in enumerate(xs), (iy,y) in enumerate(ys)
-    @test_approx_eq_eps sitp[x,y] f(x,y) sqrt(eps(1.0))
+    @test ≈(sitp[x,y],f(x,y),atol=sqrt(eps(1.0)))
 
     g = gradient(sitp, x, y)
     fx = epsilon(sitp[dual(x,1), dual(y,0)])
     fy = epsilon(sitp[dual(x,0), dual(y,1)])
 
-    @test_approx_eq_eps g[1] fx sqrt(eps(1.0))
-    @test_approx_eq_eps g[2] fy sqrt(eps(1.0))
+    @test ≈(g[1],fx,atol=sqrt(eps(1.0)))
+    @test ≈(g[2],fy,atol=sqrt(eps(1.0)))
 end
 
 end

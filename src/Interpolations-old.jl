@@ -222,7 +222,7 @@ stagedfunction gradient!{T,N,TCoefs,TOut,IT,EB}(g::Vector{TOut}, itp::Interpolat
     end
 end
 
-gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array(T,N), itp, x...)
+gradient{T,N}(itp::Interpolation{T,N}, x...) = gradient!(Array{T}(N), itp, x...)
 
 # This creates prefilter specializations for all interpolation types that need them
 stagedfunction prefilter{TWeights,TCoefs,N,IT<:Quadratic}(::Type{TWeights}, A::Array{TCoefs,N}, it::IT)

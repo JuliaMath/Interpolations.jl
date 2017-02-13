@@ -13,7 +13,7 @@ A = Float64[f(x) for x in 1:xmax]
 itp1 = Interpolation(A, Linear(OnGrid()), ExtrapError())
 
 for x in 1:.2:xmax
-    @test_approx_eq_eps f(x) itp1[x] abs(.1*f(x))
+    @test ≈(f(x),itp1[x],atol=abs(0.1 * f(x)))
 end
 
 @test_throws BoundsError itp1[-3]
@@ -24,7 +24,7 @@ end
 itp2 = Interpolation(A, Linear(OnGrid()), ExtrapNaN())
 
 for x in 1:.2:xmax
-    @test_approx_eq_eps f(x) itp2[x] abs(.1*f(x))
+    @test ≈(f(x),itp2[x],atol=abs(0.1 * f(x)))
 end
 
 xlo, xhi = itp2[.9], itp2[xmax+.2]
@@ -35,7 +35,7 @@ xlo, xhi = itp2[.9], itp2[xmax+.2]
 
 itp3 = Interpolation(A, Linear(OnGrid()), ExtrapConstant())
 for x in 3.1:.2:4.3
-    @test_approx_eq_eps f(x) itp3[x] abs(.1*f(x))
+    @test ≈(f(x),itp3[x],atol=abs(0.1 * f(x)))
 end
 
 xlo, xhi = itp3[.9], itp3[xmax+.2]
@@ -62,7 +62,7 @@ A = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
 itp1 = Interpolation(A, Linear(OnGrid()), ExtrapError())
 
 for x in 2.1:.2:xmax-1, y in 1.9:.2:ymax-.9
-    @test_approx_eq_eps f(x,y) itp1[x,y] .01
+    @test ≈(f(x,y),itp1[x,y],atol=0.01)
 end
 
 end
