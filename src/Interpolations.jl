@@ -68,12 +68,12 @@ immutable InPlace <: Flag end
 immutable InPlaceQ <: Flag end
 typealias Natural Line
 
-size{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->size(itp,i), Val{N})
+@generated size{T, N}(itp::AbstractInterpolation{T,N}) = Expr(:tuple, [:(size(itp, $i)) for i in 1:N]...)
 size(exp::AbstractExtrapolation, d) = size(exp.itp, d)
 bounds{T,N}(itp::AbstractInterpolation{T,N}) = tuple(zip(lbounds(itp), ubounds(itp))...)
 bounds{T,N}(itp::AbstractInterpolation{T,N}, d) = (lbound(itp,d),ubound(itp,d))
-lbounds{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->lbound(itp,i), Val{N})
-ubounds{T,N}(itp::AbstractInterpolation{T,N}) = ntuple(i->ubound(itp,i), Val{N})
+@generated lbounds{T,N}(itp::AbstractInterpolation{T,N}) = Expr(:tuple, [:(lbound(itp, $i)) for i in 1:N]...)
+@generated ubounds{T,N}(itp::AbstractInterpolation{T,N}) = Expr(:tuple, [:(ubound(itp, $i)) for i in 1:N]...)
 lbound{T,N}(itp::AbstractInterpolation{T,N}, d) = 1
 ubound{T,N}(itp::AbstractInterpolation{T,N}, d) = size(itp, d)
 itptype{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(::Type{AbstractInterpolation{T,N,IT,GT}}) = IT
