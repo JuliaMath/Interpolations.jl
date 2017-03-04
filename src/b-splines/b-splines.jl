@@ -7,7 +7,7 @@ export
     Quadratic,
     Cubic
 
-abstract Degree{N} <: Flag
+@compat abstract type Degree{N} <: Flag end
 
 immutable BSpline{D<:Degree} <: InterpolationType end
 BSpline{D<:Degree}(::D) = BSpline{D}()

@@ -3,7 +3,7 @@ using DualNumbers
 
 import Base.getindex
 
-Base.linearindexing{T<:AbstractInterpolation}(::Type{T}) = Base.LinearSlow()
+Base.linearindexing{T<:AbstractInterpolation}(::Type{T}) = Compat.IndexCartesian()
 
 define_indices{IT}(::Type{IT}, N, pad) = Expr(:block, Expr[define_indices_d(iextract(IT, d), d, padextract(pad, d)) for d = 1:N]...)
 
