@@ -66,7 +66,7 @@ immutable InPlace <: Flag end
 # InPlaceQ is exact for an underlying quadratic. This is nice for ground-truth testing
 # of in-place (unpadded) interpolation.
 immutable InPlaceQ <: Flag end
-typealias Natural Line
+@compat const Natural = Line
 
 @generated size{T, N}(itp::AbstractInterpolation{T,N}) = Expr(:tuple, [:(size(itp, $i)) for i in 1:N]...)
 size(exp::AbstractExtrapolation, d) = size(exp.itp, d)
