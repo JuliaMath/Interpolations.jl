@@ -46,7 +46,7 @@ immutable OnCell <: GridRepresentation end
 immutable None <: BoundaryCondition end
 immutable Flat <: BoundaryCondition end
 immutable Line <: BoundaryCondition end
-@compat const Natural = Line
+const Natural = Line
 immutable Free <: BoundaryCondition end
 immutable Periodic <: BoundaryCondition end
 immutable Reflect <: BoundaryCondition end

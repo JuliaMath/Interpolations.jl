@@ -8,7 +8,7 @@ Extrapolation{T,ITPT,IT,GT,ET}(::Type{T}, N, itp::ITPT, ::Type{IT}, ::Type{GT}, 
 # However, no tuples should be nested deeper than this; the first level is for different
 # schemes in different dimensions, and the second level is for different schemes in
 # different directions.
-@compat const ExtrapDimSpec = Union{Flag,Tuple{Vararg{Union{Flag,NTuple{2,Flag}}}}}
+const ExtrapDimSpec = Union{Flag,Tuple{Vararg{Union{Flag,NTuple{2,Flag}}}}}
 
 """
 `extrapolate(itp, scheme)` adds extrapolation behavior to an interpolation object, according to the provided scheme.
