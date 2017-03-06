@@ -36,26 +36,26 @@ export
     gradient,
     gradient!
 
-abstract Degree{N}
+@compat abstract type Degree{N} end
 
-abstract GridRepresentation
+@compat abstract type GridRepresentation end
 immutable OnGrid <: GridRepresentation end
 immutable OnCell <: GridRepresentation end
 
-abstract BoundaryCondition
+@compat abstract type BoundaryCondition end
 immutable None <: BoundaryCondition end
 immutable Flat <: BoundaryCondition end
 immutable Line <: BoundaryCondition end
-typealias Natural Line
+const Natural = Line
 immutable Free <: BoundaryCondition end
 immutable Periodic <: BoundaryCondition end
 immutable Reflect <: BoundaryCondition end
 
-abstract InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation}
+@compat abstract type InterpolationType{D<:Degree,BC<:BoundaryCondition,GR<:GridRepresentation} end
 
 include("extrapolation.jl")
 
-abstract AbstractInterpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractArray{T,N}
+@compat abstract type AbstractInterpolation{T,N,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractArray{T,N} end
 type Interpolation{T,N,TCoefs,IT<:InterpolationType,EB<:ExtrapolationBehavior} <: AbstractInterpolation{T,N,IT,EB}
     coefs::Array{TCoefs,N}
 end

@@ -43,18 +43,18 @@ import Base: convert, size, getindex, gradient, promote_rule, ndims, eltype
 if isdefined(:scaling) import Base.scaling end
 if isdefined(:scale) import Base.scale end
 
-abstract Flag
-abstract InterpolationType <: Flag
+@compat abstract type Flag end
+@compat abstract type InterpolationType <: Flag end
 immutable NoInterp <: InterpolationType end
-abstract GridType <: Flag
+@compat abstract type GridType <: Flag end
 immutable OnGrid <: GridType end
 immutable OnCell <: GridType end
 
-typealias DimSpec{T} Union{T,Tuple{Vararg{Union{T,NoInterp}}},NoInterp}
+@compat const DimSpec{T} = Union{T,Tuple{Vararg{Union{T,NoInterp}}},NoInterp}
 
-abstract AbstractInterpolation{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} <: AbstractArray{T,N}
-abstract AbstractInterpolationWrapper{T,N,ITPT,IT,GT} <: AbstractInterpolation{T,N,IT,GT}
-abstract AbstractExtrapolation{T,N,ITPT,IT,GT} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
+@compat abstract type AbstractInterpolation{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} <: AbstractArray{T,N} end
+@compat abstract type AbstractInterpolationWrapper{T,N,ITPT,IT,GT} <: AbstractInterpolation{T,N,IT,GT} end
+@compat abstract type AbstractExtrapolation{T,N,ITPT,IT,GT} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT} end
 
 immutable Throw <: Flag end
 immutable Flat <: Flag end
@@ -66,7 +66,7 @@ immutable InPlace <: Flag end
 # InPlaceQ is exact for an underlying quadratic. This is nice for ground-truth testing
 # of in-place (unpadded) interpolation.
 immutable InPlaceQ <: Flag end
-typealias Natural Line
+const Natural = Line
 
 @generated size{T, N}(itp::AbstractInterpolation{T,N}) = Expr(:tuple, [:(size(itp, $i)) for i in 1:N]...)
 size(exp::AbstractExtrapolation, d) = size(exp.itp, d)

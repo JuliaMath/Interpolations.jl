@@ -5,7 +5,7 @@ Gridded{D<:Degree}(::D) = Gridded{D}()
 
 griddedtype{D<:Degree}(::Type{Gridded{D}}) = D
 
-typealias GridIndex{T} Union{AbstractVector{T}, Tuple}
+@compat const GridIndex{T} = Union{AbstractVector{T}, Tuple}
 
 # Because Ranges check bounds on getindex, it's actually faster to convert the
 # knots to Vectors. It's also good to take a copy, so it doesn't get modified later.
