@@ -14,7 +14,7 @@ g2(y) = cos(y/6)
 f(x,y) = g1(x)*g2(y)
 A2 = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
 
-for (constructor, copier) in ((interpolate, _->_), (interpolate!, copy))
+for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
     itp1c = @inferred(constructor(copier(A1), BSpline(Linear()), OnCell()))
 
     # Just interpolation
@@ -22,7 +22,7 @@ for (constructor, copier) in ((interpolate, _->_), (interpolate!, copy))
         @test ≈(f(x),itp1c[x],atol=abs(0.1 * f(x)))
     end
 
-    # Rational element types    
+    # Rational element types
     A1R = Rational{Int}[fr(x) for x in 1:10]
     itp1r = @inferred(constructor(copier(A1R), BSpline(Linear()), OnGrid()))
     @test @inferred(size(itp1r)) == size(A1R)

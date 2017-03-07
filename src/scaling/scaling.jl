@@ -98,7 +98,7 @@ end
 rescale_gradient(r::StepRange, g) = g / r.step
 rescale_gradient(r::UnitRange, g) = g
 
-@static if isdefined(:FloatRange) & isa(FloatRange, DataType)
+@static if isdefined(Base, :FloatRange) && VERSION < v"0.6.0-dev.2376"
     rescale_gradient(r::LinSpace, g) = g * r.divisor / (r.stop - r.start)
     rescale_gradient(r::FloatRange, g) = g * r.divisor / r.step
     coordlookup(r::LinSpace, x) = (r.divisor * x + r.stop - r.len * r.start) / (r.stop - r.start)
