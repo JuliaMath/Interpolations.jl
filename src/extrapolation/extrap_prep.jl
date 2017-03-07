@@ -61,7 +61,7 @@ function extrap_prep{T,N}(::Type{T}, n::Val{N})
     return Expr(:block, exprs...)
 end
 function extrap_prep{N,T<:Tuple}(::Type{T}, n::Val{N})
-    length(T.parameters) == N || return :(throw(ArgumentError("The $N-dimensional extrap configuration $T is not supported - must be a tuple of length $N (was length $(lenght(T.parameters)))")))
+    length(T.parameters) == N || return :(throw(ArgumentError("The $N-dimensional extrap configuration $T is not supported - must be a tuple of length $N (was length $(length(T.parameters)))")))
     exprs = Expr[]
     for d in 1:N
         Tdim = T.parameters[d]
