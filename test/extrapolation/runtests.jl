@@ -11,6 +11,7 @@ A = Float64[f(x) for x in 1:xmax]
 itpg = interpolate(A, BSpline(Linear()), OnGrid())
 
 etpg = extrapolate(itpg, Flat())
+@test typeof(etpg) <: AbstractExtrapolation
 
 @test etpg[-3] == etpg[-4.5] == etpg[0.9] == etpg[1.0] == A[1]
 @test etpg[10.1] == etpg[11] == etpg[148.298452] == A[end]

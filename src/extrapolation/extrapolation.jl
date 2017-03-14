@@ -1,4 +1,4 @@
-type Extrapolation{T,N,ITPT,IT,GT,ET} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
+type Extrapolation{T,N,ITPT,IT,GT,ET} <: AbstractExtrapolation{T,N,ITPT,IT,GT}
     itp::ITPT
 end
 Extrapolation{T,ITPT,IT,GT,ET}(::Type{T}, N, itp::ITPT, ::Type{IT}, ::Type{GT}, et::ET) =
