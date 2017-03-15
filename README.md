@@ -1,6 +1,6 @@
 # Interpolations
 
-[![Build Status](https://travis-ci.org/tlycken/Interpolations.jl.svg?branch=master)](https://travis-ci.org/tlycken/Interpolations.jl)
+[![Build Status](https://travis-ci.org/JuliaMath/Interpolations.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Interpolations.jl)
 [![PkgEval Status](http://pkg.julialang.org/badges/Interpolations_0.4.svg)](http://pkg.julialang.org/?pkg=Interpolations)
 [![Interpolations](http://pkg.julialang.org/badges/Interpolations_0.5.svg)](http://pkg.julialang.org/?pkg=Interpolations)
 
@@ -256,6 +256,6 @@ Interpolations wins in every case, sometimes by a very large margin.
 
 ## Contributing
 
-Work is very much in progress, but and help is always welcome. If you want to help out but don't know where to start, take a look at issue [#5 - our feature wishlist](https://github.com/tlycken/Interpolations.jl/issues/5) =) There is also some [developer documentation](doc/devdocs.md) that may help you understand how things work internally.
+Work is very much in progress, but and help is always welcome. If you want to help out but don't know where to start, take a look at issue [#5 - our feature wishlist](https://github.com/JuliaMath/Interpolations.jl/issues/5) =) There is also some [developer documentation](doc/devdocs.md) that may help you understand how things work internally.
 
 Contributions in any form are appreciated, but the best pull requests come with tests!
