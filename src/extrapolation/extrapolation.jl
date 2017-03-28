@@ -54,9 +54,11 @@ function getindex_impl{T,N,ITPT,IT,GT,ET}(etp::Type{Extrapolation{T,N,ITPT,IT,GT
     end
 end
 
-@generated function getindex{T,N,ITPT,IT,GT,ET}(etp::Extrapolation{T,N,ITPT,IT,GT,ET}, xs...)
+@generated function getindex{T,N,ITPT,IT,GT,ET}(etp::Extrapolation{T,N,ITPT,IT,GT,ET}, xs::Number...)
     getindex_impl(etp, xs...)
 end
+
+checkbounds(::AbstractExtrapolation,I...) = nothing
 
 
 function gradient!_impl{T,N,ITPT,IT,GT,ET}(g, etp::Type{Extrapolation{T,N,ITPT,IT,GT,ET}}, xs...)

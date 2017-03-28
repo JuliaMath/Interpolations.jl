@@ -79,6 +79,13 @@ etp100g = extrapolate(interpolate(([10;20],),[100;110], Gridded(Linear())), Flat
 @test @inferred(getindex(etp100g, 5)) == 100
 @test @inferred(getindex(etp100g, 15)) == 105
 @test @inferred(getindex(etp100g, 25)) == 110
+
+
+# check all extrapolations work with vectorized indexing
+for E in [0,Flat(),Linear(),Periodic(),Reflect()]
+    @test (@inferred extrapolate(interpolate([0,0],BSpline(Linear()),OnGrid()),E)[[3]]) == [0]
+end
+
 end
 
 include("type-stability.jl")
