@@ -83,7 +83,7 @@ etp100g = extrapolate(interpolate(([10;20],),[100;110], Gridded(Linear())), Flat
 
 # check all extrapolations work with vectorized indexing
 for E in [0,Flat(),Linear(),Periodic(),Reflect()]
-    @test (@inferred(getindex(extrapolate(interpolate([0,0],BSpline(Linear()),OnGrid()),E),[3]))) == [0]
+    @test (@inferred(getindex(extrapolate(interpolate([0,0],BSpline(Linear()),OnGrid()),E),[1.2, 1.8, 3.1]))) == [0,0,0]
 end
 
 end
