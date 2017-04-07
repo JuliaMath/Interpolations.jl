@@ -51,7 +51,7 @@ sitp32 = @inferred scale(interpolate(Float32[testfunction(x,y) for x in -5:.5:5,
 
 # Iteration
 itp = interpolate(rand(3,3,3), BSpline(Quadratic(Flat())), OnCell())
-knots = map(d->1:100:201, 1:3)
+knots = map(d->1:10:21, 1:3)
 sitp = @inferred scale(itp, knots...)
 function foo!(dest, sitp)
     i = 0
