@@ -6,5 +6,6 @@ include("quadratic.jl")
 include("cubic.jl")
 include("mixed.jl")
 include("multivalued.jl")
+include("non1.jl")
 
 end

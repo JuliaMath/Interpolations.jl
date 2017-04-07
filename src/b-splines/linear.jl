@@ -29,7 +29,7 @@ Linear
 function define_indices_d(::Type{BSpline{Linear}}, d, pad)
     symix, symixp, symfx, symx = Symbol("ix_",d), Symbol("ixp_",d), Symbol("fx_",d), Symbol("x_",d)
     quote
-        $symix = clamp(floor(Int, $symx), 1, size(itp, $d)-1)
+        $symix = clamp(floor(Int, $symx), first(inds_itp[$d]), last(inds_itp[$d])-1)
         $symixp = $symix + 1
         $symfx = $symx - $symix
     end

@@ -32,6 +32,7 @@ function getindex_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
     quote
         $meta
         @nexprs $N d->(x_d = xs[d])
+        inds_itp = indices(itp)
 
         # Calculate the indices of all coefficients that will be used
         # and define fx = x - xi in each dimension
@@ -69,6 +70,7 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad
         $meta
         length(g) == $n || throw(ArgumentError(string("The length of the provided gradient vector (", length(g), ") did not match the number of interpolating dimensions (", n, ")")))
         @nexprs $N d->(x_d = xs[d])
+        inds_itp = indices(itp)
 
         # Calculate the indices of all coefficients that will be used
         # and define fx = x - xi in each dimension
@@ -130,6 +132,7 @@ function hessian_impl{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}
         $meta
         size(H) == ($n,$n) || throw(ArgumentError(string("The size of the provided Hessian matrix wasn't a square matrix of size ", size(H))))
         @nexprs $N d->(x_d = xs[d])
+        inds_itp = indices(itp)
 
         $(define_indices(IT, N, Pad))
 

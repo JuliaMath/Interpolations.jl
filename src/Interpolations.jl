@@ -37,7 +37,8 @@ export
 using Compat
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
-import Base: convert, size, getindex, gradient, promote_rule, ndims, eltype, checkbounds
+import Base: convert, size, indices, getindex, gradient, promote_rule,
+             ndims, eltype, checkbounds
 
 # Julia v0.5 compatibility
 if isdefined(:scaling) import Base.scaling end

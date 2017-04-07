@@ -241,6 +241,7 @@ function next_gen{CR,SITPT,X1,Deg,T}(::Type{ScaledIterator{CR,SITPT,X1,Deg,T}})
     quote
         sitp = iter.sitp
         itp = sitp.itp
+        inds_itp = indices(itp)
         if iter.nremaining > 0
             iter.nremaining -= 1
             iter.fx_1 += iter.dx_1

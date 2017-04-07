@@ -6,31 +6,32 @@ padding{IT<:BSpline}(::Type{IT}) = Val{0}()
     :(Val{$t}())
 end
 
-function padded_index{N,pad}(sz::NTuple{N,Int}, ::Val{pad})
-    szpad = ntuple(i->sz[i]+2padextract(pad,i), N)::NTuple{N,Int}
-    ind = Array{UnitRange{Int}}(N)
-    for i in 1:N
-        p = padextract(pad,i)
-        ind[i] = 1+p:szpad[i]-p
-    end
-    ind,szpad
+@noinline function padded_index{N,pad}(indsA::NTuple{N,AbstractUnitRange{Int}}, ::Val{pad})
+    indspad = ntuple(i->indices_addpad(indsA[i], padextract(pad,i)), Val{N})
+    indscp = ntuple(i->indices_interior(indspad[i], padextract(pad,i)), Val{N})
+    indscp, indspad
 end
 
 copy_with_padding{IT}(A, ::Type{IT}) = copy_with_padding(eltype(A), A, IT)
 function copy_with_padding{TC,IT<:DimSpec{InterpolationType}}(::Type{TC}, A, ::Type{IT})
     Pad = padding(IT)
-    ind,sz = padded_index(size(A), Pad)
-    if sz == size(A)
-        coefs = copy!(Array{TC}(size(A)), A)
+    indsA = indices(A)
+    indscp, indspad = padded_index(indsA, Pad)
+    coefs = similar(dims->Array{TC}(dims), indspad)
+    if indspad == indsA
+        coefs = copy!(coefs, A)
     else
-        coefs = zeros(TC, sz...)
-        coefs[ind...] = A
+        fill!(coefs, zero(TC))
+        copy!(coefs, CartesianRange(indscp), A, CartesianRange(indsA))
     end
     coefs, Pad
 end
 
 prefilter!{TWeights, IT<:BSpline, GT<:GridType}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = A
-prefilter{TWeights, TC, IT<:BSpline, GT<:GridType}(::Type{TWeights}, ::Type{TC}, A, ::Type{IT}, ::Type{GT}) = prefilter!(TWeights, copy!(Array{TC}(size(A)), A), IT, GT), Val{0}()
+function prefilter{TWeights, TC, IT<:BSpline, GT<:GridType}(::Type{TWeights}, ::Type{TC}, A, ::Type{IT}, ::Type{GT})
+    coefs = similar(dims->Array{TC}(dims), indices(A))
+    prefilter!(TWeights, copy!(coefs, A), IT, GT), Val{0}()
+end
 
 function prefilter{TWeights,TC,IT<:Union{Cubic,Quadratic},GT<:GridType}(
     ::Type{TWeights}, ::Type{TC}, A::AbstractArray, ::Type{BSpline{IT}}, ::Type{GT}
@@ -50,7 +51,7 @@ function prefilter!{TWeights,TCoefs<:AbstractArray,IT<:Union{Quadratic,Cubic},GT
     ::Type{TWeights}, ret::TCoefs, ::Type{BSpline{IT}}, ::Type{GT}
     )
     local buf, shape, retrs
-    sz = size(ret)
+    sz = map(length, indices(ret))
     first = true
     for dim in 1:ndims(ret)
         M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[dim], IT, GT)
