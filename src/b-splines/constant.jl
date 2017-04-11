@@ -11,7 +11,7 @@ Constant
 """
 function define_indices_d(::Type{BSpline{Constant}}, d, pad)
     symix, symx = Symbol("ix_",d), Symbol("x_",d)
-    :($symix = clamp(round(Int, $symx), 1, size(itp, $d)))
+    :($symix = clamp(round(Int, $symx), first(inds_itp[$d]), last(inds_itp[$d])))
 end
 
 """

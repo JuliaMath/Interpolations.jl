@@ -78,5 +78,7 @@ end
 lbound(etp::Extrapolation, d) = lbound(etp.itp, d)
 ubound(etp::Extrapolation, d) = ubound(etp.itp, d)
 size(etp::Extrapolation, d) = size(etp.itp, d)
+indices(etp::AbstractExtrapolation) = indices(etp.itp)
+indices(etp::AbstractExtrapolation, d) = indices(etp.itp, d)
 
 include("filled.jl")
