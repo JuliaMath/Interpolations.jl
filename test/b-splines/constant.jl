@@ -17,6 +17,8 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
     itp3c = @inferred(constructor(copier(A3), BSpline(Constant()), OnCell()))
     itp3g = @inferred(constructor(copier(A3), BSpline(Constant()), OnGrid()))
 
+    @test parent(itp1c) === itp1c.coefs
+
     # Evaluation on provided data points
     # 1D
     for i in 1:length(A1)

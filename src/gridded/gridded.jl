@@ -33,6 +33,8 @@ function GriddedInterpolation{N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}(
     GriddedInterpolation{T,N,TCoefs,IT,typeof(knts),pad}(knts, A)
 end
 
+Base.parent(A::GriddedInterpolation) = A.coefs
+
 # A type-stable version of map(collect, knots)
 mapcollect() = ()
 @inline mapcollect(k::AbstractVector) = (collect(k),)

@@ -30,6 +30,8 @@ function BSplineInterpolation{N,Tel,TWeights<:Real,IT<:DimSpec{BSpline},GT<:DimS
     BSplineInterpolation{T,N,typeof(A),IT,GT,pad}(A)
 end
 
+Base.parent(A::BSplineInterpolation) = A.coefs
+
 # Utilities for working either with scalars or tuples/tuple-types
 iextract{T<:BSpline}(::Type{T}, d) = T
 iextract(t, d) = t.parameters[d]

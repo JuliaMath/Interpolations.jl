@@ -17,6 +17,8 @@ etpg = extrapolate(itpg, Flat())
 @test etpg[10.1] == etpg[11] == etpg[148.298452] == A[end]
 
 etpf = @inferred(extrapolate(itpg, NaN))
+@test typeof(etpf) <: Interpolations.FilledExtrapolation
+@test parent(etpf) === itpg
 
 @test @inferred(size(etpf)) == (xmax,)
 @test isnan(@inferred(getindex(etpf, -2.5)))

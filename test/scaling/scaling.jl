@@ -9,6 +9,8 @@ using Base.Test
 itp = interpolate(1:1.0:10, BSpline(Linear()), OnGrid())
 
 sitp = @inferred(scale(itp, -3:.5:1.5))
+@test typeof(sitp) <: Interpolations.ScaledInterpolation
+@test parent(sitp) === itp
 
 for (x,y) in zip(-3:.05:1.5, 1:.1:10)
     @test sitp[x] ≈ y
