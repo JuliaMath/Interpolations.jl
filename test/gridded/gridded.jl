@@ -37,6 +37,7 @@ for D in (Constant, Linear), G in (OnCell, OnGrid)
     A = rand(6,5)
     knots = (collect(linspace(1,size(A,1),size(A,1))),collect(linspace(1,size(A,2),size(A,2))))
     itp = @inferred(interpolate(knots, A, Gridded(D())))
+    @test parent(itp) === A
     @inferred(getindex(itp, 2, 2))
     @inferred(getindex(itp, CartesianIndex((2,2))))
     for j = 2:size(A,2)-1, i = 2:size(A,1)-1

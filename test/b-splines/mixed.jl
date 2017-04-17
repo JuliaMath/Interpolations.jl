@@ -11,6 +11,8 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
         itp_b = @inferred(constructor(copier(A2), (BSpline(Quadratic(BC())), BSpline(Linear())), GT()))
         @test @inferred(size(itp_a)) == size(A2)
         @test @inferred(size(itp_b)) == size(A2)
+        @test_throws ArgumentError parent(itp_a)
+        @test_throws ArgumentError parent(itp_b)
 
         for j = 2:N-1, i = 2:N-1
             @test ≈(itp_a[i,j],A2[i,j],atol=sqrt(eps(A2[i,j])))

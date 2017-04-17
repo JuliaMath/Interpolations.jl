@@ -19,6 +19,7 @@ for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
         for (A, f) in ((A0, f0), (A1, f1))
             itp1 = @inferred(constructor(copier(A), BSpline(Cubic(BC())), GT()))
             @test @inferred(size(itp1)) == size(A)
+            @test_throws ArgumentError parent(itp1)
 
             # test that inner region is close to data
             for x in 3.1:.2:8.1
