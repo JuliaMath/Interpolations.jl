@@ -17,6 +17,8 @@ A2 = Float64[f(x,y) for x in 1:xmax, y in 1:ymax]
 for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
     itp1c = @inferred(constructor(copier(A1), BSpline(Linear()), OnCell()))
 
+    @test parent(itp1c) === itp1c.coefs
+
     # Just interpolation
     for x in 1:.2:xmax
         @test ≈(f(x),itp1c[x],atol=abs(0.1 * f(x)))

@@ -9,6 +9,7 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
     for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
         itp1 = @inferred(constructor(copier(A), BSpline(Quadratic(BC())), GT()))
         @test @inferred(size(itp1)) == size(A)
+        @test_throws ArgumentError parent(itp1)
 
         # test that inner region is close to data
         for x in 3.1:.2:8.1

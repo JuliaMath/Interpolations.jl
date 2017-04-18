@@ -14,6 +14,8 @@ end
     :(ScaledInterpolation{$T,$N,$ITPT,$IT,$GT,$RT}(itp, ranges))
 end
 
+Base.parent(A::ScaledInterpolation) = A.itp
+
 """
 `scale(itp, xs, ys, ...)` scales an existing interpolation object to allow for indexing using other coordinate axes than unit ranges, by wrapping the interpolation object and transforming the indices from the provided axes onto unit ranges upon indexing.
 

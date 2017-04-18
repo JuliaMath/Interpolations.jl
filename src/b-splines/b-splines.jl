@@ -126,3 +126,6 @@ include("cubic.jl")
 include("indexing.jl")
 include("prefiltering.jl")
 include("../filter1d.jl")
+
+Base.parent{T,N,TCoefs,UT<:Union{BSpline{Linear},BSpline{Constant}}}(A::BSplineInterpolation{T,N,TCoefs,UT}) = A.coefs
+Base.parent{T,N,TCoefs,UT}(A::BSplineInterpolation{T,N,TCoefs,UT}) = throw(ArgumentError("The given BSplineInterpolation does not serve as a \"view\" for a parent array. This would only be true for Constant and Linear b-splines."))
