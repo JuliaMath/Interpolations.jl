@@ -97,5 +97,6 @@ include("gridded/gridded.jl")
 include("extrapolation/extrapolation.jl")
 include("scaling/scaling.jl")
 include("utils.jl")
+include("io.jl")
 
 end # module
