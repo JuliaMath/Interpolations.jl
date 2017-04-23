@@ -15,7 +15,7 @@ schemes = (
     Periodic
 )
 
-for etp in map(E -> extrapolate(itpg, E()), schemes),
+for etp in map(E -> @inferred(extrapolate(itpg, E())), schemes),
     x in [
         # In-bounds evaluation
         3.4, 3, dual(3.1),
