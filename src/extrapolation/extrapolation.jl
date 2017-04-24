@@ -1,8 +1,8 @@
 type Extrapolation{T,N,ITPT,IT,GT,ET} <: AbstractExtrapolation{T,N,ITPT,IT,GT}
     itp::ITPT
 end
-Extrapolation{T,ITPT,IT,GT,ET}(::Type{T}, N, itp::ITPT, ::Type{IT}, ::Type{GT}, et::ET) =
-    Extrapolation{T,N,ITPT,IT,GT,ET}(itp)
+
+@deprecate Extrapolation{T,ITPT,IT,GT,ET}(::Type{T}, N, itp::ITPT, ::Type{IT}, ::Type{GT}, et::ET) Extrapolation{T,N,ITPT,IT,GT,ET}(itp)
 
 Base.parent(A::Extrapolation) = A.itp
 
@@ -27,8 +27,8 @@ You can also combine schemes in tuples. For example, the scheme `(Linear(), Flat
 
 Finally, you can specify different extrapolation behavior in different direction. `((Linear(),Flat()), Flat())` will extrapolate linearly in the first dimension if the index is too small, but use constant etrapolation if it is too large, and always use constant extrapolation in the second dimension.
 """
-extrapolate{T,N,IT,GT,ET<:ExtrapDimSpec}(itp::AbstractInterpolation{T,N,IT,GT}, et::ET) =
-    Extrapolation(T,N,itp,IT,GT,et)
+extrapolate{T,N,IT,GT,ET<:ExtrapDimSpec}(itp::AbstractInterpolation{T,N,IT,GT}, ::ET) =
+    Extrapolation{T,N,typeof(itp),IT,GT,ET}(itp)
 
 include("throw.jl")
 include("flat.jl")
