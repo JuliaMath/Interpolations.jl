@@ -64,6 +64,8 @@ end
 
 lbound(itp::GriddedInterpolation, d) = itp.knots[d][1]
 ubound(itp::GriddedInterpolation, d) = itp.knots[d][end]
+lbound(itp::GriddedInterpolation, d, inds) = itp.knots[d][1]
+ubound(itp::GriddedInterpolation, d, inds) = itp.knots[d][end]
 
 include("constant.jl")
 include("linear.jl")

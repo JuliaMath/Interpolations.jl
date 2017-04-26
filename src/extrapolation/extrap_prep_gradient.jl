@@ -1,11 +1,15 @@
 # See ?extrap_prep for documentation for all these methods
 
-extrap_prep{T}(g::Val{:gradient}, ::Type{T}, n::Val{1}) = extrap_prep(g, T, n, Val{1}())
+extrap_prep{T}(g::Val{:gradient}, ::Type{T}, n::Val{1}) = quote
+    inds_etp = indices(etp)
+    $(extrap_prep(g, T, n, Val{1}()))
+end
 extrap_prep{T}(g::Val{:gradient}, ::Type{Tuple{T}}, n::Val{1}) = extrap_prep(g, T, n)
 extrap_prep{T}(g::Val{:gradient}, ::Type{Tuple{T,T}}, n::Val{1}) = extrap_prep(g, T, n)
 extrap_prep{T}(g::Val{:gradient}, ::Type{Tuple{Tuple{T,T}}}, n::Val{1}) = extrap_prep(g, T, n)
 function extrap_prep{S,T}(g::Val{:gradient}, ::Type{Tuple{S,T}}, ::Val{1})
     quote
+        inds_etp = indices(etp)
         $(extrap_prep(g, S, n, Val{1}(), Val{:lo}()))
         $(extrap_prep(g, T, n, Val{1}(), Val{:hi}()))
     end
@@ -16,12 +20,12 @@ extrap_prep{T<:Tuple}(::Val{:gradient}, ::Type{T}, ::Val{1}) = :(throw(ArgumentE
 
 
 function extrap_prep{T,N}(g::Val{:gradient}, ::Type{T}, n::Val{N})
-    Expr(:block, [extrap_prep(g, T, n, Val{d}()) for d in 1:N]...)
+    Expr(:block, :(inds_etp = indices(etp)), [extrap_prep(g, T, n, Val{d}()) for d in 1:N]...)
 end
 
 function extrap_prep{T<:Tuple,N}(g::Val{:gradient}, ::Type{T}, n::Val{N})
     length(T.parameters) == N || return :(throw(ArgumentError("The $N-dimensional extrap configuration $T is not supported")))
-    exprs = Expr[]
+    exprs = [:(inds_etp = indices(etp))]
     for d in 1:N
         Tdim = T.parameters[d]
         if Tdim <: Tuple
