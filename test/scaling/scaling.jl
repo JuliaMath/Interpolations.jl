@@ -55,6 +55,12 @@ sitp32 = @inferred scale(interpolate(Float32[testfunction(x,y) for x in -5:.5:5,
 itp = interpolate(rand(3,3,3), BSpline(Quadratic(Flat())), OnCell())
 knots = map(d->1:10:21, 1:3)
 sitp = @inferred scale(itp, knots...)
+
+iter = @inferred(eachvalue(sitp))
+state = @inferred(start(iter))
+@test !(@inferred(done(iter, state)))
+val, state = @inferred(next(iter, state))
+
 function foo!(dest, sitp)
     i = 0
     for s in eachvalue(sitp)
