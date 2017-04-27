@@ -129,6 +129,12 @@ end
 nelements(::Union{Type{NoInterp},Type{Constant}}) = 1
 nelements(::Type{Linear}) = 2
 nelements{Q<:Quadratic}(::Type{Q}) = 3
+
+eachvalue_zero{R,BT<:Union{Type{NoInterp},Type{Constant}}}(::Type{R}, ::Type{BT}) =
+    (zero(R),)
+eachvalue_zero{R}(::Type{R}, ::Type{Linear}) = (zero(R),zero(R))
+eachvalue_zero{R,Q<:Quadratic}(::Type{R}, ::Type{Q}) = (zero(R),zero(R),zero(R))
+
 """
 `eachvalue(sitp)` constructs an iterator for efficiently visiting each
 grid point of a ScaledInterpolation object in which a small grid is
@@ -159,18 +165,18 @@ which should be more efficient than
     end
 ```
 """
-@generated function eachvalue{T,N}(sitp::ScaledInterpolation{T,N})
+function eachvalue{T,N}(sitp::ScaledInterpolation{T,N})
     ITPT = basetype(sitp)
     IT = itptype(ITPT)
-    itp_tail = ntuple(i->zero(getindex_return_type(ITPT, ntuple(i->Int, N-1))), nelements(bsplinetype(iextract(IT, 1))))
-    quote
-        dx_1 = coordlookup(sitp.ranges[1], 2) - coordlookup(sitp.ranges[1], 1)
-        ScaledIterator(CartesianRange(ssize(sitp)), sitp, dx_1, 0, zero(dx_1), $itp_tail)
-    end
+    R = getindex_return_type(ITPT, Int)
+    BT = bsplinetype(iextract(IT, 1))
+    itp_tail = eachvalue_zero(R, BT)
+    dx_1 = coordlookup(sitp.ranges[1], 2) - coordlookup(sitp.ranges[1], 1)
+    ScaledIterator(CartesianRange(ssize(sitp)), sitp, dx_1, 0, zero(dx_1), itp_tail)
 end
 
-start(iter::ScaledIterator) = start(iter.rng)
-done(iter::ScaledIterator, state) = done(iter.rng, state)
+@inline start(iter::ScaledIterator) = start(iter.rng)
+@inline done(iter::ScaledIterator, state) = done(iter.rng, state)
 
 function index_gen1(::Union{Type{NoInterp}, Type{BSpline{Constant}}})
     quote

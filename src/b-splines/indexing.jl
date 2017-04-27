@@ -86,8 +86,12 @@ end
 # thats why we use this @noinline fence
 @noinline _promote_mul(a,b) = Base.promote_op(@functorize(*), a, b)
 
-@noinline function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes)
+@noinline function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes::Tuple)
     reduce(_promote_mul, eltype(TCoefs), argtypes)
+end
+
+function getindex_return_type{T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad,I}(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, ::Type{I})
+    _promote_mul(eltype(TCoefs), I)
 end
 
 @generated function gradient!{T,N}(g::AbstractVector, itp::BSplineInterpolation{T,N}, xs::Number...)
