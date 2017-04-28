@@ -26,7 +26,8 @@ function getindex_impl{T,N,ITP,IT,GT,FT}(fitp::Type{FilledExtrapolation{T,N,ITP,
        $meta
        # Check to see if we're in the extrapolation region, i.e.,
        # out-of-bounds in an index
-       @nexprs $N d->((args[d] < lbound(fitp,d) || args[d] > ubound(fitp, d))) && return convert($Tret, fitp.fillvalue)::$Tret
+       inds_etp = indices(fitp)
+       @nexprs $N d->((args[d] < lbound(fitp, d, inds_etp[d]) || args[d] > ubound(fitp, d, inds_etp[d]))) && return convert($Tret, fitp.fillvalue)::$Tret
        # In the interpolation region
        return convert($Tret, getindex(fitp.itp,args...))::$Tret
    end
@@ -41,3 +42,5 @@ getindex{T}(fitp::FilledExtrapolation{T,1}, x::Number, y::Int) = y == 1 ? fitp[x
 
 lbound(etp::FilledExtrapolation, d) = lbound(etp.itp, d)
 ubound(etp::FilledExtrapolation, d) = ubound(etp.itp, d)
+lbound(etp::FilledExtrapolation, d, inds) = lbound(etp.itp, d, inds)
+ubound(etp::FilledExtrapolation, d, inds) = ubound(etp.itp, d, inds)

@@ -50,6 +50,7 @@ and indices. The heavy lifting is done by the `extrap_prep` function; see
 function getindex_impl{T,N,ITPT,IT,GT,ET}(etp::Type{Extrapolation{T,N,ITPT,IT,GT,ET}}, xs...)
     coords = [Symbol("xs_",d) for d in 1:N]
     quote
+        $(Expr(:meta, :inline))
         @nexprs $N d->(xs_d = xs[d])
         $(extrap_prep(ET, Val{N}()))
         etp.itp[$(coords...)]
@@ -66,6 +67,7 @@ checkbounds(::AbstractExtrapolation,I...) = nothing
 function gradient!_impl{T,N,ITPT,IT,GT,ET}(g, etp::Type{Extrapolation{T,N,ITPT,IT,GT,ET}}, xs...)
     coords = [Symbol("xs_", d) for d in 1:N]
     quote
+        $(Expr(:meta, :inline))
         @nexprs $N d->(xs_d = xs[d])
         $(extrap_prep(Val{:gradient}(), ET, Val{N}()))
         gradient!(g, etp.itp, $(coords...))
@@ -79,8 +81,10 @@ end
 
 lbound(etp::Extrapolation, d) = lbound(etp.itp, d)
 ubound(etp::Extrapolation, d) = ubound(etp.itp, d)
+lbound(etp::Extrapolation, d, inds) = lbound(etp.itp, d, inds)
+ubound(etp::Extrapolation, d, inds) = ubound(etp.itp, d, inds)
 size(etp::Extrapolation, d) = size(etp.itp, d)
-indices(etp::AbstractExtrapolation) = indices(etp.itp)
+@inline indices(etp::AbstractExtrapolation) = indices(etp.itp)
 indices(etp::AbstractExtrapolation, d) = indices(etp.itp, d)
 
 include("filled.jl")

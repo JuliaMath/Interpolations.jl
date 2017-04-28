@@ -38,12 +38,16 @@ coordinate transformations, but for anything else methods for the low- and high-
 value cases need to be implemented for each scheme.
 """ extrap_prep
 
-extrap_prep{T}(::Type{T}, n::Val{1}) = extrap_prep(T, n, Val{1}())
+extrap_prep{T}(::Type{T}, n::Val{1}) = quote
+    inds_etp = indices(etp)
+    $(extrap_prep(T, n, Val{1}()))
+end
 extrap_prep{T}(::Type{Tuple{T}}, n::Val{1}) = extrap_prep(T, n)
 extrap_prep{T}(::Type{Tuple{T,T}}, n::Val{1}) = extrap_prep(T, n)
 extrap_prep{T}(::Type{Tuple{Tuple{T,T}}}, n::Val{1}) = extrap_prep(T, n)
 function extrap_prep{S,T}(::Type{Tuple{S,T}}, n::Val{1})
     quote
+        inds_etp = indices(etp)
         $(extrap_prep(S, n, Val{1}(), Val{:lo}()))
         $(extrap_prep(T, n, Val{1}(), Val{:hi}()))
     end
@@ -54,7 +58,7 @@ extrap_prep{S,T}(::Type{Tuple{Tuple{S,T}}}, n::Val{1}) = extrap_prep(Tuple{S,T},
 extrap_prep{T<:Tuple}(::Type{T}, ::Val{1}) = :(throw(ArgumentError("The 1-dimensional extrap configuration $T is not supported")))
 
 function extrap_prep{T,N}(::Type{T}, n::Val{N})
-    exprs = Expr[]
+    exprs = [:(inds_etp = indices(etp))]
     for d in 1:N
         push!(exprs, extrap_prep(T, n, Val{d}()))
     end
@@ -62,7 +66,7 @@ function extrap_prep{T,N}(::Type{T}, n::Val{N})
 end
 function extrap_prep{N,T<:Tuple}(::Type{T}, n::Val{N})
     length(T.parameters) == N || return :(throw(ArgumentError("The $N-dimensional extrap configuration $T is not supported - must be a tuple of length $N (was length $(length(T.parameters)))")))
-    exprs = Expr[]
+    exprs = [:(inds_etp = indices(etp))]
     for d in 1:N
         Tdim = T.parameters[d]
         if Tdim <: Tuple
