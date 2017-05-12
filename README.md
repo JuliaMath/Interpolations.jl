@@ -135,6 +135,31 @@ itp = interpolate!(A, BSpline(Quadratic(InPlace())), OnCell())
 ```
 which destroys the input `A` but also does not need to allocate as much memory.
 
+### Scaled BSplines 
+
+BSplines assume your data is uniformly spaced on the grid `1:N`, or its multidimensional equivalent. If you have data of the form `[f(x) for x in A]`, you need to tell Interpolations about the grid `A`. If `A` is not uniformly spaced, you must use gridded interpolation described below. However, if `A` is a collection of ranges or linspaces, you can use scaled BSplines. This is more efficient because the gridded algorithm does not exploit the uniform spacing. Scaled BSplines can also be used with any spline degree available for BSplines, while gridded interpolation does not currently support quadratic or cubic splines.
+
+Some examples,
+```jl
+A_x = 1.:2.:40.
+A = [log(x) for x in A_x]
+itp = interpolate(A, BSpline(Cubic(Line())), OnGrid())
+sitp = scale(itp, A_x)
+sitp[3.] # exactly log(3.)
+sitp[3.5] # approximately log(3.5)
+```
+
+For multidimensional uniformly spaced grids
+```jl
+A_x1 = 1:.1:10
+A_x2 = 1:.5:20
+f(x1, x2) = log(x1+x2)
+A = [f(x1,x2) for x1 in A_x1, x2 in A_x2]
+itp = interpolate(A, BSpline(Cubic(Line())), OnGrid())
+sitp = scale(itp, A_x1, A_x2)
+sitp[5., 10.] # exactly log(5 + 10)
+sitp[5.6, 7.1] # approximately log(5.6 + 7.1)
+```
 ### Gridded interpolation
 
 These use a very similar syntax to BSplines, with the major exception
