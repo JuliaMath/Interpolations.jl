@@ -198,8 +198,8 @@ function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}
     du[1] = dl[end] = 0
 
     specs = WoodburyMatrices.sparse_factors(T, n,
-                                  (1, 3, one(T)),
-                                  (n, n-2, one(T))
+                                  (1, 3, oneunit(T)),
+                                  (n, n-2, oneunit(T))
                                  )
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
@@ -218,8 +218,8 @@ function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, :
     du[1] = dl[end] = -2
 
     specs = WoodburyMatrices.sparse_factors(T, n,
-                                  (1, 3, one(T)),
-                                  (n, n-2, one(T)),
+                                  (1, 3, oneunit(T)),
+                                  (n, n-2, oneunit(T)),
                                   )
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)

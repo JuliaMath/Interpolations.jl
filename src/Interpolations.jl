@@ -43,6 +43,9 @@ import Base: convert, size, indices, getindex, gradient, promote_rule,
 # Julia v0.5 compatibility
 if isdefined(:scaling) import Base.scaling end
 if isdefined(:scale) import Base.scale end
+if !isdefined(Base, :oneunit)
+    const oneunit = one
+end
 
 @compat abstract type Flag end
 @compat abstract type InterpolationType <: Flag end

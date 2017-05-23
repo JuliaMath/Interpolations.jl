@@ -21,11 +21,11 @@ function BSplineInterpolation{N,Tel,TWeights<:Real,IT<:DimSpec{BSpline},GT<:DimS
     isleaftype(IT) || error("The b-spline type must be a leaf type (was $IT)")
     isleaftype(typeof(A)) || warn("For performance reasons, consider using an array of a concrete type (typeof(A) == $(typeof(A)))")
 
-    c = one(TWeights)
+    c = zero(TWeights)
     for _ in 2:N
         c *= c
     end
-    T = typeof(c * one(Tel))
+    T = typeof(c * zero(Tel))
 
     BSplineInterpolation{T,N,typeof(A),IT,GT,pad}(A)
 end

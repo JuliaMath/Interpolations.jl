@@ -24,11 +24,11 @@ function GriddedInterpolation{N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}(
         issorted(k) || error("knot-vectors must be sorted in increasing order")
         iextract(IT, d) != NoInterp || k == collect(1:size(A, d)) || error("knot-vector should be the range 1:$(size(A,d)) for the method Gridded{NoInterp}")
     end
-    c = one(TWeights)
+    c = zero(TWeights)
     for _ in 2:N
         c *= c
     end
-    T = typeof(c * one(TCoefs))
+    T = typeof(c * zero(TCoefs))
 
     GriddedInterpolation{T,N,TCoefs,IT,typeof(knts),pad}(knts, A)
 end
