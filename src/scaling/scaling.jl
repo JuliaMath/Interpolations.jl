@@ -68,12 +68,12 @@ Returns *half* the width of one step of the range.
 This function is used to calculate the upper and lower bounds of `OnCell` interpolation objects.
 """ boundstep
 
-coordlookup(r::UnitRange, x) = x - r.start + one(eltype(r))
+coordlookup(r::UnitRange, x) = x - r.start + oneunit(eltype(r))
 coordlookup(i::Bool, r::Range, x) = i ? coordlookup(r, x) : convert(typeof(coordlookup(r,x)), x)
-coordlookup(r::StepRange, x) = (x - r.start) / r.step + one(eltype(r))
+coordlookup(r::StepRange, x) = (x - r.start) / r.step + oneunit(eltype(r))
 
 @static if isdefined(:StepRangeLen)
-    coordlookup(r::StepRangeLen, x) = (x - first(r)) / step(r) + one(eltype(r))
+    coordlookup(r::StepRangeLen, x) = (x - first(r)) / step(r) + oneunit(eltype(r))
     boundstep(r::StepRangeLen) = 0.5*step(r)
     rescale_gradient(r::StepRangeLen, g) = g / step(r)
 end
@@ -113,7 +113,7 @@ rescale_gradient(r::UnitRange, g) = g
     rescale_gradient(r::LinSpace, g) = g * r.divisor / (r.stop - r.start)
     rescale_gradient(r::FloatRange, g) = g * r.divisor / r.step
     coordlookup(r::LinSpace, x) = (r.divisor * x + r.stop - r.len * r.start) / (r.stop - r.start)
-    coordlookup(r::FloatRange, x) = (r.divisor * x - r.start) / r.step + one(eltype(r))
+    coordlookup(r::FloatRange, x) = (r.divisor * x - r.start) / r.step + oneunit(eltype(r))
     boundstep(r::LinSpace) = ((r.stop - r.start) / r.divisor) / 2
     boundstep(r::FloatRange) = r.step / 2
 end

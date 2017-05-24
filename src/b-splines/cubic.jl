@@ -187,11 +187,11 @@ Applying this condition yields
 function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
                                    ::Type{Cubic{Flat}}, ::Type{OnGrid})
     dl, d, du = inner_system_diags(T, n, Cubic{Flat})
-    d[1] = d[end] = -one(T)
+    d[1] = d[end] = -oneunit(T)
     du[1] = dl[end] = zero(T)
 
     # Now Woodbury correction to set `[1, 3], [n, n-2] ==> 1`
-    specs = WoodburyMatrices.sparse_factors(T, n, (1, 3, one(T)), (n, n-2, one(T)))
+    specs = WoodburyMatrices.sparse_factors(T, n, (1, 3, oneunit(T)), (n, n-2, oneunit(T)))
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
 end
@@ -222,8 +222,8 @@ function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
     specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, 3, T(-3)),
                                   (n, n-2, T(-3)),
-                                  (1, 4, one(T)),
-                                  (n, n-3, one(T))
+                                  (1, 4, oneunit(T)),
+                                  (n, n-3, oneunit(T))
                                   )
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
@@ -251,8 +251,8 @@ function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
     specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, 3, T(5)),
                                   (n, n-2, T(5)),
-                                  (1, 4, -one(T)),
-                                  (n, n-3, -one(T))
+                                  (1, 4, -oneunit(T)),
+                                  (n, n-3, -oneunit(T))
                                   )
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
@@ -273,8 +273,8 @@ function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
     # now need Woodbury correction to set :
     #    - [1, 3] and [n, n-2] ==> 1
     specs = WoodburyMatrices.sparse_factors(T, n,
-                                  (1, 3, one(T)),
-                                  (n, n-2, one(T)),
+                                  (1, 3, oneunit(T)),
+                                  (n, n-2, oneunit(T)),
                                   )
 
     Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)

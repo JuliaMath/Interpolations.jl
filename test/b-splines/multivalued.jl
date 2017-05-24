@@ -18,7 +18,6 @@ end
 (*)(n::Number, p::MyPair) = MyPair(n*p.first, n*p.second)
 (*)(p::MyPair, n::Number) = n*p
 (/)(p::MyPair, n::Number) = MyPair(p.first/n, p.second/n)
-Base.one{T}(::Type{MyPair{T}}) = MyPair(one(T),one(T))
 Base.zero{T}(::Type{MyPair{T}}) = MyPair(zero(T),zero(T))
 Base.promote_rule{T1,T2<:Number}(::Type{MyPair{T1}}, ::Type{T2}) = MyPair{promote_type(T1,T2)}
 Base.promote_op{T1,T2<:Number}(::typeof(@functorize(*)), ::Type{MyPair{T1}}, ::Type{T2}) = MyPair{promote_type(T1,T2)}
