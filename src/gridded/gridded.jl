@@ -28,7 +28,7 @@ function GriddedInterpolation{N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}(
     for _ in 2:N
         c *= c
     end
-    T = typeof(c * zero(TCoefs))
+    T = Core.Inference.return_type(*, Tuple{typeof(c), TCoefs})
 
     GriddedInterpolation{T,N,TCoefs,IT,typeof(knts),pad}(knts, A)
 end

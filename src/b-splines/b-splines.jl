@@ -25,7 +25,7 @@ function BSplineInterpolation{N,Tel,TWeights<:Real,IT<:DimSpec{BSpline},GT<:DimS
     for _ in 2:N
         c *= c
     end
-    T = typeof(c * zero(Tel))
+    T = Core.Inference.return_type(*, Tuple{typeof(c), Tel})
 
     BSplineInterpolation{T,N,typeof(A),IT,GT,pad}(A)
 end
