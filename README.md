@@ -45,7 +45,7 @@ itp = interpolate(A, options...)
 ```
 where `options...` (discussed below) controls the type of
 interpolation you want to perform.  This syntax assumes that the
-samples in `A` are equally-spaced. 
+samples in `A` are equally-spaced.
 
 To evaluate the interpolation at position `(x, y, ...)`, simply do
 ```jl
@@ -135,7 +135,7 @@ itp = interpolate!(A, BSpline(Quadratic(InPlace())), OnCell())
 ```
 which destroys the input `A` but also does not need to allocate as much memory.
 
-### Scaled BSplines 
+### Scaled BSplines
 
 BSplines assume your data is uniformly spaced on the grid `1:N`, or its multidimensional equivalent. If you have data of the form `[f(x) for x in A]`, you need to tell Interpolations about the grid `A`. If `A` is not uniformly spaced, you must use gridded interpolation described below. However, if `A` is a collection of ranges or linspaces, you can use scaled BSplines. This is more efficient because the gridded algorithm does not exploit the uniform spacing. Scaled BSplines can also be used with any spline degree available for BSplines, while gridded interpolation does not currently support quadratic or cubic splines.
 
@@ -173,7 +173,7 @@ A = rand(20)
 A_x = collect(1.0:2.0:40.0)
 knots = (A_x,)
 itp = interpolate(knots, A, Gridded(Linear()))
-itp[2.0] 
+itp[2.0]
 ```
 
 The spacing between adjacent samples need not be constant, you can use the syntax
@@ -278,6 +278,38 @@ For 1d, the "Dierckx scalar" and "GI" tests were interrupted because
 they ran more than 20 seconds (far longer than any other test).  Both
 performed much better in 2d, interestingly.  You can see that
 Interpolations wins in every case, sometimes by a very large margin.
+
+## Transitioning from Grid.jl
+
+Instead of using
+```julia
+yi = InterpGrid(y, BCreflect, InterpQuadratic)
+```
+you should use
+```julia
+yi = interpolate(y, BSpline(Quadratic(Reflect())), OnCell())
+```
+
+In general, here are the closest mappings:
+
+|  Grid             | Interpolations                             |
+|:-----------------:|:------------------------------------------:|
+| `InterpNearest`   | `Constant`                                 |
+| `InterpLinear`    | `Linear`                                   |
+| `InterpQuadratic` | `Quadratic`                                |
+| `InterpCubic`     | `Cubic`                                    |
+|                   |                                            |
+| `BCnil`           | `extrapolate(itp, Interpolations.Throw())` |
+| `BCnan`           | `extrapolate(itp, NaN)`                    |
+| `BCna`            | `extrapolate(itp, NaN)`                    |
+| `BCreflect`       | `interpolate` with `Reflect()`             |
+| `BCperiodic`      | `interpolate` with `Periodic()`            |
+| `BCnearest`       | `interpolate` with `Flat()`                |
+| `BCfill`          | `extrapolate` with value                   |
+|                   |                                            |
+| odd orders        | `OnGrid()`                                 |
+| even orders       | `OnCell()`                                 |
+
 
 ## Contributing
 
