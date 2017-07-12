@@ -210,6 +210,28 @@ NoInterp
 whereby the coordinate of the selected input vector MUST be located on a grid point. Requests for off grid
 coordinates results in the throwing of an error.
 
+## Parametric splines
+
+Given a set a knots with coordinates `x(t)` and `y(t)`, a parametric spline `S(t) = (x(t),y(t))` parametrized by `t in [0,1]` can be constructed with the following code adapted from a [post](http://julia-programming-language.2336112.n4.nabble.com/Parametric-splines-td37794.html#a37818) by Tomas Lycken:
+
+```julia
+using Interpolations
+using Plots
+
+t = 0:.1:1
+x = sin.(2π*t)
+y = cos.(2π*t)
+A = hcat(x,y)
+
+itp = scale(interpolate(A, (BSpline(Cubic(Natural())), NoInterp()), OnGrid()), t, 1:2)
+
+tfine = 0:.01:1
+xs, ys = [itp[t,1] for t in tfine], [itp[t,2] for t in tfine]
+
+scatter(x, y, label="knots")
+plot!(xs, ys, label="spline")
+```
+
 ## Extrapolation
 
 The call to `extrapolate` defines what happens if you try to index into the interpolation object with coordinates outside of `[1, size(data,d)]` in any dimension `d`. The implemented boundary conditions are `Throw`, `Flat`, `Linear`, `Periodic` and `Reflect`, with more options planned. `Periodic` and `Reflect` require that there is a method of `Base.mod` that can handle the indices used.
