@@ -216,7 +216,6 @@ Given a set a knots with coordinates `x(t)` and `y(t)`, a parametric spline `S(t
 
 ```julia
 using Interpolations
-using Plots
 
 t = 0:.1:1
 x = sin.(2π*t)
@@ -227,10 +226,17 @@ itp = scale(interpolate(A, (BSpline(Cubic(Natural())), NoInterp()), OnGrid()), t
 
 tfine = 0:.01:1
 xs, ys = [itp[t,1] for t in tfine], [itp[t,2] for t in tfine]
+```
+
+We can then plot the spline with:
+
+```julia
+using Plots
 
 scatter(x, y, label="knots")
 plot!(xs, ys, label="spline")
 ```
+[parametric spline](doc/images/parametric_spline.png)
 
 ## Extrapolation
 
