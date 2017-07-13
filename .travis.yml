@@ -6,4 +6,4 @@ julia:
     - nightly
 matrix:
     allow_failures:
-        - nightly
+        - julia: nightly
