@@ -5,5 +5,5 @@ julia:
     - 0.6
     - nightly
 matrix:
-    - allow_failures:
+    allow_failures:
         - nightly
