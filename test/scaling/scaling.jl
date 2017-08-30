@@ -79,6 +79,5 @@ rbar = similar(rfoo)
 foo!(rfoo, sitp)
 bar!(rbar, sitp)
 @test rfoo ≈ rbar
-@test (@elapsed foo!(rfoo, sitp)) < (@elapsed bar!(rbar, sitp))
 
 end
