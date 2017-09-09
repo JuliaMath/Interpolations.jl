@@ -28,11 +28,7 @@ for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
 end
 
 # AbstractArrays
-if VERSION < v"0.5.0"
-    makesharedarray{T}(::Type{T}, dims; kwargs...) = SharedArray(T, dims; kwargs...)
-else
-    makesharedarray{T}(::Type{T}, dims; kwargs...) = SharedArray{T}(dims; kwargs...)
-end
+makesharedarray{T}(::Type{T}, dims; kwargs...) = SharedArray{T}(dims; kwargs...)
 function copyshared(A)
     B = makesharedarray(eltype(A), size(A))
     copy!(B, A)
