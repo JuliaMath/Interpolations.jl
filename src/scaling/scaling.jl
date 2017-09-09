@@ -2,11 +2,11 @@ export ScaledInterpolation, eachvalue
 
 import Base: done, next, start
 
-immutable ScaledInterpolation{T,N,ITPT,IT,GT,RT} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
+struct ScaledInterpolation{T,N,ITPT,IT,GT,RT} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
     itp::ITPT
     ranges::RT
 end
-@generated function ScaledInterpolation{ITPT,RT}(itp::ITPT, ranges::RT)
+@generated function ScaledInterpolation(itp::ITPT, ranges::RT) where {ITPT,RT}
     T = eltype(itp)
     N = ndims(itp)
     IT = itptype(itp)
@@ -23,7 +23,7 @@ The parameters `xs` etc must be either ranges or linspaces, and there must be on
 
 For every `NoInterp` dimension of the interpolation object, the range must be exactly `1:size(itp, d)`.
 """
-function scale{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, ranges::Range...)
+function scale(itp::AbstractInterpolation{T,N,IT,GT}, ranges::Range...) where {T,N,IT,GT}
     length(ranges) == N || throw(ArgumentError("Must scale $N-dimensional interpolation object with exactly $N ranges (you used $(length(ranges)))"))
     for d in 1:N
         if iextract(IT,d) != NoInterp
@@ -36,27 +36,27 @@ function scale{T,N,IT,GT}(itp::AbstractInterpolation{T,N,IT,GT}, ranges::Range..
     ScaledInterpolation(itp, ranges)
 end
 
-@generated function getindex{T,N,ITPT,IT<:DimSpec}(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...)
+@generated function getindex(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...) where {T,N,ITPT,IT<:DimSpec}
     length(xs) == N || throw(ArgumentError("Must index into $N-dimensional scaled interpolation object with exactly $N indices (you used $(length(xs)))"))
     interp_indices = map(i -> iextract(IT, i) != NoInterp ? :(coordlookup(sitp.ranges[$i], xs[$i])) : :(xs[$i]), 1:N)
     return :($(Expr(:meta,:inline)); getindex(sitp.itp, $(interp_indices...)))
 end
 
-getindex{T}(sitp::ScaledInterpolation{T,1}, x::Number, y::Int) = y == 1 ? sitp[x] : throw(BoundsError())
+getindex(sitp::ScaledInterpolation{T,1}, x::Number, y::Int) where {T} = y == 1 ? sitp[x] : throw(BoundsError())
 
 size(sitp::ScaledInterpolation, d) = size(sitp.itp, d)
-lbound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnGrid}, d) = 1 <= d <= N ? sitp.ranges[d][1] : throw(BoundsError())
-lbound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d) = 1 <= d <= N ? sitp.ranges[d][1] - boundstep(sitp.ranges[d]) : throw(BoundsError())
-ubound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnGrid}, d) = 1 <= d <= N ? sitp.ranges[d][end] : throw(BoundsError())
-ubound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d) = 1 <= d <= N ? sitp.ranges[d][end] + boundstep(sitp.ranges[d]) : throw(BoundsError())
+lbound(sitp::ScaledInterpolation{T,N,ITPT,IT,OnGrid}, d) where {T,N,ITPT,IT} = 1 <= d <= N ? sitp.ranges[d][1] : throw(BoundsError())
+lbound(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d) where {T,N,ITPT,IT} = 1 <= d <= N ? sitp.ranges[d][1] - boundstep(sitp.ranges[d]) : throw(BoundsError())
+ubound(sitp::ScaledInterpolation{T,N,ITPT,IT,OnGrid}, d) where {T,N,ITPT,IT} = 1 <= d <= N ? sitp.ranges[d][end] : throw(BoundsError())
+ubound(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d) where {T,N,ITPT,IT} = 1 <= d <= N ? sitp.ranges[d][end] + boundstep(sitp.ranges[d]) : throw(BoundsError())
 
-lbound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnGrid}, d, inds) =
+lbound(sitp::ScaledInterpolation{T,N,ITPT,IT,OnGrid}, d, inds) where {T,N,ITPT,IT} =
     sitp.ranges[d][1]
-lbound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d, inds) =
+lbound(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d, inds) where {T,N,ITPT,IT} =
     sitp.ranges[d][1] - boundstep(sitp.ranges[d])
-ubound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnGrid}, d, inds) =
+ubound(sitp::ScaledInterpolation{T,N,ITPT,IT,OnGrid}, d, inds) where {T,N,ITPT,IT} =
     sitp.ranges[d][end]
-ubound{T,N,ITPT,IT}(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d, inds) =
+ubound(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d, inds) where {T,N,ITPT,IT} =
     sitp.ranges[d][end] + boundstep(sitp.ranges[d])
 
 boundstep(r::StepRange) = r.step / 2
@@ -78,16 +78,16 @@ coordlookup(r::StepRange, x) = (x - r.start) / r.step + oneunit(eltype(r))
     rescale_gradient(r::StepRangeLen, g) = g / step(r)
 end
 
-basetype{T,N,ITPT,IT,GT,RT}(::Type{ScaledInterpolation{T,N,ITPT,IT,GT,RT}}) = ITPT
+basetype(::Type{ScaledInterpolation{T,N,ITPT,IT,GT,RT}}) where {T,N,ITPT,IT,GT,RT} = ITPT
 basetype(sitp::ScaledInterpolation) = basetype(typeof(sitp))
 
 # @eval uglyness required for disambiguation with method in b-splies/indexing.jl
 # also, GT is only specified to avoid disambiguation warnings on julia 0.4
-gradient{T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs::Real...) =
+gradient(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs::Real...) where {T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} =
         gradient!(Array{T}(count_interp_dims(IT,N)), sitp, xs...)
-gradient{T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}}(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs...) =
+gradient(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs...) where {T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} =
         gradient!(Array{T}(count_interp_dims(IT,N)), sitp, xs...)
-@generated function gradient!{T,N,ITPT,IT}(g, sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...)
+@generated function gradient!(g, sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...) where {T,N,ITPT,IT}
     ndims(g) == 1 || throw(DimensionMismatch("g must be a vector (but had $(ndims(g)) dimensions)"))
     length(xs) == N || throw(DimensionMismatch("Must index into $N-dimensional scaled interpolation object with exactly $N indices (you used $(length(xs)))"))
 
@@ -126,7 +126,7 @@ Implements the chain rule dy/dx = dy/du * du/dx for use when calculating gradien
 
 
 ### Iteration
-type ScaledIterator{CR<:CartesianRange,SITPT,X1,Deg,T}
+mutable struct ScaledIterator{CR<:CartesianRange,SITPT,X1,Deg,T}
     rng::CR
     sitp::SITPT
     dx_1::X1
@@ -137,12 +137,12 @@ end
 
 nelements(::Union{Type{NoInterp},Type{Constant}}) = 1
 nelements(::Type{Linear}) = 2
-nelements{Q<:Quadratic}(::Type{Q}) = 3
+nelements(::Type{Q}) where {Q<:Quadratic} = 3
 
-eachvalue_zero{R,BT<:Union{Type{NoInterp},Type{Constant}}}(::Type{R}, ::Type{BT}) =
+eachvalue_zero(::Type{R}, ::Type{BT}) where {R,BT<:Union{Type{NoInterp},Type{Constant}}} =
     (zero(R),)
-eachvalue_zero{R}(::Type{R}, ::Type{Linear}) = (zero(R),zero(R))
-eachvalue_zero{R,Q<:Quadratic}(::Type{R}, ::Type{Q}) = (zero(R),zero(R),zero(R))
+eachvalue_zero(::Type{R}, ::Type{Linear}) where {R} = (zero(R),zero(R))
+eachvalue_zero(::Type{R}, ::Type{Q}) where {R,Q<:Quadratic} = (zero(R),zero(R),zero(R))
 
 """
 `eachvalue(sitp)` constructs an iterator for efficiently visiting each
@@ -174,7 +174,7 @@ which should be more efficient than
     end
 ```
 """
-function eachvalue{T,N}(sitp::ScaledInterpolation{T,N})
+function eachvalue(sitp::ScaledInterpolation{T,N}) where {T,N}
     ITPT = basetype(sitp)
     IT = itptype(ITPT)
     R = getindex_return_type(ITPT, Int)
@@ -200,24 +200,24 @@ function index_gen1(::Type{BSpline{Linear}})
     end
 end
 
-function index_gen1{Q<:Quadratic}(::Type{BSpline{Q}})
+function index_gen1(::Type{BSpline{Q}}) where Q<:Quadratic
     quote
         p = iter.itp_tail
         value = cm_1*p[1] + c_1*p[2] + cp_1*p[3]
     end
 end
-function index_gen_tail{IT}(B::Union{Type{NoInterp}, Type{BSpline{Constant}}}, ::Type{IT}, N)
+function index_gen_tail(B::Union{Type{NoInterp}, Type{BSpline{Constant}}}, ::Type{IT}, N) where IT
     [index_gen(B, IT, N, 0)]
 end
 
-function index_gen_tail{IT}(::Type{BSpline{Linear}}, ::Type{IT}, N)
+function index_gen_tail(::Type{BSpline{Linear}}, ::Type{IT}, N) where IT
     [index_gen(BS1, IT, N, i) for i = 0:1]
 end
 
-function index_gen_tail{IT,Q<:Quadratic}(::Type{BSpline{Q}}, ::Type{IT}, N)
+function index_gen_tail(::Type{BSpline{Q}}, ::Type{IT}, N) where {IT,Q<:Quadratic}
     [index_gen(BSpline{Q}, IT, N, i) for i = -1:1]
 end
-function nremaining_gen{Q<:Quadratic}(::Union{Type{BSpline{Constant}}, Type{BSpline{Q}}})
+function nremaining_gen(::Union{Type{BSpline{Constant}}, Type{BSpline{Q}}}) where Q<:Quadratic
     quote
         EPS = 0.001*iter.dx_1
         floor(Int, iter.dx_1 >= 0 ?
@@ -234,7 +234,7 @@ function nremaining_gen(::Type{BSpline{Linear}})
               (max(1-EPS, floor(Int,x_1)) - x_1)/iter.dx_1)
     end
 end
-function next_gen{CR,SITPT,X1,Deg,T}(::Type{ScaledIterator{CR,SITPT,X1,Deg,T}})
+function next_gen(::Type{ScaledIterator{CR,SITPT,X1,Deg,T}}) where {CR,SITPT,X1,Deg,T}
     N = ndims(CR)
     ITPT = basetype(SITPT)
     IT = itptype(ITPT)
@@ -279,7 +279,7 @@ function next_gen{CR,SITPT,X1,Deg,T}(::Type{ScaledIterator{CR,SITPT,X1,Deg,T}})
     end
 end
 
-@generated function next{CR,ITPT,N}(iter::ScaledIterator{CR,ITPT}, state::CartesianIndex{N})
+@generated function next(iter::ScaledIterator{CR,ITPT}, state::CartesianIndex{N}) where {CR,ITPT,N}
     value_expr = next_gen(iter)
     quote
         $value_expr
@@ -287,4 +287,4 @@ end
     end
 end
 
-ssize{T,N}(sitp::ScaledInterpolation{T,N}) = map(r->round(Int, last(r)-first(r)+1), sitp.ranges)::NTuple{N,Int}
+ssize(sitp::ScaledInterpolation{T,N}) where {T,N} = map(r->round(Int, last(r)-first(r)+1), sitp.ranges)::NTuple{N,Int}

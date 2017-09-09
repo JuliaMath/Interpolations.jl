@@ -1,19 +1,19 @@
-deval{N}(::Val{N}) = N
-padding{IT<:BSpline}(::Type{IT}) = Val{0}()
-@generated function padding{IT}(t::Type{IT})
+deval(::Val{N}) where {N} = N
+padding(::Type{IT}) where {IT<:BSpline} = Val{0}()
+@generated function padding(t::Type{IT}) where IT
     pad = [deval(padding(IT.parameters[d])) for d = 1:length(IT.parameters)]
     t = tuple(pad...)
     :(Val{$t}())
 end
 
-@noinline function padded_index{N,pad}(indsA::NTuple{N,AbstractUnitRange{Int}}, ::Val{pad})
+@noinline function padded_index(indsA::NTuple{N,AbstractUnitRange{Int}}, ::Val{pad}) where {N,pad}
     indspad = ntuple(i->indices_addpad(indsA[i], padextract(pad,i)), Val{N})
     indscp = ntuple(i->indices_interior(indspad[i], padextract(pad,i)), Val{N})
     indscp, indspad
 end
 
-copy_with_padding{IT}(A, ::Type{IT}) = copy_with_padding(eltype(A), A, IT)
-function copy_with_padding{TC,IT<:DimSpec{InterpolationType}}(::Type{TC}, A, ::Type{IT})
+copy_with_padding(A, ::Type{IT}) where {IT} = copy_with_padding(eltype(A), A, IT)
+function copy_with_padding(::Type{TC}, A, ::Type{IT}) where {TC,IT<:DimSpec{InterpolationType}}
     Pad = padding(IT)
     indsA = indices(A)
     indscp, indspad = padded_index(indsA, Pad)
@@ -27,29 +27,29 @@ function copy_with_padding{TC,IT<:DimSpec{InterpolationType}}(::Type{TC}, A, ::T
     coefs, Pad
 end
 
-prefilter!{TWeights, IT<:BSpline, GT<:GridType}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = A
-function prefilter{TWeights, TC, IT<:BSpline, GT<:GridType}(::Type{TWeights}, ::Type{TC}, A, ::Type{IT}, ::Type{GT})
+prefilter!(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) where {TWeights, IT<:BSpline, GT<:GridType} = A
+function prefilter(::Type{TWeights}, ::Type{TC}, A, ::Type{IT}, ::Type{GT}) where {TWeights, TC, IT<:BSpline, GT<:GridType}
     coefs = similar(dims->Array{TC}(dims), indices(A))
     prefilter!(TWeights, copy!(coefs, A), IT, GT), Val{0}()
 end
 
-function prefilter{TWeights,TC,IT<:Union{Cubic,Quadratic},GT<:GridType}(
+function prefilter(
     ::Type{TWeights}, ::Type{TC}, A::AbstractArray, ::Type{BSpline{IT}}, ::Type{GT}
-    )
+    ) where {TWeights,TC,IT<:Union{Cubic,Quadratic},GT<:GridType}
     ret, Pad = copy_with_padding(TC, A, BSpline{IT})
     prefilter!(TWeights, ret, BSpline{IT}, GT), Pad
 end
 
-function prefilter{TWeights,TC,IT<:Tuple{Vararg{Union{BSpline,NoInterp}}},GT<:DimSpec{GridType}}(
+function prefilter(
     ::Type{TWeights}, ::Type{TC}, A::AbstractArray, ::Type{IT}, ::Type{GT}
-    )
+    ) where {TWeights,TC,IT<:Tuple{Vararg{Union{BSpline,NoInterp}}},GT<:DimSpec{GridType}}
     ret, Pad = copy_with_padding(TC, A, IT)
     prefilter!(TWeights, ret, IT, GT), Pad
 end
 
-function prefilter!{TWeights,TCoefs<:AbstractArray,IT<:Union{Quadratic,Cubic},GT<:GridType}(
+function prefilter!(
     ::Type{TWeights}, ret::TCoefs, ::Type{BSpline{IT}}, ::Type{GT}
-    )
+    ) where {TWeights,TCoefs<:AbstractArray,IT<:Union{Quadratic,Cubic},GT<:GridType}
     local buf, shape, retrs
     sz = map(length, indices(ret))
     first = true
@@ -60,9 +60,9 @@ function prefilter!{TWeights,TCoefs<:AbstractArray,IT<:Union{Quadratic,Cubic},GT
     ret
 end
 
-function prefilter!{TWeights,TCoefs<:AbstractArray,IT<:Tuple{Vararg{Union{BSpline,NoInterp}}},GT<:DimSpec{GridType}}(
+function prefilter!(
     ::Type{TWeights}, ret::TCoefs, ::Type{IT}, ::Type{GT}
-    )
+    ) where {TWeights,TCoefs<:AbstractArray,IT<:Tuple{Vararg{Union{BSpline,NoInterp}}},GT<:DimSpec{GridType}}
     local buf, shape, retrs
     sz = size(ret)
     first = true

@@ -30,7 +30,7 @@ end
 
 # This assumes fractional values 0 <= fx_d <= 1, integral values ix_d and ixp_d (typically ixp_d = ix_d+1,
 #except at boundaries), and an array itp.coefs
-function index_gen{IT<:DimSpec{Gridded}}(::Type{Gridded{Linear}}, ::Type{IT}, N::Integer, offsets...)
+function index_gen(::Type{Gridded{Linear}}, ::Type{IT}, N::Integer, offsets...) where IT<:DimSpec{Gridded}
     if length(offsets) < N
         d = length(offsets)+1
         sym = Symbol("c_", d)

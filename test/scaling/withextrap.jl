@@ -6,7 +6,7 @@ using Interpolations, Base.Test
 xs = linspace(-5, 5, 10)
 ys = map(sin, xs)
 
-function run_tests{T,N,IT}(sut::Interpolations.AbstractInterpolation{T,N,IT,OnGrid}, itp)
+function run_tests(sut::Interpolations.AbstractInterpolation{T,N,IT,OnGrid}, itp) where {T,N,IT}
     for x in xs
         @test ≈(sut[x],sin(x),atol=sqrt(eps(sin(x))))
     end
@@ -14,7 +14,7 @@ function run_tests{T,N,IT}(sut::Interpolations.AbstractInterpolation{T,N,IT,OnGr
     @test sut[5] == sut[5.1] == sut[15.8] == sut[Inf] == itp[end]
 end
 
-function run_tests{T,N,IT}(sut::Interpolations.AbstractInterpolation{T,N,IT,OnCell}, itp)
+function run_tests(sut::Interpolations.AbstractInterpolation{T,N,IT,OnCell}, itp) where {T,N,IT}
     halfcell = (xs[2] - xs[1]) / 2
 
     for x in (5 + halfcell, 5 + 1.1halfcell, 15.8, Inf)

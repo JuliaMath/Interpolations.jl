@@ -1,4 +1,4 @@
-type Extrapolation{T,N,ITPT,IT,GT,ET} <: AbstractExtrapolation{T,N,ITPT,IT,GT}
+mutable struct Extrapolation{T,N,ITPT,IT,GT,ET} <: AbstractExtrapolation{T,N,ITPT,IT,GT}
     itp::ITPT
 end
 
@@ -27,7 +27,7 @@ You can also combine schemes in tuples. For example, the scheme `(Linear(), Flat
 
 Finally, you can specify different extrapolation behavior in different direction. `((Linear(),Flat()), Flat())` will extrapolate linearly in the first dimension if the index is too small, but use constant etrapolation if it is too large, and always use constant extrapolation in the second dimension.
 """
-extrapolate{T,N,IT,GT,ET<:ExtrapDimSpec}(itp::AbstractInterpolation{T,N,IT,GT}, ::ET) =
+extrapolate(itp::AbstractInterpolation{T,N,IT,GT}, ::ET) where {T,N,IT,GT,ET<:ExtrapDimSpec} =
     Extrapolation{T,N,typeof(itp),IT,GT,ET}(itp)
 
 include("throw.jl")
@@ -47,7 +47,7 @@ as the function body of the getindex method for the given type of extrapolation
 and indices. The heavy lifting is done by the `extrap_prep` function; see
 `?extrap_prep` for details.
 """
-function getindex_impl{T,N,ITPT,IT,GT,ET}(etp::Type{Extrapolation{T,N,ITPT,IT,GT,ET}}, xs...)
+function getindex_impl(etp::Type{Extrapolation{T,N,ITPT,IT,GT,ET}}, xs...) where {T,N,ITPT,IT,GT,ET}
     coords = [Symbol("xs_",d) for d in 1:N]
     quote
         $(Expr(:meta, :inline))
@@ -57,14 +57,14 @@ function getindex_impl{T,N,ITPT,IT,GT,ET}(etp::Type{Extrapolation{T,N,ITPT,IT,GT
     end
 end
 
-@generated function getindex{T,N,ITPT,IT,GT,ET}(etp::Extrapolation{T,N,ITPT,IT,GT,ET}, xs::Number...)
+@generated function getindex(etp::Extrapolation{T,N,ITPT,IT,GT,ET}, xs::Number...) where {T,N,ITPT,IT,GT,ET}
     getindex_impl(etp, xs...)
 end
 
 checkbounds(::AbstractExtrapolation,I...) = nothing
 
 
-function gradient!_impl{T,N,ITPT,IT,GT,ET}(g, etp::Type{Extrapolation{T,N,ITPT,IT,GT,ET}}, xs...)
+function gradient!_impl(g, etp::Type{Extrapolation{T,N,ITPT,IT,GT,ET}}, xs...) where {T,N,ITPT,IT,GT,ET}
     coords = [Symbol("xs_", d) for d in 1:N]
     quote
         $(Expr(:meta, :inline))
@@ -75,7 +75,7 @@ function gradient!_impl{T,N,ITPT,IT,GT,ET}(g, etp::Type{Extrapolation{T,N,ITPT,I
 end
 
 
-@generated function gradient!{T,N,ITPT,IT,GT,ET}(g::AbstractVector, etp::Extrapolation{T,N,ITPT,IT,GT,ET}, xs...)
+@generated function gradient!(g::AbstractVector, etp::Extrapolation{T,N,ITPT,IT,GT,ET}, xs...) where {T,N,ITPT,IT,GT,ET}
     gradient!_impl(g, etp, xs...)
 end
 

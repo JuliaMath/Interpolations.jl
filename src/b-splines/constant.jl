@@ -1,4 +1,4 @@
-immutable Constant <: Degree{0} end
+struct Constant <: Degree{0} end
 
 """
 Constant b-splines are *nearest-neighbor* interpolations, and effectively
@@ -41,7 +41,7 @@ function hessian_coefficients(::Type{BSpline{Constant}}, d)
     :($sym = 0)
 end
 
-function index_gen{IT<:DimSpec{BSpline}}(::Type{BSpline{Constant}}, ::Type{IT}, N::Integer, offsets...)
+function index_gen(::Type{BSpline{Constant}}, ::Type{IT}, N::Integer, offsets...) where IT<:DimSpec{BSpline}
     if (length(offsets) < N)
         d = length(offsets)+1
         sym = Symbol("c_", d)

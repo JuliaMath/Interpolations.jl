@@ -1,19 +1,19 @@
-function extrap_prep{N,d}(::Type{Flat}, ::Val{N}, ::Val{d})
+function extrap_prep(::Type{Flat}, ::Val{N}, ::Val{d}) where {N,d}
     xs_d = Symbol("xs_", d)
     :($xs_d = clamp($xs_d, lbound(etp, $d, inds_etp[$d]), ubound(etp, $d, inds_etp[$d])))
 end
 
-function extrap_prep{N,d}(::Type{Flat}, ::Val{N}, ::Val{d}, ::Val{:lo})
+function extrap_prep(::Type{Flat}, ::Val{N}, ::Val{d}, ::Val{:lo}) where {N,d}
     xs_d = Symbol("xs_", d)
     :($xs_d = max($xs_d, lbound(etp, $d, inds_etp[$d])))
 end
 
-function extrap_prep{N,d}(::Type{Flat}, ::Val{N}, ::Val{d}, ::Val{:hi})
+function extrap_prep(::Type{Flat}, ::Val{N}, ::Val{d}, ::Val{:hi}) where {N,d}
     xs_d = Symbol("xs_", d)
     :($xs_d = min($xs_d, ubound(etp, $d, inds_etp[$d])))
 end
 
-function extrap_prep{N,d}(::Val{:gradient}, ::Type{Flat}, ::Val{N}, ::Val{d}, ::Val{:lo})
+function extrap_prep(::Val{:gradient}, ::Type{Flat}, ::Val{N}, ::Val{d}, ::Val{:lo}) where {N,d}
     coords = [Symbol("xs_", k) for k in 1:N]
     xs_d = coords[d]
 
@@ -27,7 +27,7 @@ function extrap_prep{N,d}(::Val{:gradient}, ::Type{Flat}, ::Val{N}, ::Val{d}, ::
     end
 end
 
-function extrap_prep{N,d}(::Val{:gradient}, ::Type{Flat}, ::Val{N}, ::Val{d}, ::Val{:hi})
+function extrap_prep(::Val{:gradient}, ::Type{Flat}, ::Val{N}, ::Val{d}, ::Val{:hi}) where {N,d}
     coords = [Symbol("xs_", k) for k in 1:N]
     xs_d = coords[d]
 

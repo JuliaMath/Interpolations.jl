@@ -7,7 +7,7 @@ using Compat
 
 import Base: +, -, *, /
 
-immutable MyPair{T}
+struct MyPair{T}
     first::T
     second::T
 end
@@ -18,10 +18,10 @@ end
 (*)(n::Number, p::MyPair) = MyPair(n*p.first, n*p.second)
 (*)(p::MyPair, n::Number) = n*p
 (/)(p::MyPair, n::Number) = MyPair(p.first/n, p.second/n)
-Base.zero{T}(::Type{MyPair{T}}) = MyPair(zero(T),zero(T))
-Base.promote_rule{T1,T2<:Number}(::Type{MyPair{T1}}, ::Type{T2}) = MyPair{promote_type(T1,T2)}
-Base.promote_op{T1,T2<:Number}(::typeof(*), ::Type{MyPair{T1}}, ::Type{T2}) = MyPair{promote_type(T1,T2)}
-Base.promote_op{T1<:Number,T2}(::typeof(*), ::Type{T1}, ::Type{MyPair{T2}}) = MyPair{promote_type(T1,T2)}
+Base.zero(::Type{MyPair{T}}) where {T} = MyPair(zero(T),zero(T))
+Base.promote_rule(::Type{MyPair{T1}}, ::Type{T2}) where {T1,T2<:Number} = MyPair{promote_type(T1,T2)}
+Base.promote_op(::typeof(*), ::Type{MyPair{T1}}, ::Type{T2}) where {T1,T2<:Number} = MyPair{promote_type(T1,T2)}
+Base.promote_op(::typeof(*), ::Type{T1}, ::Type{MyPair{T2}}) where {T1<:Number,T2} = MyPair{promote_type(T1,T2)}
 
 # 1d
 A = reinterpret(MyPair{Float64}, rand(2, 10), (10,))

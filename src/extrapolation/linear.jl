@@ -1,4 +1,4 @@
-function extrap_prep{N,d}(::Type{Linear}, ::Val{N}, ::Val{d}, ::Val{:lo})
+function extrap_prep(::Type{Linear}, ::Val{N}, ::Val{d}, ::Val{:lo}) where {N,d}
     coords = [Symbol("xs_", k) for k in 1:N]
     xs_d = coords[d]
     quote
@@ -8,7 +8,7 @@ function extrap_prep{N,d}(::Type{Linear}, ::Val{N}, ::Val{d}, ::Val{:lo})
         end
     end
 end
-function extrap_prep{N,d}(::Type{Linear}, ::Val{N}, ::Val{d}, ::Val{:hi})
+function extrap_prep(::Type{Linear}, ::Val{N}, ::Val{d}, ::Val{:hi}) where {N,d}
     coords = [Symbol("xs_", k) for k in 1:N]
     xs_d = coords[d]
     quote
@@ -19,8 +19,8 @@ function extrap_prep{N,d}(::Type{Linear}, ::Val{N}, ::Val{d}, ::Val{:hi})
     end
 end
 
-extrap_prep{N,d,l}(::Val{:gradient}, ::Type{Linear}, n::Val{N}, dim::Val{d}, lohi::Val{l}) =
+extrap_prep(::Val{:gradient}, ::Type{Linear}, n::Val{N}, dim::Val{d}, lohi::Val{l}) where {N,d,l} =
     extrap_prep(Flat, n, dim, lohi)
 
-extrap_prep{N,d}(::Val{:gradient}, ::Type{Linear}, n::Val{N}, dim::Val{d}) =
+extrap_prep(::Val{:gradient}, ::Type{Linear}, n::Val{N}, dim::Val{d}) where {N,d} =
     extrap_prep(Flat, n, dim)
