@@ -1,5 +1,5 @@
-immutable Quadratic{BC<:Flag} <: Degree{2} end
-Quadratic{BC<:Flag}(::BC) = Quadratic{BC}()
+struct Quadratic{BC<:Flag} <: Degree{2} end
+Quadratic(::BC) where {BC<:Flag} = Quadratic{BC}()
 
 """
 Assuming uniform knots with spacing 1, the `i`th piece of quadratic spline
@@ -28,7 +28,7 @@ Quadratic
 `fx_d = x_d - ix_d` (corresponding to `i` `and `δx` in the docstring for
 `Quadratic`), as well as auxiliary quantities `ixm_d` and `ixp_d`
 """
-function define_indices_d{BC}(::Type{BSpline{Quadratic{BC}}}, d, pad)
+function define_indices_d(::Type{BSpline{Quadratic{BC}}}, d, pad) where BC
     symix, symixm, symixp = Symbol("ix_",d), Symbol("ixm_",d), Symbol("ixp_",d)
     symx, symfx = Symbol("x_",d), Symbol("fx_",d)
     quote
@@ -51,7 +51,7 @@ function define_indices_d(::Type{BSpline{Quadratic{Periodic}}}, d, pad)
         $symixm = modrange($symix - 1, inds_itp[$d])
     end
 end
-function define_indices_d{BC<:Union{InPlace,InPlaceQ}}(::Type{BSpline{Quadratic{BC}}}, d, pad)
+function define_indices_d(::Type{BSpline{Quadratic{BC}}}, d, pad) where BC<:Union{InPlace,InPlaceQ}
     symix, symixm, symixp = Symbol("ix_",d), Symbol("ixm_",d), Symbol("ixp_",d)
     symx, symfx = Symbol("x_",d), Symbol("fx_",d)
     pad == 0 || error("Use $BC only with interpolate!")
@@ -77,7 +77,7 @@ and we define `cX_d` for `X ⋹ {m, _, p}` such that
 where `p` and `q` are defined in the docstring entry for `Quadratic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
-function coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, N, d)
+function coefficients(::Type{BSpline{Q}}, N, d) where Q<:Quadratic
     symm, sym, symp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d)
     symfx = Symbol("fx_",d)
     quote
@@ -98,7 +98,7 @@ and we define `cX_d` for `X ⋹ {m, _, p}` such that
 where `p` and `q` are defined in the docstring entry for `Quadratic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
-function gradient_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
+function gradient_coefficients(::Type{BSpline{Q}}, d) where Q<:Quadratic
     symm, sym, symp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d)
     symfx = Symbol("fx_",d)
     quote
@@ -119,7 +119,7 @@ and we define `cX_d` for `X ⋹ {m, _, p}` such that
 where `p` and `q` are defined in the docstring entry for `Quadratic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
-function hessian_coefficients{Q<:Quadratic}(::Type{BSpline{Q}}, d)
+function hessian_coefficients(::Type{BSpline{Q}}, d) where Q<:Quadratic
     symm, sym, symp = Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d)
     quote
         $symm = 1
@@ -130,7 +130,7 @@ end
 
 # This assumes integral values ixm_d, ix_d, and ixp_d,
 # coefficients cm_d, c_d, and cp_d, and an array itp.coefs
-function index_gen{Q<:Quadratic,IT<:DimSpec{BSpline}}(::Type{BSpline{Q}}, ::Type{IT}, N::Integer, offsets...)
+function index_gen(::Type{BSpline{Q}}, ::Type{IT}, N::Integer, offsets...) where {Q<:Quadratic,IT<:DimSpec{BSpline}}
     if length(offsets) < N
         d = length(offsets)+1
         symm, sym, symp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d)
@@ -142,10 +142,10 @@ function index_gen{Q<:Quadratic,IT<:DimSpec{BSpline}}(::Type{BSpline{Q}}, ::Type
     end
 end
 
-padding{BC<:Flag}(::Type{BSpline{Quadratic{BC}}}) = Val{1}()
+padding(::Type{BSpline{Quadratic{BC}}}) where {BC<:Flag} = Val{1}()
 padding(::Type{BSpline{Quadratic{Periodic}}}) = Val{0}()
 
-function inner_system_diags{T,Q<:Quadratic}(::Type{T}, n::Int, ::Type{Q})
+function inner_system_diags(::Type{T}, n::Int, ::Type{Q}) where {T,Q<:Quadratic}
     du = fill(convert(T, SimpleRatio(1,8)), n-1)
     d = fill(convert(T, SimpleRatio(3,4)), n)
     dl = copy(du)
@@ -158,21 +158,21 @@ end
 
     -cm + c = 0
 """
-function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnCell})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnCell}) where {T,TC,BC<:Union{Flat,Reflect}}
     dl,d,du = inner_system_diags(T,n,Quadratic{BC})
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
     lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TC, n)
 end
 
-function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{InPlace}}, ::Type{OnCell})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{InPlace}}, ::Type{OnCell}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,Quadratic{InPlace})
     d[1] = d[end] = convert(T, SimpleRatio(7,8))
     lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TC, n)
 end
 
 # InPlaceQ continues the quadratic at 2 all the way down to 1 (rather than 1.5)
-function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{InPlaceQ}}, ::Type{OnCell})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{InPlaceQ}}, ::Type{OnCell}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,Quadratic{InPlaceQ})
     d[1] = d[end] = SimpleRatio(9,8)
     dl[end] = du[1] = SimpleRatio(-1,4)
@@ -192,7 +192,7 @@ end
 
     -cm + cp = 0
 """
-function prefiltering_system{T,TC,BC<:Union{Flat,Reflect}}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnGrid})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{BC}}, ::Type{OnGrid}) where {T,TC,BC<:Union{Flat,Reflect}}
     dl,d,du = inner_system_diags(T,n,Quadratic{BC})
     d[1] = d[end] = -1
     du[1] = dl[end] = 0
@@ -212,7 +212,7 @@ of `x` for a quadratic b-spline, these both yield
 
     1 cm -2 c + 1 cp = 0
 """
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Line}}, ::Type{GT})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Line}}, ::Type{GT}) where {T,TC,GT<:GridType}
     dl,d,du = inner_system_diags(T,n,Quadratic{Line})
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
@@ -232,7 +232,7 @@ that `y_1''(3/2) = y_2''(3/2)`, yielding
 
     1 cm -3 c + 3 cp - cpp = 0
 """
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Free}}, ::Type{GT})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Free}}, ::Type{GT}) where {T,TC,GT<:GridType}
     dl,d,du = inner_system_diags(T,n,Quadratic{Free})
     d[1] = d[end] = 1
     du[1] = dl[end] = -3
@@ -254,7 +254,7 @@ by looking at the coefficients themselves as periodic, yielding
 
 where `N` is the number of data points.
 """
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Periodic}}, ::Type{GT})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Periodic}}, ::Type{GT}) where {T,TC,GT<:GridType}
     dl,d,du = inner_system_diags(T,n,Quadratic{Periodic})
 
     specs = WoodburyMatrices.sparse_factors(T, n,

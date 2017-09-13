@@ -15,12 +15,12 @@ function extrap_prep_dim(::Type{Reflect}, d)
     end
 end
 
-extrap_prep{N,d}(::Type{Reflect}, ::Val{N}, ::Val{d}) = extrap_prep_dim(Reflect, d)
-function extrap_prep{N,d}(::Type{Reflect}, ::Val{N}, ::Val{d}, ::Val{:lo})
+extrap_prep(::Type{Reflect}, ::Val{N}, ::Val{d}) where {N,d} = extrap_prep_dim(Reflect, d)
+function extrap_prep(::Type{Reflect}, ::Val{N}, ::Val{d}, ::Val{:lo}) where {N,d}
     xs_d = Symbol("xs_", d)
     :($xs_d < lbound(etp.itp, $d, inds_etp[$d]) && $(extrap_prep_dim(Reflect, d)))
 end
-function extrap_prep{N,d}(::Type{Reflect}, ::Val{N}, ::Val{d}, ::Val{:hi})
+function extrap_prep(::Type{Reflect}, ::Val{N}, ::Val{d}, ::Val{:hi}) where {N,d}
     xs_d = Symbol("xs_", d)
     :($xs_d > ubound(etp.itp, $d, inds_etp[$d]) && $(extrap_prep_dim(Reflect, d)))
 end

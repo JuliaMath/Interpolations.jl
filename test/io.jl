@@ -3,11 +3,7 @@ module IOTests
 using Base.Test
 using Interpolations
 
-SPACE = if VERSION < v"0.6.0-dev.2505" # julia PR #20288
-    ""
-else
-    " "
-end
+SPACE = " "
 
 @testset "BSpline" begin
     A = rand(8,20)

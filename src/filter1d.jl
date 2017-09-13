@@ -16,7 +16,7 @@ function A_ldiv_B_md!(dest, F, src, dim::Integer, b::AbstractVector)
 end
 
 # Filtering along the first dimension
-function _A_ldiv_B_md!{T,CI<:CartesianIndex{0}}(dest, F::LU{T,Tridiagonal{T}}, src,  R1::CartesianRange{CI}, R2, b)
+function _A_ldiv_B_md!(dest, F::LU{T,Tridiagonal{T}}, src,  R1::CartesianRange{CI}, R2, b) where {T,CI<:CartesianIndex{0}}
     n = size(F, 1)
     if n == 0
         return nothing
@@ -41,7 +41,7 @@ function _A_ldiv_B_md!{T,CI<:CartesianIndex{0}}(dest, F::LU{T,Tridiagonal{T}}, s
 end
 
 # Filtering along any other dimension
-function _A_ldiv_B_md!{T}(dest, F::LU{T,Tridiagonal{T}}, src, R1, R2, b)
+function _A_ldiv_B_md!(dest, F::LU{T,Tridiagonal{T}}, src, R1, R2, b) where T
     n = size(F, 1)
     dl = F.factors.dl
     d  = F.factors.d
@@ -82,7 +82,7 @@ function _A_ldiv_B_md!(dest, W::Woodbury, src,  R1, R2, b)
     AxisAlgorithms.sub!(dest, tmp3)
 end
 
-function check_matrix{T}(F::LU{T,Tridiagonal{T}})
+function check_matrix(F::LU{T,Tridiagonal{T}}) where T
     for i = 1:size(F,1)
         F.ipiv[i] == i || error("For efficiency, pivoting is not supported")
     end

@@ -1,5 +1,5 @@
-immutable Cubic{BC<:Flag} <: Degree{3} end
-Cubic{BC<:Flag}(::BC) = Cubic{BC}()
+struct Cubic{BC<:Flag} <: Degree{3} end
+Cubic(::BC) where {BC<:Flag} = Cubic{BC}()
 
 """
 Assuming uniform knots with spacing 1, the `i`th piece of cubic spline
@@ -29,7 +29,7 @@ Cubic
 `fx_d = x_d - ix_d` (corresponding to `i` `and `δx` in the docstring for
 `Cubic`), as well as auxiliary quantities `ixm_d`, `ixp_d` and `ixpp_d`
 """
-function define_indices_d{BC}(::Type{BSpline{Cubic{BC}}}, d, pad)
+function define_indices_d(::Type{BSpline{Cubic{BC}}}, d, pad) where BC
     symix, symixm, symixp = Symbol("ix_",d), Symbol("ixm_",d), Symbol("ixp_",d)
     symixpp, symx, symfx = Symbol("ixpp_",d), Symbol("x_",d), Symbol("fx_",d)
     quote
@@ -65,7 +65,7 @@ function define_indices_d(::Type{BSpline{Cubic{Periodic}}}, d, pad)
     end
 end
 
-padding{BC<:Flag}(::Type{BSpline{Cubic{BC}}}) = Val{1}()
+padding(::Type{BSpline{Cubic{BC}}}) where {BC<:Flag} = Val{1}()
 padding(::Type{BSpline{Cubic{Periodic}}}) = Val{0}()
 
 """
@@ -80,7 +80,7 @@ and we define `cX_d` for `X ⋹ {m, _, p, pp}` such that
 where `p` and `q` are defined in the docstring entry for `Cubic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
-function coefficients{C<:Cubic}(::Type{BSpline{C}}, N, d)
+function coefficients(::Type{BSpline{C}}, N, d) where C<:Cubic
     symm, sym =  Symbol("cm_",d), Symbol("c_",d)
     symp, sympp = Symbol("cp_",d) ,Symbol("cpp_",d)
     symfx = Symbol("fx_",d)
@@ -108,7 +108,7 @@ and we define `cX_d` for `X ⋹ {m, _, p, pp}` such that
 where `p` and `q` are defined in the docstring entry for `Cubic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
-function gradient_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
+function gradient_coefficients(::Type{BSpline{C}}, d) where C<:Cubic
     symm, sym, symp, sympp = Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d), Symbol("cpp_",d)
     symfx = Symbol("fx_",d)
     symfx_sqr = Symbol("fx_sqr_", d)
@@ -136,7 +136,7 @@ and we define `cX_d` for `X ⋹ {m, _, p, pp}` such that
 where `p` and `q` are defined in the docstring entry for `Cubic`, and
 `fx_d` in the docstring entry for `define_indices_d`.
 """
-function hessian_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
+function hessian_coefficients(::Type{BSpline{C}}, d) where C<:Cubic
     symm, sym, symp, sympp = Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d), Symbol("cpp_",d)
     symfx = Symbol("fx_",d)
     quote
@@ -147,7 +147,7 @@ function hessian_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
     end
 end
 
-function index_gen{C<:Cubic,IT<:DimSpec{BSpline}}(::Type{BSpline{C}}, ::Type{IT}, N::Integer, offsets...)
+function index_gen(::Type{BSpline{C}}, ::Type{IT}, N::Integer, offsets...) where {C<:Cubic,IT<:DimSpec{BSpline}}
     if length(offsets) < N
         d = length(offsets)+1
         symm, sym, symp, sympp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d), Symbol("cpp_",d)
@@ -171,7 +171,7 @@ end
         1/6 2/3 1/6
            ⋱  ⋱   ⋱
 """
-function inner_system_diags{T,C<:Cubic}(::Type{T}, n::Int, ::Type{C})
+function inner_system_diags(::Type{T}, n::Int, ::Type{C}) where {T,C<:Cubic}
     du = fill(convert(T, SimpleRatio(1, 6)), n-1)
     d = fill(convert(T, SimpleRatio(2, 3)), n)
     dl = copy(du)
@@ -184,8 +184,8 @@ Applying this condition yields
 
     -cm + cp = 0
 """
-function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
-                                   ::Type{Cubic{Flat}}, ::Type{OnGrid})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             ::Type{Cubic{Flat}}, ::Type{OnGrid}) where {T,TC}
     dl, d, du = inner_system_diags(T, n, Cubic{Flat})
     d[1] = d[end] = -oneunit(T)
     du[1] = dl[end] = zero(T)
@@ -210,8 +210,8 @@ or, equivalently,
 were to use `y_0'(x)` we would have to introduce new coefficients, so that would not
 close the system. Instead, we extend the outermost polynomial for an extra half-cell.)
 """
-function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
-                                   ::Type{Cubic{Flat}}, ::Type{OnCell})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             ::Type{Cubic{Flat}}, ::Type{OnCell}) where {T,TC}
     dl, d, du = inner_system_diags(T,n,Cubic{Flat})
     d[1] = d[end] = -9
     du[1] = dl[end] = 11
@@ -239,8 +239,8 @@ Applying this condition yields
 were to use `y_0'(x)` we would have to introduce new coefficients, so that would not
 close the system. Instead, we extend the outermost polynomial for an extra half-cell.)
 """
-function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
-                                   ::Type{Cubic{Line}}, ::Type{OnCell})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             ::Type{Cubic{Line}}, ::Type{OnCell}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,Cubic{Line})
     d[1] = d[end] = 3
     du[1] = dl[end] = -7
@@ -264,8 +264,8 @@ condition gives:
 
     1 cm -2 c + 1 cp = 0
 """
-function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
-                                   ::Type{Cubic{Line}}, ::Type{OnGrid})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             ::Type{Cubic{Line}}, ::Type{OnGrid}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,Cubic{Line})
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
@@ -288,8 +288,8 @@ as periodic, yielding
 
 where `N` is the number of data points.
 """
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
-                                                ::Type{Cubic{Periodic}}, ::Type{GT})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             ::Type{Cubic{Periodic}}, ::Type{GT}) where {T,TC,GT<:GridType}
     dl, d, du = inner_system_diags(T,n,Cubic{Periodic})
 
     specs = WoodburyMatrices.sparse_factors(T, n,
@@ -307,8 +307,8 @@ continuous derivative at the second-to-last cell boundary; this means
 
     1 cm -3 c + 3 cp -1 cpp = 0
 """
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
-                                                ::Type{Cubic{Free}}, ::Type{GT})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             ::Type{Cubic{Free}}, ::Type{GT}) where {T,TC,GT<:GridType}
     dl, d, du = inner_system_diags(T,n,Cubic{Periodic})
 
     specs = WoodburyMatrices.sparse_factors(T, n,

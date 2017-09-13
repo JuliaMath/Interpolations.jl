@@ -7,7 +7,7 @@ function coefficients(::Type{NoInterp}, N, d)
     :()
 end
 
-function index_gen{IT<:DimSpec}(::Type{NoInterp}, ::Type{IT}, N::Integer, offsets...)
+function index_gen(::Type{NoInterp}, ::Type{IT}, N::Integer, offsets...) where IT<:DimSpec
     if (length(offsets) < N)
         return :($(index_gen(IT, N, offsets..., 0)))
     else
@@ -20,8 +20,8 @@ padding(::Type{NoInterp}) = Val{0}()
 
 # How many non-NoInterp dimensions are there?
 count_interp_dims(::Type{NoInterp}, N) = 0
-count_interp_dims{IT<:InterpolationType}(::Type{IT}, N) = N
-function count_interp_dims{IT<:Tuple{Vararg{InterpolationType}}}(it::Type{IT}, N)
+count_interp_dims(::Type{IT}, N) where {IT<:InterpolationType} = N
+function count_interp_dims(it::Type{IT}, N) where IT<:Tuple{Vararg{InterpolationType}}
     n = 0
     for p in it.parameters
         n += count_interp_dims(p, 1)

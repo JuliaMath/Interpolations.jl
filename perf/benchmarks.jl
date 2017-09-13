@@ -10,7 +10,7 @@ end
 
 # To evaluate at fractional positions without any "unnecessary"
 # overhead, safer to use Base.Cartesian
-@generated function sumvalues{T,N}(itp::AbstractInterpolation{T,N}, inds)
+@generated function sumvalues(itp::AbstractInterpolation{T,N}, inds) where {T,N}
     quote
         @nexprs $N d->inds_d = inds[d]
         s = zero(eltype(itp))
@@ -28,13 +28,13 @@ function sumvalues_indices(itp)
 end
 
 strip_prefix(str) = replace(str, "Interpolations.", "")
-benchstr{T<:Interpolations.GridType}(::Type{T}) = strip_prefix(string(T))
+benchstr(::Type{T}) where {T<:Interpolations.GridType} = strip_prefix(string(T))
 
 benchstr(::Type{Constant}) = "Constant()"
 benchstr(::Type{Linear}) = "Linear()"
-benchstr{BC<:Interpolations.Flag}(::Type{Quadratic{BC}}) =
+benchstr(::Type{Quadratic{BC}}) where {BC<:Interpolations.Flag} =
     string("Quadratic(", strip_prefix(string(BC)), "())")
-benchstr{BC<:Interpolations.Flag}(::Type{Cubic{BC}}) =
+benchstr(::Type{Cubic{BC}}) where {BC<:Interpolations.Flag} =
     string("Quadratic(", strip_prefix(string(BC)), "())")
 
 groupstr(::Type{Constant}) = "constant"

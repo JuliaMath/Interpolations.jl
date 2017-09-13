@@ -10,7 +10,7 @@ end
 
 
 # Indexing at a point
-function getindex_impl{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}})
+function getindex_impl(itp::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}}) where {T,N,TCoefs,IT<:DimSpec{Gridded},K,P}
     meta = Expr(:meta, :inline)
     quote
         $meta
@@ -26,12 +26,12 @@ function getindex_impl{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::Type{GriddedInt
     end
 end
 
-@generated function getindex{T,N}(itp::GriddedInterpolation{T,N}, x::Number...)
+@generated function getindex(itp::GriddedInterpolation{T,N}, x::Number...) where {T,N}
     getindex_impl(itp)
 end
 
 # Because of the "vectorized" definition below, we need a definition for CartesianIndex
-@generated function getindex{T,N}(itp::GriddedInterpolation{T,N}, index::CartesianIndex{N})
+@generated function getindex(itp::GriddedInterpolation{T,N}, index::CartesianIndex{N}) where {T,N}
     args = [:(index[$d]) for d = 1:N]
     :(getindex(itp, $(args...)))
 end
@@ -39,7 +39,7 @@ end
 # Indexing with vector inputs. Here, it pays to pre-process the input indexes,
 # because N*n is much smaller than n^N.
 # TODO: special-case N=1, because there is no reason to separately cache the indexes.
-@generated function getindex!{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(dest, itp::GriddedInterpolation{T,N,TCoefs,IT,K,P}, xv...)
+@generated function getindex!(dest, itp::GriddedInterpolation{T,N,TCoefs,IT,K,P}, xv...) where {T,N,TCoefs,IT<:DimSpec{Gridded},K,P}
     length(xv) == N || error("Can only be called with $N indexes")
     indexes_exprs = Expr[define_indices_d(iextract(IT, d), d, P) for d = 1:N]
     coefficient_exprs = Expr[coefficients(iextract(IT, d), N, d) for d = 1:N]
@@ -92,12 +92,12 @@ end
     end
 end
 
-function getindex{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::GriddedInterpolation{T,N,TCoefs,IT,K,P}, x...)
+function getindex(itp::GriddedInterpolation{T,N,TCoefs,IT,K,P}, x...) where {T,N,TCoefs,IT<:DimSpec{Gridded},K,P}
     dest = Array{T}( map(length, x))::Array{T,N}
     getindex!(dest, itp, x...)
 end
 
-function gradient_impl{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}})
+function gradient_impl(itp::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}}) where {T,N,TCoefs,IT<:DimSpec{Gridded},K,P}
     meta = Expr(:meta, :inline)
     # For each component of the gradient, alternately calculate
     # coefficients and set component
@@ -130,17 +130,17 @@ function gradient_impl{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::Type{GriddedInt
     end
 end
 
-@generated function gradient!{T,N}(g::AbstractVector, itp::GriddedInterpolation{T,N}, x::Number...)
+@generated function gradient!(g::AbstractVector, itp::GriddedInterpolation{T,N}, x::Number...) where {T,N}
     length(x) == N || error("Can only be called with $N indexes")
     gradient_impl(itp)
 end
 
-@generated function gradient!{T,N}(g::AbstractVector, itp::GriddedInterpolation{T,N}, index::CartesianIndex{N})
+@generated function gradient!(g::AbstractVector, itp::GriddedInterpolation{T,N}, index::CartesianIndex{N}) where {T,N}
     args = [:(index[$d]) for d = 1:N]
     :(gradient!(g, itp, $(args...)))
 end
 
-function getindex_return_type{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}}, argtypes)
+function getindex_return_type(::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}}, argtypes) where {T,N,TCoefs,IT<:DimSpec{Gridded},K,P}
     Tret = TCoefs
     for a in argtypes
         Tret = Base.promote_op(*, Tret, a) # the macro is used to support julia 0.4

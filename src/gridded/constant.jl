@@ -20,7 +20,7 @@ function gradient_coefficients(::Type{Gridded{Constant}}, N, d)
     :($sym = 0)
 end
 
-function index_gen{IT<:DimSpec{Gridded}}(::Type{Gridded{Constant}}, ::Type{IT}, N::Integer, offsets...)
+function index_gen(::Type{Gridded{Constant}}, ::Type{IT}, N::Integer, offsets...) where IT<:DimSpec{Gridded}
     if (length(offsets) < N)
         d = length(offsets)+1
         sym = Symbol("c_", d)

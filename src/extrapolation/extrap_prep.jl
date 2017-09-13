@@ -38,33 +38,33 @@ coordinate transformations, but for anything else methods for the low- and high-
 value cases need to be implemented for each scheme.
 """ extrap_prep
 
-extrap_prep{T}(::Type{T}, n::Val{1}) = quote
+extrap_prep(::Type{T}, n::Val{1}) where {T} = quote
     inds_etp = indices(etp)
     $(extrap_prep(T, n, Val{1}()))
 end
-extrap_prep{T}(::Type{Tuple{T}}, n::Val{1}) = extrap_prep(T, n)
-extrap_prep{T}(::Type{Tuple{T,T}}, n::Val{1}) = extrap_prep(T, n)
-extrap_prep{T}(::Type{Tuple{Tuple{T,T}}}, n::Val{1}) = extrap_prep(T, n)
-function extrap_prep{S,T}(::Type{Tuple{S,T}}, n::Val{1})
+extrap_prep(::Type{Tuple{T}}, n::Val{1}) where {T} = extrap_prep(T, n)
+extrap_prep(::Type{Tuple{T,T}}, n::Val{1}) where {T} = extrap_prep(T, n)
+extrap_prep(::Type{Tuple{Tuple{T,T}}}, n::Val{1}) where {T} = extrap_prep(T, n)
+function extrap_prep(::Type{Tuple{S,T}}, n::Val{1}) where {S,T}
     quote
         inds_etp = indices(etp)
         $(extrap_prep(S, n, Val{1}(), Val{:lo}()))
         $(extrap_prep(T, n, Val{1}(), Val{:hi}()))
     end
 end
-extrap_prep{S,T}(::Type{Tuple{Tuple{S,T}}}, n::Val{1}) = extrap_prep(Tuple{S,T}, n)
+extrap_prep(::Type{Tuple{Tuple{S,T}}}, n::Val{1}) where {S,T} = extrap_prep(Tuple{S,T}, n)
 
 # needed for ambiguity resolution
-extrap_prep{T<:Tuple}(::Type{T}, ::Val{1}) = :(throw(ArgumentError("The 1-dimensional extrap configuration $T is not supported")))
+extrap_prep(::Type{T}, ::Val{1}) where {T<:Tuple} = :(throw(ArgumentError("The 1-dimensional extrap configuration $T is not supported")))
 
-function extrap_prep{T,N}(::Type{T}, n::Val{N})
+function extrap_prep(::Type{T}, n::Val{N}) where {T,N}
     exprs = [:(inds_etp = indices(etp))]
     for d in 1:N
         push!(exprs, extrap_prep(T, n, Val{d}()))
     end
     return Expr(:block, exprs...)
 end
-function extrap_prep{N,T<:Tuple}(::Type{T}, n::Val{N})
+function extrap_prep(::Type{T}, n::Val{N}) where {N,T<:Tuple}
     length(T.parameters) == N || return :(throw(ArgumentError("The $N-dimensional extrap configuration $T is not supported - must be a tuple of length $N (was length $(length(T.parameters)))")))
     exprs = [:(inds_etp = indices(etp))]
     for d in 1:N
@@ -82,8 +82,8 @@ function extrap_prep{N,T<:Tuple}(::Type{T}, n::Val{N})
     end
     return Expr(:block, exprs...)
 end
-extrap_prep{T,N,d}(::Type{T}, n::Val{N}, dim::Val{d}) = extrap_prep(Tuple{T,T}, n, dim)
-function extrap_prep{S,T,N,d}(::Type{Tuple{S,T}}, n::Val{N}, dim::Val{d})
+extrap_prep(::Type{T}, n::Val{N}, dim::Val{d}) where {T,N,d} = extrap_prep(Tuple{T,T}, n, dim)
+function extrap_prep(::Type{Tuple{S,T}}, n::Val{N}, dim::Val{d}) where {S,T,N,d}
     quote
         $(extrap_prep(S, n, dim, Val{:lo}()))
         $(extrap_prep(T, n, dim, Val{:hi}()))

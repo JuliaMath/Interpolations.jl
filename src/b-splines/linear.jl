@@ -1,4 +1,4 @@
-immutable Linear <: Degree{1} end
+struct Linear <: Degree{1} end
 
 """
 Assuming uniform knots with spacing 1, the `i`th peice of linear b-spline
@@ -90,7 +90,7 @@ end
 
 # This assumes fractional values 0 <= fx_d <= 1, integral values ix_d and ixp_d (typically ixp_d = ix_d+1,
 #except at boundaries), and an array itp.coefs
-function index_gen{IT<:DimSpec{BSpline}}(::Type{BSpline{Linear}}, ::Type{IT}, N::Integer, offsets...)
+function index_gen(::Type{BSpline{Linear}}, ::Type{IT}, N::Integer, offsets...) where IT<:DimSpec{BSpline}
     if length(offsets) < N
         d = length(offsets)+1
         sym = Symbol("c_", d)

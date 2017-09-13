@@ -2,7 +2,7 @@ using ShowItLikeYouBuildIt
 
 Base.summary(A::AbstractInterpolation) = summary_build(A)
 
-function ShowItLikeYouBuildIt.showarg{T,N,TW,ST,GT}(io::IO, A::BSplineInterpolation{T,N,TW,ST,GT})
+function ShowItLikeYouBuildIt.showarg(io::IO, A::BSplineInterpolation{T,N,TW,ST,GT}) where {T,N,TW,ST,GT}
     print(io, "interpolate(")
     showarg(io, A.coefs)
     print(io, ", ")
@@ -12,7 +12,7 @@ function ShowItLikeYouBuildIt.showarg{T,N,TW,ST,GT}(io::IO, A::BSplineInterpolat
     print(io, ')')
 end
 
-function ShowItLikeYouBuildIt.showarg{T,N,TC,ST,K}(io::IO, A::GriddedInterpolation{T,N,TC,ST,K})
+function ShowItLikeYouBuildIt.showarg(io::IO, A::GriddedInterpolation{T,N,TC,ST,K}) where {T,N,TC,ST,K}
     print(io, "interpolate(")
     _showknots(io, A.knots)
     print(io, ", ")
@@ -23,7 +23,7 @@ function ShowItLikeYouBuildIt.showarg{T,N,TC,ST,K}(io::IO, A::GriddedInterpolati
 end
 
 _showknots(io, A) = showarg(io, A)
-function _showknots{N}(io, tup::NTuple{N,Any})
+function _showknots(io, tup::NTuple{N,Any}) where N
     print(io, '(')
     for (i, A) in enumerate(tup)
         showarg(io, A)
@@ -39,7 +39,7 @@ function ShowItLikeYouBuildIt.showarg(io::IO, A::ScaledInterpolation)
     print(io, ", ", A.ranges, ')')
 end
 
-function ShowItLikeYouBuildIt.showarg{T,N,TI,IT,GT,ET}(io::IO, A::Extrapolation{T,N,TI,IT,GT,ET})
+function ShowItLikeYouBuildIt.showarg(io::IO, A::Extrapolation{T,N,TI,IT,GT,ET}) where {T,N,TI,IT,GT,ET}
     print(io, "extrapolate(")
     showarg(io, A.itp)
     print(io, ", ")
@@ -47,32 +47,32 @@ function ShowItLikeYouBuildIt.showarg{T,N,TI,IT,GT,ET}(io::IO, A::Extrapolation{
     print(io, ')')
 end
 
-function ShowItLikeYouBuildIt.showarg{T,N,TI,IT,GT}(io::IO, A::FilledExtrapolation{T,N,TI,IT,GT})
+function ShowItLikeYouBuildIt.showarg(io::IO, A::FilledExtrapolation{T,N,TI,IT,GT}) where {T,N,TI,IT,GT}
     print(io, "extrapolate(")
     showarg(io, A.itp)
     print(io, ", ", A.fillvalue, ')')
 end
 
-_showtypeparam{T}(io, ::Type{T}) =
+_showtypeparam(io, ::Type{T}) where {T} =
     print(io, T.name.name, "()")
-_showtypeparam{T}(io, ::Type{Quadratic{T}}) =
+_showtypeparam(io, ::Type{Quadratic{T}}) where {T} =
     print(io, "Quadratic(", T.name.name, "())")
-_showtypeparam{T}(io, ::Type{Cubic{T}}) =
+_showtypeparam(io, ::Type{Cubic{T}}) where {T} =
     print(io, "Cubic(",     T.name.name, "())")
 
-function _showtypeparam{T}(io, ::Type{BSpline{T}})
+function _showtypeparam(io, ::Type{BSpline{T}}) where T
     print(io, "BSpline(")
     _showtypeparam(io, T)
     print(io, ')')
 end
 
-function _showtypeparam{T}(io, ::Type{Gridded{T}})
+function _showtypeparam(io, ::Type{Gridded{T}}) where T
     print(io, "Gridded(")
     _showtypeparam(io, T)
     print(io, ')')
 end
 
-function _showtypeparam{TTup<:Tuple}(io, types::Type{TTup})
+function _showtypeparam(io, types::Type{TTup}) where TTup<:Tuple
     print(io, '(')
     N = length(types.types)
     for (i, T) in enumerate(types.types)
