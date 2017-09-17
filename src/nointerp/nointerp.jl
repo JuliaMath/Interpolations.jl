@@ -1,3 +1,9 @@
+function interpolate(A::AbstractArray, ::NoInterp, gt::GT) where {GT<:DimSpec{GridType}}
+    interpolate(Int, eltype(A), A, NoInterp(), gt)
+end
+
+iextract(::Type{NoInterp}, d) = NoInterp
+
 function define_indices_d(::Type{NoInterp}, d, pad)
     symix, symx = Symbol("ix_",d), Symbol("x_",d)
     :($symix = convert(Int, $symx))
@@ -28,3 +34,5 @@ function count_interp_dims(it::Type{IT}, N) where IT<:Tuple{Vararg{Interpolation
     end
     n
 end
+
+prefilter(::Type{TWeights}, ::Type{TC}, A, ::Type{IT},::Type{GT}) where {TWeights, TC, IT<:NoInterp, GT<:GridType} = A, Val{0}()

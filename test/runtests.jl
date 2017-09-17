@@ -8,6 +8,7 @@ using Interpolations
 include("extrapolation/runtests.jl")
 # b-spline interpolation tests
 include("b-splines/runtests.jl")
+include("nointerp.jl")
 
 # scaling tests
 include("scaling/runtests.jl")
