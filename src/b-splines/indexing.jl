@@ -94,6 +94,10 @@ function getindex_return_type(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}
     _promote_mul(eltype(TCoefs), I)
 end
 
+@noinline function getindex_return_type(::Type{Tel}, ::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}, argtypes::Tuple) where {Tel,T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}
+    reduce(_promote_mul, eltype(TCoefs), (Tel, argtypes...))
+end
+
 @generated function gradient!(g::AbstractVector, itp::BSplineInterpolation{T,N}, xs::Number...) where {T,N}
     length(xs) == N || error("Can only be called with $N indexes")
     gradient_impl(itp)
