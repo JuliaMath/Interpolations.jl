@@ -81,7 +81,10 @@ etp100g = extrapolate(interpolate(([10;20],),[100;110], Gridded(Linear())), Flat
 @test @inferred(getindex(etp100g, 5)) == 100
 @test @inferred(getindex(etp100g, 15)) == 105
 @test @inferred(getindex(etp100g, 25)) == 110
-
+# issue #178
+a = randn(10,10) + im*rand(10,10)
+etp = @inferred(extrapolate(interpolate((1:10, 1:10), a, Gridded(Linear())), 0.0))
+@test @inferred(etp[-1,0]) === 0.0+0.0im
 
 # check all extrapolations work with vectorized indexing
 for E in [0,Flat(),Linear(),Periodic(),Reflect()]
