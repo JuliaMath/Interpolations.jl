@@ -21,7 +21,7 @@ function getindex_impl(fitp::Type{FilledExtrapolation{T,N,ITP,IT,GT,FT}}, args) 
     n = length(args)
     n == N || return error("Must index $(N)-dimensional interpolation objects with $(nindexes(N))")
 
-    Tret = FT<:Number ? getindex_return_type(T, ITP, args) : FT
+    Tret = FT<:Number ? getindex_return_type(ITP, (T, args...)) : FT
     meta = Expr(:meta, :inline)
     quote
         $meta
