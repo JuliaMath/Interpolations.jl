@@ -98,8 +98,12 @@ gradient(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs...) where {T,N,ITPT,IT<:D
     quote
         length(g) == $(count_interp_dims(IT, N)) || throw(ArgumentError(string("The length of the provided gradient vector (", length(g), ") did not match the number of interpolating dimensions (", $(count_interp_dims(IT, N)), ")")))
         gradient!(g, sitp.itp, $(interp_indices...))
-        for i in eachindex(g)
-            g[i] = rescale_gradient(sitp.ranges[i], g[i])
+        cntr = 0
+        for i = 1:N
+                if $(interp_dimens)[i]
+                    cntr += 1
+                    g[cntr] = rescale_gradient(sitp.ranges[i], g[cntr])
+                end
         end
         g
     end
