@@ -41,4 +41,10 @@ for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
     end
 end
 
+# Issue #183
+x = rand(3,3,3)
+itp = interpolate(x, BSpline(Linear()), OnGrid())
+@test itp[1.5, CartesianIndex((2, 3))] === itp[1.5, 2, 3]
+@test itp[CartesianIndex((1, 2)), 1.5] == itp[1, 2, 1.5]
+
 end
