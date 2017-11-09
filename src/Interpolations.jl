@@ -94,6 +94,18 @@ eltype(::Type{ITP}) where {ITP<:AbstractInterpolation} = eltype(supertype(ITP))
 eltype(itp::AbstractInterpolation) = eltype(typeof(itp))
 count_interp_dims(::Type{T}, N) where {T<:AbstractInterpolation} = N
 
+# Generic indexing methods (fixes #183)
+Base.to_index(::AbstractInterpolation, i::Real) = i
+
+@inline function Base._getindex(::IndexCartesian, A::AbstractInterpolation{T,N}, I::Vararg{Int,N}) where {T,N} # ambiguity resolution
+    @inbounds r = getindex(A, I...)
+    r
+end
+@inline function Base._getindex(::IndexCartesian, A::AbstractInterpolation{T,N}, I::Vararg{Real,N}) where {T,N}
+    @inbounds r = getindex(A, I...)
+    r
+end
+
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
 include("gridded/gridded.jl")
