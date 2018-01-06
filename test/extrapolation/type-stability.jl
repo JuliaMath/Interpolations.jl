@@ -50,4 +50,13 @@ for (etp2,E) in map(E -> (extrapolate(itp2, E()), E), schemes),
     @inferred(getindex(etp2, x, y))
 end
 
+A = [1 2; 3 4]
+Af = Float64.(A)
+for B in (A, Af)
+    itpg = interpolate(B, BSpline(Linear()), OnGrid())
+    etp = extrapolate(itpg, NaN)
+    @test typeof(@inferred(getindex(etp, dual(1.5,1), dual(1.5,1)))) ==
+          typeof(@inferred(getindex(etp, dual(6.5,1), dual(3.5,1))))
+end
+
 end

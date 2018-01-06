@@ -17,27 +17,18 @@ Base.parent(A::FilledExtrapolation) = A.itp
 """
 extrapolate(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue) where {T,N,IT,GT} = FilledExtrapolation(itp, fillvalue)
 
-function getindex_impl(fitp::Type{FilledExtrapolation{T,N,ITP,IT,GT,FT}}, args) where {T,N,ITP,IT,GT,FT}
-    n = length(args)
-    n == N || return error("Must index $(N)-dimensional interpolation objects with $(nindexes(N))")
-
-    Tret = FT<:Number ? getindex_return_type(ITP, (T, args...)) : FT
-    meta = Expr(:meta, :inline)
-    quote
-        $meta
-        # Check to see if we're in the extrapolation region, i.e.,
-        # out-of-bounds in an index
-        inds_etp = indices(fitp)
-        @nexprs $N d->((args[d] < lbound(fitp, d, inds_etp[d]) || args[d] > ubound(fitp, d, inds_etp[d]))) && return convert($Tret, fitp.fillvalue)::$Tret
-        # In the interpolation region
-        return convert($Tret, getindex(fitp.itp,args...))::$Tret
-    end
+@inline function getindex(fitp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, args::Vararg{Number,M}) where {T,N,ITP,IT,GT,FT,M}
+    inds, trailing = Base.IteratorsMD.split(args, Val{N})
+    @boundscheck all(x->x==1, trailing) || Base.throw_boundserror(fitp, args)
+    Tret = typeof(prod(inds) * zero(T))
+    checkbounds(Bool, fitp, inds...) && return convert(Tret, fitp.itp[inds...])
+    convert(Tret, fitp.fillvalue)
 end
 
-
-@generated function getindex(fitp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, args::Number...) where {T,N,ITP,IT,GT,FT}
-    getindex_impl(fitp, args)
-end
+@inline Base.checkbounds(::Type{Bool}, A::FilledExtrapolation, I...) = _checkbounds(A, 1, indices(A), I)
+@inline _checkbounds(A, d::Int, IA::TT1, I::TT2) where {TT1,TT2} =
+    (I[1] >= lbound(A, d, IA[1])) & (I[1] <= ubound(A, d, IA[1])) & _checkbounds(A, d+1, Base.tail(IA), Base.tail(I))
+_checkbounds(A, d::Int, ::Tuple{}, ::Tuple{}) = true
 
 getindex(fitp::FilledExtrapolation{T,1}, x::Number, y::Int) where {T} = y == 1 ? fitp[x] : throw(BoundsError())
 

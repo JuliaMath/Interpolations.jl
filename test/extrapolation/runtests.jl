@@ -29,7 +29,7 @@ etpf = @inferred(extrapolate(itpg, NaN))
 
 @test etpf[2.5,1] == etpf[2.5]   # for show method
 @test_throws BoundsError etpf[2.5,2]
-@test_throws ErrorException etpf[2.5,2,1]  # this will probably become a BoundsError someday
+@test_throws BoundsError etpf[2.5,2,1]
 
 x =  @inferred(getindex(etpf, dual(-2.5,1)))
 @test isa(x, Dual)
