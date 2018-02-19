@@ -1,10 +1,10 @@
-function getindex(itp::GriddedInterpolation{T,N,TCoefs,Interpolations.Gridded{Interpolations.Cubic{Interpolations.Reflect}},K,P}, x::Number) where{T,N,TCoefs,K,P}
-    a,b,c = coefficients(itp.knots[1], itp.coefs)
+function getindex(itp::GriddedInterpolation{T,N,TCoefs,Interpolations.Gridded{Interpolations.Cubic{Interpolations.Natural}},K,P}, x::Number) where{T,N,TCoefs,K,P}
+    a,b,c,d = coefficients(itp.knots[1], itp.coefs)
     interpolate(x, a, b, c, d, itp.knots[1])
 end
 
-function getindex(itp::GriddedInterpolation{T,N,TCoefs,Interpolations.Gridded{Interpolations.Cubic{Interpolations.Reflect}},K,P}, x::AbstractVector) where{T,N,TCoefs,K,P}
-    a,b,c = coefficients(itp.knots[1], itp.coefs)
+function getindex(itp::GriddedInterpolation{T,N,TCoefs,Interpolations.Gridded{Interpolations.Cubic{Interpolations.Natural}},K,P}, x::AbstractVector) where{T,N,TCoefs,K,P}
+    a,b,c,d = coefficients(itp.knots[1], itp.coefs)
     interpolate.(x, [a], [b], [c], [d], [itp.knots[1]])
 end
 
@@ -27,61 +27,97 @@ function interpolate(x, a, b, c, d, X, v=false)
 end
 
 
+## TODO: Check which one of the below is faster.
+function expand_array!(x2t, x2)
+    x2t[1]       = x2[1]
+    x2t[end]     = x2[end]
+    x2t[2:end-1] = cat(2, x2[2:end-1], x2[2:end-1])'[:]
+    x2t
+end
+
+function expand_array2!(rhs, y)
+    n = length(y)
+    rhs[1] = y[1]        # f₀(1) = y[1] 
+    for i in 2:(n-1)
+        k = 2(i-1)       # fᵢ    = y[i]
+        rhs[k]   = y[i]  # fᵢ₊₁  = y[i] 
+        rhs[k+1] = y[i]
+    end
+    rhs[n] = y[n] # fₙ    = y[n]
+end
+
+function expand_array(x2::AbstractArray{T,1}) where T
+    x2t = zeros(T,2(size(x2,1)-1))
+    expand_array!(x2t, x2)
+end
+
 function coefficients(x, y;
+        force_linear_extrapolation = true,
+        boundary_condition = :natural)
+    A,rhs = spline_coef_equations(x, y, force_linear_extrapolation=force_linear_extrapolation,
+        boundary_condition=boundary_condition)
+    coefficients = A\rhs
+    a,b,c,d = [coefficients[n:4:end] for n in 1:4]
+    return a,b,c,d
+end
+
+function spline_coef_equations(x, y;
         force_linear_extrapolation = true,
         boundary_condition = :natural
     )
-    const x1   = 0.
-    const xend = 0.
-    
+    valid_boundary_conditions = [:natural, :periodic, :notaknot, :quadratic]
+    if !(boundary_condition in valid_boundary_conditions)
+        error("Boundary Condition must be one of $valid_boundary_conditions not $boundary_condition")
+    end
+
     n   = length(x)
-    A   = zeros(n,n)
-    rx  = zeros(n)
-    for i in 2:(n-1)
-        A[i-1,i]  = 1.0/3.0*(x[i]-x[i-1]);
-        A[i,i]    = 2.0/3.0*(x[i+1]-x[i-1]);
-        A[i+1,i]  = 1.0/3.0*(x[i+1]-x[i]);
-        rx[i]  = (y[i+1]-y[i])/(x[i+1]-x[i]) - (y[i]-y[i-1])/(x[i]-x[i-1])
-    end
-   
-    if boundary_condition == :natural
-        A[1,1] = 2.0
-        A[2,1] = 0.0
-        rx[1] = x1
+    A   = zeros(4(n-1),4(n-1))
+    rhs = zeros(4(n-1))
+    
+    # First 2(n-1) polynomials are of the form:
+    #     fᵢ = aᵢx³ + bᵢx² +cᵢx + dᵢ
+    rhs[1:2(n-1)] = expand_array(y)
 
-        A[n,n] = 2.0
-        A[n-1,n] = 0.0
-        rx[n] = xend
-    elseif boundary_condition == :periodic
-        A[1,1] = 2.0*(x[2]-x[1])
-        A[2,1] = 1.0*(x[2]-x[1])
-        rx[1]  = 3.0*((y[2]-y[1])/(x[2]-x[1])-x1)
-
-        A[n,n] = 2.0*(x[n]-x[n-1])
-        A[n-1,n] =1.0*(x[n]-x[n-1])
-        rx[n]=3.0*(xend-(y[n]-y[n-1])/(x[n]-x[n-1]))
-    else
-        error("Boundary condition $boundary_condition not recognised.")
+    x2     = expand_array(x)
+    x2inds = expand_array(1:length(x))
+    niind = 0
+    for xi in 1:(length(x2))
+        for ni in 1:4
+            A[xi, (niind+ni)] = x2[xi]^(4-ni)
+        end
+        iseven(xi) && (niind += 4 )
     end
 
-    b = A \ rx;
-
-    a = zeros(n)
-    c = zeros(n)
-    for i in 1:(n-1)
-        a[i]=1.0/3.0*(b[i+1]-b[i])/(x[i+1]-x[i])
-        c[i]=(y[i+1]-y[i])/(x[i+1]-x[i])- 1.0/3.0*(2.0*b[i]+b[i+1])*(x[i+1]-x[i])
+    # Next polynomials from first derivative
+    #    3ax² + 2bx + c + 0
+    niind = 1
+    for xi in 2:(n-1)
+        rind = xi + 2(n-1) - 1
+        A[rind,niind:niind+3] .= A[rind,(niind+4):(niind+7)] .= [(3*(x[xi]^2)),2x[xi],1,0]
+        A[rind,niind+4:niind+7] *= -1.
+        niind += 4
     end
-
-    if force_linear_extrapolation
-        b[1]   = 0.0
-        b[n]   = 0.0
-        a[n]   = 0.0
-        @show a[1]
-        h      = x[n]-x[n-1];
-        c[n]   = 3a[n-1] * (h * h)  +  2b[n-1] * h  +  c[n-1]
+    
+    # Next polynomials from 2nd derivative
+    #    6ax + 2b + 0 + 0
+    niind = 1
+    for xi in 2:(n-1)
+        rind = xi + 2(n-1) + n - 3
+        A[rind,niind:niind+3] .= A[rind,(niind+4):(niind+7)] .= [6*(x[xi]),2,0,0]
+        A[rind,niind+4:niind+7] *= -1.
+        niind += 4
     end
-    return a, b, c
+    
+    # Next boundary conditions:
+    # Natural Spline Satisfies:
+    # 6a₁x₁   + 2b₁ = 0
+    A[end-1,1] = 6x[1]
+    A[end-1,2] = 2.
+    # 6aₙxₙ₊₁ + 2bₙ = 0
+    A[end,4(n-2)+1]  = 6x[end]
+    A[end,4(n-2)+2]  = 2.
+    
+    return A,rhs
 end
 
 #####
