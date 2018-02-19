@@ -69,4 +69,5 @@ ubound(itp::GriddedInterpolation, d, inds) = itp.knots[d][end]
 
 include("constant.jl")
 include("linear.jl")
+include("cubic.jl")
 include("indexing.jl")

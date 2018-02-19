@@ -1,43 +1,39 @@
 function getindex(itp::GriddedInterpolation{T,N,TCoefs,Interpolations.Gridded{Interpolations.Cubic{Interpolations.Reflect}},K,P}, x::Number) where{T,N,TCoefs,K,P}
     a,b,c = coefficients(itp.knots[1], itp.coefs)
-    interpolate(x, a, b, c, itp.knots[1], itp.coefs)
+    interpolate(x, a, b, c, d, itp.knots[1])
 end
 
 function getindex(itp::GriddedInterpolation{T,N,TCoefs,Interpolations.Gridded{Interpolations.Cubic{Interpolations.Reflect}},K,P}, x::AbstractVector) where{T,N,TCoefs,K,P}
     a,b,c = coefficients(itp.knots[1], itp.coefs)
-    interpolate.(x, [a], [b], [c], [itp.knots[1]], [itp.coefs])
+    interpolate.(x, [a], [b], [c], [d], [itp.knots[1]])
 end
 
 
 """
-    interpolate(x, a, b, c, X, Y, v=false)
+    interpolate(x, a, b, c, d, X, v=false)
 Interpoalte at location x using coefficients a,b,c fitted to X & Y.
 If i in in the range of x:
     Sᵢ(x) = a(x - xᵢ)³ + b(x - xᵢ)² + c(x - xᵢ) + dᵢ
 Otherwise extrapolate with a = 0 (i.e. a 1st or 2nd order spline)
 """
-function interpolate(x, a, b, c, X, Y, v=false)
+function interpolate(x, a, b, c, d, X, v=false)
     idx = max(searchsortedfirst(X,x)-1,1)
-    h   = x - X[idx] # (x - xᵢ)
     n   = length(X)
- 
-    if x < X[1]        # extrapolation to the left
-        return (b[1]*h + c[1])*h + Y[1];
-    elseif x > X[n]       # extrapolation to the right
-        return (b[n]*h + c[n])*h + Y[n];
-    else                    # interpolation
-        return ((a[idx]*h + b[idx])*h + c[idx])*h + Y[idx];
+    idx = idx >= n ? idx - 1 : idx
+    if idx < n                    # interpolation
+        return a[idx]*(x^3) + b[idx]*(x^2) + c[idx]x + d[idx]
     end
-    interpol
+    error()
 end
 
 
 function coefficients(x, y;
-        x1 = 0.,
-        xend = 0.,
-        m_force_linear_extrapolation = true,
-        boundaries = (:first_deriv, :first_deriv)
+        force_linear_extrapolation = true,
+        boundary_condition = :natural
     )
+    const x1   = 0.
+    const xend = 0.
+    
     n   = length(x)
     A   = zeros(n,n)
     rx  = zeros(n)
@@ -47,28 +43,25 @@ function coefficients(x, y;
         A[i+1,i]  = 1.0/3.0*(x[i+1]-x[i]);
         rx[i]  = (y[i+1]-y[i])/(x[i+1]-x[i]) - (y[i]-y[i-1])/(x[i]-x[i-1])
     end
-    
-	boundary_start,boundary_end = boundaries
-    if (boundary_start == :second_deriv)
-        A[1,1] = 2.0;
-        A[2,1] = 0.0;
-        rx[0] = x1;
-    elseif (boundary_start == :first_deriv)
-        A[1,1] = 2.0*(x[2]-x[1]);
-        A[2,1] = 1.0*(x[2]-x[1]);
-        rx[1] = 3.0*((y[2]-y[1])/(x[2]-x[1])-x1);
+   
+    if boundary_condition == :natural
+        A[1,1] = 2.0
+        A[2,1] = 0.0
+        rx[1] = x1
+
+        A[n,n] = 2.0
+        A[n-1,n] = 0.0
+        rx[n] = xend
+    elseif boundary_condition == :periodic
+        A[1,1] = 2.0*(x[2]-x[1])
+        A[2,1] = 1.0*(x[2]-x[1])
+        rx[1]  = 3.0*((y[2]-y[1])/(x[2]-x[1])-x1)
+
+        A[n,n] = 2.0*(x[n]-x[n-1])
+        A[n-1,n] =1.0*(x[n]-x[n-1])
+        rx[n]=3.0*(xend-(y[n]-y[n-1])/(x[n]-x[n-1]))
     else
-        assert(false);
-    end
-    
-    if (boundary_end == :second_deriv)
-    A[n,n] = 2.0;
-    A[n-1,n] = 0.0;
-    rx[n] = xend;
-    elseif (boundary_end == :first_deriv)
-        A[n,n] = 2.0*(x[n]-x[n-1]);
-        A[n-1,n] =1.0*(x[n]-x[n-1]);
-        rx[n]=3.0*(xend-(y[n]-y[n-1])/(x[n]-x[n-1]));
+        error("Boundary condition $boundary_condition not recognised.")
     end
 
     b = A \ rx;
@@ -80,11 +73,14 @@ function coefficients(x, y;
         c[i]=(y[i+1]-y[i])/(x[i+1]-x[i])- 1.0/3.0*(2.0*b[i]+b[i+1])*(x[i+1]-x[i])
     end
 
-    b[1] = (m_force_linear_extrapolation==false) ? b[1] : 0.0;
-    h      = x[n]-x[n-1];
-    a[n] = 0.0
-    c[n] = 3a[n-1] * (h * h)  +  2b[n-1] * h  +  c[n-1]
-    m_force_linear_extrapolation && (b[n]=0.0)
+    if force_linear_extrapolation
+        b[1]   = 0.0
+        b[n]   = 0.0
+        a[n]   = 0.0
+        @show a[1]
+        h      = x[n]-x[n-1];
+        c[n]   = 3a[n-1] * (h * h)  +  2b[n-1] * h  +  c[n-1]
+    end
     return a, b, c
 end
 
