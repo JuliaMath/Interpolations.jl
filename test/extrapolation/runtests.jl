@@ -29,7 +29,7 @@ etpf = @inferred(extrapolate(itpg, NaN))
 
 @test etpf[2.5,1] == etpf[2.5]   # for show method
 @test_throws BoundsError etpf[2.5,2]
-@test_throws ErrorException etpf[2.5,2,1]  # this will probably become a BoundsError someday
+@test_throws BoundsError etpf[2.5,2,1]
 
 x =  @inferred(getindex(etpf, dual(-2.5,1)))
 @test isa(x, Dual)
@@ -90,6 +90,14 @@ etp = @inferred(extrapolate(interpolate((1:10, 1:10), a, Gridded(Linear())), 0.0
 for E in [0,Flat(),Linear(),Periodic(),Reflect()]
     @test (@inferred(getindex(extrapolate(interpolate([0,0],BSpline(Linear()),OnGrid()),E),[1.2, 1.8, 3.1]))) == [0,0,0]
 end
+
+# Issue #156
+F     = *(collect(1.:10.), collect(1:4)')
+itp   = interpolate(F, (BSpline(Linear()), NoInterp()), OnGrid());
+itps   = scale(itp, 1:10, 1:4)
+itpe   = extrapolate(itps, (Linear(), Interpolations.Throw()))
+@test itpe[10.1, 1] ≈ 10.1
+@test_throws BoundsError itpe[9.9, 0]
 
 end
 

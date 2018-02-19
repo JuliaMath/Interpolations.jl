@@ -30,6 +30,8 @@ Finally, you can specify different extrapolation behavior in different direction
 extrapolate(itp::AbstractInterpolation{T,N,IT,GT}, ::ET) where {T,N,IT,GT,ET<:ExtrapDimSpec} =
     Extrapolation{T,N,typeof(itp),IT,GT,ET}(itp)
 
+count_interp_dims(::Type{<:Extrapolation{T,N,ITPT}}, n) where {T,N,ITPT} = count_interp_dims(ITPT, n)
+
 include("throw.jl")
 include("flat.jl")
 include("linear.jl")
