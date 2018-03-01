@@ -35,6 +35,7 @@ export
     # scaling/scaling.jl
 
 using Compat
+using Compat.LinearAlgebra
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
 import Base: convert, size, indices, getindex, gradient, promote_rule,
