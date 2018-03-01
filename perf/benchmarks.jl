@@ -96,12 +96,12 @@ for A in (collect(Float64, 1:3),
     end
 end
 
-paramspath = joinpath(dirname(@__FILE__), "params.jld")
+paramspath = joinpath(dirname(@__FILE__), "params.json")
 
 if isfile(paramspath)
-    loadparams!(suite, BenchmarkTools.load(paramspath, "suite"), :evals);
+    loadparams!(suite, BenchmarkTools.load(paramspath)[1], :evals);
 else
     info("Tuning suite (this may take a while)")
     tune!(suite)
-    BenchmarkTools.save(paramspath, "suite", params(suite));
+    BenchmarkTools.save(paramspath, params(suite));
 end
