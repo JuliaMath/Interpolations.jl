@@ -52,6 +52,11 @@ To evaluate the interpolation at position `(x, y, ...)`, simply do
 v = itp[x, y, ...]
 ```
 
+or, alternatively, using function call syntax:
+```jl
+v = itp(x, y, ...)
+```
+
 Some interpolation objects support computation of the gradient, which
 can be obtained as
 ```jl
