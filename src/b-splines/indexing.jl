@@ -108,9 +108,11 @@ end
 for R in [:Real, :Any]
     @eval @generated function gradient(itp::AbstractInterpolation{T,N}, xs::$R...) where {T,N}
         n = count_interp_dims(itp, N)
-        Tg = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
         xargs = [:(xs[$d]) for d in 1:length(xs)]
-        :(gradient!(Array{$Tg, 1}($n), itp, $(xargs...)))
+        quote
+            Tg = $(Expr(:call, :promote_type, T, [x <: AbstractArray ? eltype(x) : x for x in xs]...))
+            gradient!(Array{Tg, 1}($n), itp, $(xargs...))
+        end
     end
 end
 
