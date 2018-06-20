@@ -160,9 +160,11 @@ end
 
 @generated function hessian(itp::AbstractInterpolation{T,N}, xs...) where {T,N}
     n = count_interp_dims(itp,N)
-    TH = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
     xargs = [:(xs[$d]) for d in 1:length(xs)]
-    :(hessian!(Array{TH, 2}($n,$n), itp, $(xargs...)))
+    quote
+        TH = $(Expr(:call, :promote_type, T, [x <: AbstractArray ? eltype(x) : x for x in xs]...))
+        hessian!(Array{TH, 2}($n,$n), itp, $(xargs...))
+    end
 end
 
 hessian1(itp::AbstractInterpolation{T,1}, x) where {T} = hessian(itp, x)[1,1]
