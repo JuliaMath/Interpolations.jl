@@ -16,10 +16,10 @@ function gradient_coefficients(::Type{IT}, N, dim) where IT<:DimSpec{BSpline}
 end
 function hessian_coefficients(::Type{IT}, N, dim1, dim2) where IT<:DimSpec{BSpline}
     exs = if dim1 == dim2
-        Expr[d==dim1==dim2 ? hessian_coefficients(iextract(IT, dim), d) :
+        Expr[d==dim1==dim2 ? hessian_coefficients(iextract(IT, d), d) :
                              coefficients(iextract(IT, d), N, d) for d in 1:N]
     else
-        Expr[d==dim1 || d==dim2 ? gradient_coefficients(iextract(IT, dim), d) :
+        Expr[d==dim1 || d==dim2 ? gradient_coefficients(iextract(IT, d), d) :
                                   coefficients(iextract(IT, d), N, d) for d in 1:N]
     end
     Expr(:block, exs...)
@@ -160,7 +160,7 @@ end
     n = count_interp_dims(itp,N)
     TH = promote_type(T, [x <: AbstractArray ? eltype(x) : x for x in xs]...)
     xargs = [:(xs[$d]) for d in 1:length(xs)]
-    :(hessian!(Array{TH, 2}($n,$n), itp, $(xargs...)))
+    :(hessian!(Array{$TH, 2}($n,$n), itp, $(xargs...)))
 end
 
 hessian1(itp::AbstractInterpolation{T,1}, x) where {T} = hessian(itp, x)[1,1]
