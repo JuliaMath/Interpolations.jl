@@ -25,8 +25,11 @@ function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, ::IT, :
     for _ in 2:N
         c *= c
     end
-    T = Base.promote_op(*, typeof(c), Tel)
-
+    if isempty(A)
+        T = Base.promote_op(*, typeof(c), Tel)
+    else
+        T = typeof(c*first(A))
+    end
     BSplineInterpolation{T,N,typeof(A),IT,GT,pad}(A)
 end
 
