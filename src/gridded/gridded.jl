@@ -28,7 +28,11 @@ function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::A
     for _ in 2:N
         c *= c
     end
-    T = typeof(c*first(A))
+    if isempty(A)
+        T = Base.promote_op(*, typeof(c), eltype(A))
+    else
+        T = typeof(c * first(A))
+    end
     GriddedInterpolation{T,N,TCoefs,IT,typeof(knts),pad}(knts, A)
 end
 
