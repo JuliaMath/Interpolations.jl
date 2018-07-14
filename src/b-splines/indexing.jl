@@ -1,5 +1,4 @@
 using Base.Cartesian
-using DualNumbers
 
 import Base.getindex
 
