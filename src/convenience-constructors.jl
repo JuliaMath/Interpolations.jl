@@ -1,3 +1,3 @@
-LinearInterpolation(ranges::NTuple{N,T}, vs) where {N,T <: Range} = extrapolate(scale(interpolate(vs, BSpline(Linear()), OnGrid()), ranges...),  Interpolations.Throw())
-LinearInterpolation(ranges::NTuple{N,T}, vs) where {N,T <: AbstractArray} = extrapolate(interpolate(ranges, vs, Gridded(Linear())),  Interpolations.Throw())
-CubicSplineInterpolation(ranges::NTuple{N,T}, vs) where {N,T <: Range} = extrapolate(scale(interpolate(vs, BSpline(Cubic(Line())), OnGrid()), ranges...),  Interpolations.Throw())
+LinearInterpolation(ranges::NTuple{N,T}, vs; extrapolation_bc = Interpolations.Throw()) where {N,T <: Range} = extrapolate(scale(interpolate(vs, BSpline(Linear()), OnGrid()), ranges...), extrapolation_bc)
+LinearInterpolation(ranges::NTuple{N,T}, vs; extrapolation_bc = Interpolations.Throw()) where {N,T <: AbstractArray} = extrapolate(interpolate(ranges, vs, Gridded(Linear())), extrapolation_bc)
+CubicSplineInterpolation(ranges::NTuple{N,T}, vs; extrapolation_bc = Interpolations.Throw()) where {N,T <: Range} = extrapolate(scale(interpolate(vs, BSpline(Cubic(Line())), OnGrid()), ranges...), extrapolation_bc)
