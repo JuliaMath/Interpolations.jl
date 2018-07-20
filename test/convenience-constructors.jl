@@ -66,6 +66,23 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         @test_throws BoundsError interp[xmin - ΔX / 2]
         @test_throws BoundsError interp[xmax + ΔX / 2]
     end
+
+    @testset "1d-handling-extrapolation" begin
+        xs = XMIN:ΔX:XMAX
+        f(x) = log(x)
+        A = [f(x) for x in xs]
+        ΔA_l = A[2] - A[1]
+        ΔA_h = A[end] - A[end - 1]
+        x_lower = XMIN - ΔX
+        x_higher = XMAX + ΔX
+
+        extrap = LinearInterpolation(xs, A, extrapolation_bc = Interpolations.Linear())
+        extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs), Interpolations.Linear())
+
+        @test typeof(extrap) == typeof(extrap_full)
+        @test extrap[x_lower] ≈ A[1] - ΔA_l
+        @test extrap[x_higher] ≈ A[end] + ΔA_h
+    end
 end
 
 @testset "2d-interpolations" begin
@@ -140,6 +157,26 @@ end
         @test_throws BoundsError interp[xmin - ΔX / 2,ymin + ΔY / 2]
         @test_throws BoundsError interp[xmin + ΔX / 2,ymin - ΔY / 2]
         @test_throws BoundsError interp[xmax + ΔX / 2,ymax + ΔY / 2]
+    end
+
+    @testset "2d-handling-extrapolation" begin
+        xs = XMIN:ΔX:XMAX
+        ys = YMIN:ΔY:YMAX
+        f(x, y) = log(x+y)
+        A = [f(x,y) for x in xs, y in ys]
+        ΔA_l = A[2, 1] - A[1, 1]
+        ΔA_h = A[end, end] - A[end - 1, end]
+        x_lower = XMIN - ΔX
+        x_higher = XMAX + ΔX
+        y_lower = YMIN - ΔY
+        y_higher = YMAX + ΔY
+
+        extrap = LinearInterpolation((xs, ys), A, extrapolation_bc = (Interpolations.Linear(), Interpolations.Flat()))
+        extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs, ys), (Interpolations.Linear(), Interpolations.Flat()))
+
+        @test typeof(extrap) == typeof(extrap_full)
+        @test extrap[x_lower, y_lower] ≈ A[1, 1] - ΔA_l
+        @test extrap[x_higher, y_higher] ≈ A[end, end] + ΔA_h
     end
 end
 
