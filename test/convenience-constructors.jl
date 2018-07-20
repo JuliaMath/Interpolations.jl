@@ -19,8 +19,10 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         xs = XMIN:ΔX:XMAX
         f(x) = log(x)
         A = [f(x) for x in xs]
-        interp = LinearInterpolation(xs, A)
+        interp = LinearInterpolation(xs, A) # using convenience constructor
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs), Interpolations.Throw()) # using full constructor
 
+        @test typeof(interp) == typeof(interp_full)
         @test interp[XMIN] ≈ f(XMIN)
         @test interp[XMAX] ≈ f(XMAX)
         @test interp[XMIN + ΔX] ≈ f(XMIN + ΔX)
@@ -35,7 +37,9 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         f(x) = log(x)
         A = [f(x) for x in xs]
         interp = CubicSplineInterpolation(xs, A)
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line())), OnGrid()), xs), Interpolations.Throw())
 
+        @test typeof(interp) == typeof(interp_full)
         @test interp[XMIN] ≈ f(XMIN)
         @test interp[XMAX] ≈ f(XMAX)
         @test interp[XMIN + ΔX] ≈ f(XMIN + ΔX)
@@ -52,7 +56,9 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         f(x) = log(x)
         A = [f(x) for x in xs]
         interp = LinearInterpolation(xs, A)
+        interp_full = extrapolate(interpolate((xs, ), A, Gridded(Linear())), Interpolations.Throw())
 
+        @test typeof(interp) == typeof(interp_full)
         @test interp[xmin] ≈ f(xmin)
         @test interp[xmax] ≈ f(xmax)
         @test interp[xs[2]] ≈ f(xs[2])
@@ -69,7 +75,9 @@ end
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
         interp = LinearInterpolation((xs, ys), A)
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs, ys), Interpolations.Throw())
 
+        @test typeof(interp) == typeof(interp_full)
         @test interp[XMIN,YMIN] ≈ f(XMIN,YMIN)
         @test interp[XMIN,YMAX] ≈ f(XMIN,YMAX)
         @test interp[XMAX,YMIN] ≈ f(XMAX,YMIN)
@@ -90,7 +98,9 @@ end
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
         interp = CubicSplineInterpolation((xs, ys), A)
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line())), OnGrid()), xs, ys), Interpolations.Throw())
 
+        @test typeof(interp) == typeof(interp_full)
         @test interp[XMIN,YMIN] ≈ f(XMIN,YMIN)
         @test interp[XMIN,YMAX] ≈ f(XMIN,YMAX)
         @test interp[XMAX,YMIN] ≈ f(XMAX,YMIN)
@@ -115,7 +125,9 @@ end
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
         interp = LinearInterpolation((xs, ys), A)
+        interp_full = extrapolate(interpolate((xs, ys), A, Gridded(Linear())), Interpolations.Throw())
 
+        @test typeof(interp) == typeof(interp_full)
         @test interp[xmin,ymin] ≈ f(xmin,ymin)
         @test interp[xmin,ymax] ≈ f(xmin,ymax)
         @test interp[xmax,ymin] ≈ f(xmax,ymin)
