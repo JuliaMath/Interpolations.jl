@@ -19,7 +19,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         xs = XMIN:ΔX:XMAX
         f(x) = log(x)
         A = [f(x) for x in xs]
-        interp = LinearInterpolation((xs, ), A)
+        interp = LinearInterpolation(xs, A)
 
         @test interp[XMIN] ≈ f(XMIN)
         @test interp[XMAX] ≈ f(XMAX)
@@ -34,7 +34,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         xs = XMIN:ΔX:XMAX
         f(x) = log(x)
         A = [f(x) for x in xs]
-        interp = CubicSplineInterpolation((xs, ), A)
+        interp = CubicSplineInterpolation(xs, A)
 
         @test interp[XMIN] ≈ f(XMIN)
         @test interp[XMAX] ≈ f(XMAX)
@@ -51,7 +51,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         xmax = xs[XLEN]
         f(x) = log(x)
         A = [f(x) for x in xs]
-        interp = LinearInterpolation((xs, ), A)
+        interp = LinearInterpolation(xs, A)
 
         @test interp[xmin] ≈ f(xmin)
         @test interp[xmax] ≈ f(xmax)
