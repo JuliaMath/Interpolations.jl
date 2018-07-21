@@ -39,6 +39,8 @@ from the Julia REPL.
 
 ## General usage
 
+Note: the current version of `Interpolations` supports interpolation evaluation using index calls `[]`, but this feature will be deprecated in future. We highly recommend function calls with `()` as follows.
+
 Given an `AbstractArray` `A`, construct an "interpolation object" `itp` as
 ```jl
 itp = interpolate(A, options...)
@@ -49,7 +51,7 @@ samples in `A` are equally-spaced.
 
 To evaluate the interpolation at position `(x, y, ...)`, simply do
 ```jl
-v = itp[x, y, ...]
+v = itp(x, y, ...)
 ```
 
 Some interpolation objects support computation of the gradient, which
@@ -89,14 +91,14 @@ Julia's iterator objects, e.g.,
 ```jl
 function ongrid!(dest, itp)
     for I in CartesianRange(size(itp))
-        dest[I] = itp[I]
+        dest[I] = itp(I)
     end
 end
 ```
 would store the on-grid value at each grid point of `itp` in the output `dest`.
 Finally, courtesy of Julia's indexing rules, you can also use
 ```jl
-fine = itp[linspace(1,10,1001), linspace(1,15,201)]
+fine = itp(linspace(1,10,1001), linspace(1,15,201))
 ```
 
 ### Quickstart guide
@@ -171,11 +173,11 @@ Some examples:
 ```jl
 # Nearest-neighbor interpolation
 itp = interpolate(a, BSpline(Constant()), OnCell())
-v = itp[5.4]   # returns a[5]
+v = itp(5.4)   # returns a[5]
 
 # (Multi)linear interpolation
 itp = interpolate(A, BSpline(Linear()), OnGrid())
-v = itp[3.2, 4.1]  # returns 0.9*(0.8*A[3,4]+0.2*A[4,4]) + 0.1*(0.8*A[3,5]+0.2*A[4,5])
+v = itp(3.2, 4.1)  # returns 0.9*(0.8*A[3,4]+0.2*A[4,4]) + 0.1*(0.8*A[3,5]+0.2*A[4,5])
 
 # Quadratic interpolation with reflecting boundary conditions
 # Quadratic is the lowest order that has continuous gradient
@@ -183,7 +185,7 @@ itp = interpolate(A, BSpline(Quadratic(Reflect())), OnCell())
 
 # Linear interpolation in the first dimension, and no interpolation (just lookup) in the second
 itp = interpolate(A, (BSpline(Linear()), NoInterp()), OnGrid())
-v = itp[3.65, 5]  # returns  0.35*A[3,5] + 0.65*A[4,5]
+v = itp(3.65, 5)  # returns  0.35*A[3,5] + 0.65*A[4,5]
 ```
 There are more options available, for example:
 ```jl
@@ -202,8 +204,8 @@ A_x = 1.:2.:40.
 A = [log(x) for x in A_x]
 itp = interpolate(A, BSpline(Cubic(Line())), OnGrid())
 sitp = scale(itp, A_x)
-sitp[3.] # exactly log(3.)
-sitp[3.5] # approximately log(3.5)
+sitp(3.) # exactly log(3.)
+sitp(3.5) # approximately log(3.5)
 ```
 
 For multidimensional uniformly spaced grids
@@ -214,8 +216,8 @@ f(x1, x2) = log(x1+x2)
 A = [f(x1,x2) for x1 in A_x1, x2 in A_x2]
 itp = interpolate(A, BSpline(Cubic(Line())), OnGrid())
 sitp = scale(itp, A_x1, A_x2)
-sitp[5., 10.] # exactly log(5 + 10)
-sitp[5.6, 7.1] # approximately log(5.6 + 7.1)
+sitp(5., 10.) # exactly log(5 + 10)
+sitp(5.6, 7.1) # approximately log(5.6 + 7.1)
 ```
 ### Gridded interpolation
 
@@ -230,7 +232,7 @@ A = rand(20)
 A_x = collect(1.0:2.0:40.0)
 knots = (A_x,)
 itp = interpolate(knots, A, Gridded(Linear()))
-itp[2.0]
+itp(2.0)
 ```
 
 The spacing between adjacent samples need not be constant, you can use the syntax
@@ -245,7 +247,7 @@ For example:
 A = rand(8,20)
 knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
 itp = interpolate(knots, A, Gridded(Linear()))
-itp[4,1.2]  # approximately A[2,6]
+itp(4,1.2)  # approximately A[2,6]
 ```
 One may also mix modes, by specifying a mode vector in the form of an explicit tuple:
 ```jl
@@ -282,7 +284,7 @@ A = hcat(x,y)
 itp = scale(interpolate(A, (BSpline(Cubic(Natural())), NoInterp()), OnGrid()), t, 1:2)
 
 tfine = 0:.01:1
-xs, ys = [itp[t,1] for t in tfine], [itp[t,2] for t in tfine]
+xs, ys = [itp(t,1) for t in tfine], [itp(t,2) for t in tfine]
 ```
 
 We can then plot the spline with:

@@ -29,6 +29,7 @@ include("issues/runtests.jl")
 
 include("io.jl")
 include("convenience-constructors.jl")
+include("readme-examples.jl")
 
 end
 

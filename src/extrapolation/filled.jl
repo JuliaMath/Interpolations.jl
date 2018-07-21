@@ -25,6 +25,11 @@ extrapolate(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue) where {T,N,IT,GT} 
     convert(Tret, fitp.fillvalue)
 end
 
+function (fitp::FilledExtrapolation{T,N,ITP,IT,GT,FT})(args...) where {T,N,ITP,IT,GT,FT}
+    # support function calls
+    fitp[args...]
+end
+
 @inline Base.checkbounds(::Type{Bool}, A::FilledExtrapolation, I...) = _checkbounds(A, 1, indices(A), I)
 @inline _checkbounds(A, d::Int, IA::TT1, I::TT2) where {TT1,TT2} =
     (I[1] >= lbound(A, d, IA[1])) & (I[1] <= ubound(A, d, IA[1])) & _checkbounds(A, d+1, Base.tail(IA), Base.tail(I))
