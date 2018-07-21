@@ -28,6 +28,7 @@ include("typing.jl")
 include("issues/runtests.jl")
 
 include("io.jl")
+include("readme-examples.jl")
 
 end
 

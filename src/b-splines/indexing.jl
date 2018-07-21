@@ -50,6 +50,11 @@ end
     getindex_impl(itp)
 end
 
+function (itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad})(args...) where {T,N,TCoefs,IT,GT,pad}
+    # support function calls
+    itp[args...]
+end
+
 function gradient_impl(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}) where {T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}
     meta = Expr(:meta, :inline)
     # For each component of the gradient, alternately calculate
