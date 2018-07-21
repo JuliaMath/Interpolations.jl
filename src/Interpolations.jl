@@ -27,7 +27,10 @@ export
     Reflect,
     Natural,
     InPlace,
-    InPlaceQ
+    InPlaceQ,
+
+    LinearInterpolation,
+    CubicSplineInterpolation
 
     # see the following files for further exports:
     # b-splines/b-splines.jl
@@ -114,5 +117,6 @@ include("extrapolation/extrapolation.jl")
 include("scaling/scaling.jl")
 include("utils.jl")
 include("io.jl")
+include("convenience-constructors.jl")
 
 end # module
