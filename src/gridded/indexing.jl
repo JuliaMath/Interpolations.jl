@@ -36,6 +36,11 @@ end
     :(getindex(itp, $(args...)))
 end
 
+function (itp::GriddedInterpolation{T,N,TCoefs,IT,K,pad})(args...) where {T,N,TCoefs,IT,K,pad}
+    # support function calls
+    itp[args...]
+end
+
 # Indexing with vector inputs. Here, it pays to pre-process the input indexes,
 # because N*n is much smaller than n^N.
 # TODO: special-case N=1, because there is no reason to separately cache the indexes.

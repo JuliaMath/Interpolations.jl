@@ -25,8 +25,11 @@ function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, ::IT, :
     for _ in 2:N
         c *= c
     end
-    T = Core.Inference.return_type(*, Tuple{typeof(c), Tel})
-
+    if isempty(A)
+        T = Base.promote_op(*, typeof(c), eltype(A))
+    else
+        T = typeof(c * first(A))
+    end
     BSplineInterpolation{T,N,typeof(A),IT,GT,pad}(A)
 end
 
@@ -63,7 +66,7 @@ function size(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d) where {T,N,TCo
 end
 
 @inline indices(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}) where {T,N,TCoefs,IT,GT,pad} =
-    map_repeat(indices_removepad, indices(itp.coefs), pad)
+    indices_removepad.(indices(itp.coefs), pad)
 
 function indices(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d) where {T,N,TCoefs,IT,GT,pad}
     d <= N ? indices_removepad(indices(itp.coefs, d), padextract(pad, d)) : indices(itp.coefs, d)
@@ -105,28 +108,6 @@ offsetsym(off, d) = off == -1 ? Symbol("ixm_", d) :
 @inline indices_addpad(inds::Base.OneTo, pad) = Base.OneTo(length(inds) + 2*pad)
 @inline indices_addpad(inds, pad) = oftype(inds, first(inds):last(inds) + 2*pad)
 @inline indices_interior(inds, pad) = first(inds)+pad:last(inds)-pad
-
-"""
-    map_repeat(f, a, b)
-
-Equivalent to `(f(a[1], b[1]), f(a[2], b[2]), ...)` if `a` and `b` are
-tuples of the same lengths, or `(f(a[1], b), f(a[2], b), ...)` if `b`
-is a scalar.
-"""
-@generated function map_repeat(f, a::NTuple{N,Any}, b::NTuple{N,Any}) where N
-    ex = [:(f(a[$i], b[$i])) for i = 1:N]
-    quote
-        $(Expr(:meta, :inline))
-        ($(ex...),)
-    end
-end
-@generated function map_repeat(f, a::NTuple{N,Any}, b) where N
-    ex = [:(f(a[$i], b)) for i = 1:N]
-    quote
-        $(Expr(:meta, :inline))
-        ($(ex...),)
-    end
-end
 
 include("constant.jl")
 include("linear.jl")

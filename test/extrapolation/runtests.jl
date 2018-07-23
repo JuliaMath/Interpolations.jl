@@ -103,3 +103,4 @@ end
 
 include("type-stability.jl")
 include("non1.jl")
+include("function-call-syntax.jl")

@@ -27,7 +27,10 @@ export
     Reflect,
     Natural,
     InPlace,
-    InPlaceQ
+    InPlaceQ,
+
+    LinearInterpolation,
+    CubicSplineInterpolation
 
     # see the following files for further exports:
     # b-splines/b-splines.jl
@@ -35,6 +38,7 @@ export
     # scaling/scaling.jl
 
 using Compat
+using Compat.LinearAlgebra
 using WoodburyMatrices, Ratios, AxisAlgorithms
 
 import Base: convert, size, indices, getindex, gradient, promote_rule,
@@ -113,5 +117,6 @@ include("extrapolation/extrapolation.jl")
 include("scaling/scaling.jl")
 include("utils.jl")
 include("io.jl")
+include("convenience-constructors.jl")
 
 end # module

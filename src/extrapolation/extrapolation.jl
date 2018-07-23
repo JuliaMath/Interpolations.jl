@@ -63,6 +63,11 @@ end
     getindex_impl(etp, xs...)
 end
 
+function (etp::Extrapolation{T,N,ITPT,IT,GT,ET})(args...) where {T,N,ITPT,IT,GT,ET}
+    # support function calls
+    etp[args...]
+end
+
 checkbounds(::AbstractExtrapolation,I...) = nothing
 
 

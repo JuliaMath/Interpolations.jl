@@ -45,6 +45,10 @@ end
 
 getindex(sitp::ScaledInterpolation{T,1}, x::Number, y::Int) where {T} = y == 1 ? sitp[x] : throw(BoundsError())
 
+function (sitp::ScaledInterpolation{T,N,ITPT,IT})(args...) where {T,N,ITPT,IT<:DimSpec}
+    sitp[args...]
+end
+
 size(sitp::ScaledInterpolation, d) = size(sitp.itp, d)
 lbound(sitp::ScaledInterpolation{T,N,ITPT,IT,OnGrid}, d) where {T,N,ITPT,IT} = 1 <= d <= N ? sitp.ranges[d][1] : throw(BoundsError())
 lbound(sitp::ScaledInterpolation{T,N,ITPT,IT,OnCell}, d) where {T,N,ITPT,IT} = 1 <= d <= N ? sitp.ranges[d][1] - boundstep(sitp.ranges[d]) : throw(BoundsError())
