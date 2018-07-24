@@ -23,13 +23,13 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         interp_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs), Interpolations.Throw()) # using full constructor
 
         @test typeof(interp) == typeof(interp_full)
-        @test interp[XMIN] ≈ f(XMIN)
-        @test interp[XMAX] ≈ f(XMAX)
-        @test interp[XMIN + ΔX] ≈ f(XMIN + ΔX)
-        @test interp[XMAX - ΔX] ≈ f(XMAX - ΔX)
-        @test interp[XMIN + ΔX / 2] ≈ f(XMIN + ΔX / 2) atol=.1
-        @test_throws BoundsError interp[XMIN - ΔX / 2]
-        @test_throws BoundsError interp[XMAX + ΔX / 2]
+        @test interp(XMIN) ≈ f(XMIN)
+        @test interp(XMAX) ≈ f(XMAX)
+        @test interp(XMIN + ΔX) ≈ f(XMIN + ΔX)
+        @test interp(XMAX - ΔX) ≈ f(XMAX - ΔX)
+        @test interp(XMIN + ΔX / 2) ≈ f(XMIN + ΔX / 2) atol=.1
+        @test_throws BoundsError interp(XMIN - ΔX / 2)
+        @test_throws BoundsError interp(XMAX + ΔX / 2)
     end
 
     @testset "1d-regular-grids-cubic" begin
@@ -40,13 +40,13 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line())), OnGrid()), xs), Interpolations.Throw())
 
         @test typeof(interp) == typeof(interp_full)
-        @test interp[XMIN] ≈ f(XMIN)
-        @test interp[XMAX] ≈ f(XMAX)
-        @test interp[XMIN + ΔX] ≈ f(XMIN + ΔX)
-        @test interp[XMAX - ΔX] ≈ f(XMAX - ΔX)
-        @test interp[XMIN + ΔX / 2] ≈ f(XMIN + ΔX / 2) atol=.1
-        @test_throws BoundsError interp[XMIN - ΔX / 2]
-        @test_throws BoundsError interp[XMAX + ΔX / 2]
+        @test interp(XMIN) ≈ f(XMIN)
+        @test interp(XMAX) ≈ f(XMAX)
+        @test interp(XMIN + ΔX) ≈ f(XMIN + ΔX)
+        @test interp(XMAX - ΔX) ≈ f(XMAX - ΔX)
+        @test interp(XMIN + ΔX / 2) ≈ f(XMIN + ΔX / 2) atol=.1
+        @test_throws BoundsError interp(XMIN - ΔX / 2)
+        @test_throws BoundsError interp(XMAX + ΔX / 2)
     end
 
     @testset "1d-irregular-grids" begin
@@ -59,12 +59,12 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         interp_full = extrapolate(interpolate((xs, ), A, Gridded(Linear())), Interpolations.Throw())
 
         @test typeof(interp) == typeof(interp_full)
-        @test interp[xmin] ≈ f(xmin)
-        @test interp[xmax] ≈ f(xmax)
-        @test interp[xs[2]] ≈ f(xs[2])
-        @test interp[xmin + ΔX / 2] ≈ f(xmin + ΔX / 2) atol=.1
-        @test_throws BoundsError interp[xmin - ΔX / 2]
-        @test_throws BoundsError interp[xmax + ΔX / 2]
+        @test interp(xmin) ≈ f(xmin)
+        @test interp(xmax) ≈ f(xmax)
+        @test interp(xs[2]) ≈ f(xs[2])
+        @test interp(xmin + ΔX / 2) ≈ f(xmin + ΔX / 2) atol=.1
+        @test_throws BoundsError interp(xmin - ΔX / 2)
+        @test_throws BoundsError interp(xmax + ΔX / 2)
     end
 
     @testset "1d-handling-extrapolation" begin
@@ -80,8 +80,8 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs), Interpolations.Linear())
 
         @test typeof(extrap) == typeof(extrap_full)
-        @test extrap[x_lower] ≈ A[1] - ΔA_l
-        @test extrap[x_higher] ≈ A[end] + ΔA_h
+        @test extrap(x_lower) ≈ A[1] - ΔA_l
+        @test extrap(x_higher) ≈ A[end] + ΔA_h
     end
 end
 
@@ -95,18 +95,18 @@ end
         interp_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs, ys), Interpolations.Throw())
 
         @test typeof(interp) == typeof(interp_full)
-        @test interp[XMIN,YMIN] ≈ f(XMIN,YMIN)
-        @test interp[XMIN,YMAX] ≈ f(XMIN,YMAX)
-        @test interp[XMAX,YMIN] ≈ f(XMAX,YMIN)
-        @test interp[XMAX,YMAX] ≈ f(XMAX,YMAX)
-        @test interp[XMIN + ΔX,YMIN] ≈ f(XMIN + ΔX,YMIN)
-        @test interp[XMIN,YMIN + ΔY] ≈ f(XMIN,YMIN + ΔY)
-        @test interp[XMIN + ΔX,YMIN + ΔY] ≈ f(XMIN + ΔX,YMIN + ΔY)
-        @test interp[XMIN + ΔX / 2,YMIN + ΔY / 2] ≈ f(XMIN + ΔX / 2,YMIN + ΔY / 2) atol=.1
-        @test_throws BoundsError interp[XMIN - ΔX / 2,YMIN - ΔY / 2]
-        @test_throws BoundsError interp[XMIN - ΔX / 2,YMIN + ΔY / 2]
-        @test_throws BoundsError interp[XMIN + ΔX / 2,YMIN - ΔY / 2]
-        @test_throws BoundsError interp[XMAX + ΔX / 2,YMAX + ΔY / 2]
+        @test interp(XMIN,YMIN) ≈ f(XMIN,YMIN)
+        @test interp(XMIN,YMAX) ≈ f(XMIN,YMAX)
+        @test interp(XMAX,YMIN) ≈ f(XMAX,YMIN)
+        @test interp(XMAX,YMAX) ≈ f(XMAX,YMAX)
+        @test interp(XMIN + ΔX,YMIN) ≈ f(XMIN + ΔX,YMIN)
+        @test interp(XMIN,YMIN + ΔY) ≈ f(XMIN,YMIN + ΔY)
+        @test interp(XMIN + ΔX,YMIN + ΔY) ≈ f(XMIN + ΔX,YMIN + ΔY)
+        @test interp(XMIN + ΔX / 2,YMIN + ΔY / 2) ≈ f(XMIN + ΔX / 2,YMIN + ΔY / 2) atol=.1
+        @test_throws BoundsError interp(XMIN - ΔX / 2,YMIN - ΔY / 2)
+        @test_throws BoundsError interp(XMIN - ΔX / 2,YMIN + ΔY / 2)
+        @test_throws BoundsError interp(XMIN + ΔX / 2,YMIN - ΔY / 2)
+        @test_throws BoundsError interp(XMAX + ΔX / 2,YMAX + ΔY / 2)
     end
 
     @testset "2d-regular-grids-cubic" begin
@@ -118,18 +118,18 @@ end
         interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line())), OnGrid()), xs, ys), Interpolations.Throw())
 
         @test typeof(interp) == typeof(interp_full)
-        @test interp[XMIN,YMIN] ≈ f(XMIN,YMIN)
-        @test interp[XMIN,YMAX] ≈ f(XMIN,YMAX)
-        @test interp[XMAX,YMIN] ≈ f(XMAX,YMIN)
-        @test interp[XMAX,YMAX] ≈ f(XMAX,YMAX)
-        @test interp[XMIN + ΔX,YMIN] ≈ f(XMIN + ΔX,YMIN)
-        @test interp[XMIN,YMIN + ΔY] ≈ f(XMIN,YMIN + ΔY)
-        @test interp[XMIN + ΔX,YMIN + ΔY] ≈ f(XMIN + ΔX,YMIN + ΔY)
-        @test interp[XMIN + ΔX / 2,YMIN + ΔY / 2] ≈ f(XMIN + ΔX / 2,YMIN + ΔY / 2) atol=.1
-        @test_throws BoundsError interp[XMIN - ΔX / 2,YMIN - ΔY / 2]
-        @test_throws BoundsError interp[XMIN - ΔX / 2,YMIN + ΔY / 2]
-        @test_throws BoundsError interp[XMIN + ΔX / 2,YMIN - ΔY / 2]
-        @test_throws BoundsError interp[XMAX + ΔX / 2,YMAX + ΔY / 2]
+        @test interp(XMIN,YMIN) ≈ f(XMIN,YMIN)
+        @test interp(XMIN,YMAX) ≈ f(XMIN,YMAX)
+        @test interp(XMAX,YMIN) ≈ f(XMAX,YMIN)
+        @test interp(XMAX,YMAX) ≈ f(XMAX,YMAX)
+        @test interp(XMIN + ΔX,YMIN) ≈ f(XMIN + ΔX,YMIN)
+        @test interp(XMIN,YMIN + ΔY) ≈ f(XMIN,YMIN + ΔY)
+        @test interp(XMIN + ΔX,YMIN + ΔY) ≈ f(XMIN + ΔX,YMIN + ΔY)
+        @test interp(XMIN + ΔX / 2,YMIN + ΔY / 2) ≈ f(XMIN + ΔX / 2,YMIN + ΔY / 2) atol=.1
+        @test_throws BoundsError interp(XMIN - ΔX / 2,YMIN - ΔY / 2)
+        @test_throws BoundsError interp(XMIN - ΔX / 2,YMIN + ΔY / 2)
+        @test_throws BoundsError interp(XMIN + ΔX / 2,YMIN - ΔY / 2)
+        @test_throws BoundsError interp(XMAX + ΔX / 2,YMAX + ΔY / 2)
     end
 
     @testset "2d-irregular-grids" begin
@@ -145,18 +145,18 @@ end
         interp_full = extrapolate(interpolate((xs, ys), A, Gridded(Linear())), Interpolations.Throw())
 
         @test typeof(interp) == typeof(interp_full)
-        @test interp[xmin,ymin] ≈ f(xmin,ymin)
-        @test interp[xmin,ymax] ≈ f(xmin,ymax)
-        @test interp[xmax,ymin] ≈ f(xmax,ymin)
-        @test interp[xmax,ymax] ≈ f(xmax,ymax)
-        @test interp[xs[2],ymin] ≈ f(xs[2],ymin)
-        @test interp[xmin,ys[2]] ≈ f(xmin,ys[2])
-        @test interp[xs[2],ys[2]] ≈ f(xs[2],ys[2])
-        @test interp[xmin + ΔX / 2,ymin + ΔY / 2] ≈ f(xmin + ΔX / 2,ymin + ΔY / 2) atol=.1
-        @test_throws BoundsError interp[xmin - ΔX / 2,ymin - ΔY / 2]
-        @test_throws BoundsError interp[xmin - ΔX / 2,ymin + ΔY / 2]
-        @test_throws BoundsError interp[xmin + ΔX / 2,ymin - ΔY / 2]
-        @test_throws BoundsError interp[xmax + ΔX / 2,ymax + ΔY / 2]
+        @test interp(xmin,ymin) ≈ f(xmin,ymin)
+        @test interp(xmin,ymax) ≈ f(xmin,ymax)
+        @test interp(xmax,ymin) ≈ f(xmax,ymin)
+        @test interp(xmax,ymax) ≈ f(xmax,ymax)
+        @test interp(xs[2],ymin) ≈ f(xs[2],ymin)
+        @test interp(xmin,ys[2]) ≈ f(xmin,ys[2])
+        @test interp(xs[2],ys[2]) ≈ f(xs[2],ys[2])
+        @test interp(xmin + ΔX / 2,ymin + ΔY / 2) ≈ f(xmin + ΔX / 2,ymin + ΔY / 2) atol=.1
+        @test_throws BoundsError interp(xmin - ΔX / 2,ymin - ΔY / 2)
+        @test_throws BoundsError interp(xmin - ΔX / 2,ymin + ΔY / 2)
+        @test_throws BoundsError interp(xmin + ΔX / 2,ymin - ΔY / 2)
+        @test_throws BoundsError interp(xmax + ΔX / 2,ymax + ΔY / 2)
     end
 
     @testset "2d-handling-extrapolation" begin
@@ -175,8 +175,8 @@ end
         extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs, ys), (Interpolations.Linear(), Interpolations.Flat()))
 
         @test typeof(extrap) == typeof(extrap_full)
-        @test extrap[x_lower, y_lower] ≈ A[1, 1] - ΔA_l
-        @test extrap[x_higher, y_higher] ≈ A[end, end] + ΔA_h
+        @test extrap(x_lower, y_lower) ≈ A[1, 1] - ΔA_l
+        @test extrap(x_higher, y_higher) ≈ A[end, end] + ΔA_h
     end
 end
 
