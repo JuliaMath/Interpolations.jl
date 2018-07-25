@@ -24,7 +24,7 @@ function _A_ldiv_B_md!(dest, F::LU{T,Tridiagonal{T}}, src,  R1::CartesianRange{C
     dl = F.factors.dl
     d  = F.factors.d
     du = F.factors.du
-    dinv = 1./F.factors.d  # might not want to do this for small R2
+    dinv = 1 ./ F.factors.d  # might not want to do this for small R2
     @inbounds for I2 in R2
         # Forward substitution
         dest[1, I2] = src[1, I2] + b[1]
@@ -46,7 +46,7 @@ function _A_ldiv_B_md!(dest, F::LU{T,Tridiagonal{T}}, src, R1, R2, b) where T
     dl = F.factors.dl
     d  = F.factors.d
     du = F.factors.du
-    dinv = 1./d  # might not want to do this for small R1 and R2
+    dinv = 1 ./ d  # might not want to do this for small R1 and R2
     # Forward substitution
     @inbounds for I2 in R2
         @simd for I1 in R1

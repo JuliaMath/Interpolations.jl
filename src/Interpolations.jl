@@ -45,8 +45,8 @@ import Base: convert, size, indices, getindex, gradient, promote_rule,
              ndims, eltype, checkbounds
 
 # Julia v0.5 compatibility
-if isdefined(:scaling) import Base.scaling end
-if isdefined(:scale) import Base.scale end
+if isdefined(Base, :scaling) import Base.scaling end
+if isdefined(Base, :scale) import Base.scale end
 if !isdefined(Base, :oneunit)
     const oneunit = one
 end

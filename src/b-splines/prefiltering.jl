@@ -17,20 +17,20 @@ function copy_with_padding(::Type{TC}, A, ::Type{IT}) where {TC,IT<:DimSpec{Inte
     Pad = padding(IT)
     indsA = indices(A)
     indscp, indspad = padded_index(indsA, Pad)
-    coefs = similar(dims->Array{TC}(dims), indspad)
+    coefs = similar(dims->Array{TC}(undef, dims), indspad)
     if indspad == indsA
-        coefs = copy!(coefs, A)
+        coefs = copyto!(coefs, A)
     else
         fill!(coefs, zero(TC))
-        copy!(coefs, CartesianRange(indscp), A, CartesianRange(indsA))
+        copyto!(coefs, CartesianRange(indscp), A, CartesianRange(indsA))
     end
     coefs, Pad
 end
 
 prefilter!(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) where {TWeights, IT<:BSpline, GT<:GridType} = A
 function prefilter(::Type{TWeights}, ::Type{TC}, A, ::Type{IT}, ::Type{GT}) where {TWeights, TC, IT<:BSpline, GT<:GridType}
-    coefs = similar(dims->Array{TC}(dims), indices(A))
-    prefilter!(TWeights, copy!(coefs, A), IT, GT), Val{0}()
+    coefs = similar(dims->Array{TC}(undef, dims), indices(A))
+    prefilter!(TWeights, copyto!(coefs, A), IT, GT), Val{0}()
 end
 
 function prefilter(
