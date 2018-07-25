@@ -24,7 +24,15 @@ function hessian_coefficients(::Type{IT}, N, dim1, dim2) where IT<:DimSpec{BSpli
     Expr(:block, exs...)
 end
 
-index_gen(::Type{IT}, N::Integer, offsets...) where {IT} = index_gen(iextract(IT, min(length(offsets)+1, N)), IT, N, offsets...)
+function index_gen(::Type{IT}, N::Integer, offsets...) where {IT}
+    idx = index_gen(iextract(IT, min(length(offsets)+1, N)), IT, N, offsets...)
+    if VERSION >= v"0.7-"
+        # avoid an inference bug
+        convert(Union{Expr,Symbol},idx)
+    else
+        idx
+    end
+end
 
 function getindex_impl(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}) where {T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}
     meta = Expr(:meta, :inline)
