@@ -22,6 +22,16 @@ function index_gen(::Type{NoInterp}, ::Type{IT}, N::Integer, offsets...) where I
     end
 end
 
+# FIXME: needed due to a Julia inference bug (in julia 0.7)
+function index_gen(::Type{NoInterp}, ::Type{NoInterp}, N::Integer, offsets...)
+    if (length(offsets) < N)
+        return :($(index_gen(NoInterp, NoInterp, N, offsets..., 0)))
+    else
+        indices = [offsetsym(offsets[d], d) for d = 1:N]
+        return :(itp.coefs[$(indices...)])
+    end
+end
+
 padding(::Type{NoInterp}) = Val{0}()
 
 # How many non-NoInterp dimensions are there?

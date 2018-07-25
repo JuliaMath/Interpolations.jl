@@ -1,6 +1,6 @@
 module IOTests
 
-using Base.Test
+using Compat.Test
 using Interpolations
 
 SPACE = " "

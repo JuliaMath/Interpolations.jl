@@ -1,6 +1,10 @@
 export ScaledInterpolation, eachvalue
 
-import Base: done, next, start
+@static if VERSION < v"0.7.0-DEV.5126"
+    import Base: done, next, start
+else
+    import Base: iterate
+end
 
 struct ScaledInterpolation{T,N,ITPT,IT,GT,RT} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
     itp::ITPT
@@ -24,7 +28,7 @@ The parameters `xs` etc must be either ranges or linspaces, and there must be on
 
 For every `NoInterp` dimension of the interpolation object, the range must be exactly `1:size(itp, d)`.
 """
-function scale(itp::AbstractInterpolation{T,N,IT,GT}, ranges::Range...) where {T,N,IT,GT}
+function scale(itp::AbstractInterpolation{T,N,IT,GT}, ranges::AbstractRange...) where {T,N,IT,GT}
     length(ranges) == N || throw(ArgumentError("Must scale $N-dimensional interpolation object with exactly $N ranges (you used $(length(ranges)))"))
     for d in 1:N
         if iextract(IT,d) != NoInterp
@@ -74,10 +78,10 @@ This function is used to calculate the upper and lower bounds of `OnCell` interp
 """ boundstep
 
 coordlookup(r::UnitRange, x) = x - r.start + oneunit(eltype(r))
-coordlookup(i::Bool, r::Range, x) = i ? coordlookup(r, x) : convert(typeof(coordlookup(r,x)), x)
+coordlookup(i::Bool, r::AbstractRange, x) = i ? coordlookup(r, x) : convert(typeof(coordlookup(r,x)), x)
 coordlookup(r::StepRange, x) = (x - r.start) / r.step + oneunit(eltype(r))
 
-@static if isdefined(:StepRangeLen)
+@static if isdefined(Base, :StepRangeLen)
     coordlookup(r::StepRangeLen, x) = (x - first(r)) / step(r) + oneunit(eltype(r))
     boundstep(r::StepRangeLen) = 0.5*step(r)
     rescale_gradient(r::StepRangeLen, g) = g / step(r)
@@ -89,9 +93,9 @@ basetype(sitp::ScaledInterpolation) = basetype(typeof(sitp))
 # @eval uglyness required for disambiguation with method in b-splies/indexing.jl
 # also, GT is only specified to avoid disambiguation warnings on julia 0.4
 gradient(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs::Real...) where {T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} =
-        gradient!(Array{T}(count_interp_dims(IT,N)), sitp, xs...)
+        gradient!(Array{T}(undef, count_interp_dims(IT,N)), sitp, xs...)
 gradient(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs...) where {T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} =
-        gradient!(Array{T}(count_interp_dims(IT,N)), sitp, xs...)
+        gradient!(Array{T}(undef, count_interp_dims(IT,N)), sitp, xs...)
 @generated function gradient!(g, sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...) where {T,N,ITPT,IT}
     ndims(g) == 1 || throw(DimensionMismatch("g must be a vector (but had $(ndims(g)) dimensions)"))
     length(xs) == N || throw(DimensionMismatch("Must index into $N-dimensional scaled interpolation object with exactly $N indices (you used $(length(xs)))"))
@@ -118,24 +122,15 @@ end
 rescale_gradient(r::StepRange, g) = g / r.step
 rescale_gradient(r::UnitRange, g) = g
 
-@static if isdefined(Base, :FloatRange) && VERSION < v"0.6.0-dev.2376"
-    rescale_gradient(r::LinSpace, g) = g * r.divisor / (r.stop - r.start)
-    rescale_gradient(r::FloatRange, g) = g * r.divisor / r.step
-    coordlookup(r::LinSpace, x) = (r.divisor * x + r.stop - r.len * r.start) / (r.stop - r.start)
-    coordlookup(r::FloatRange, x) = (r.divisor * x - r.start) / r.step + oneunit(eltype(r))
-    boundstep(r::LinSpace) = ((r.stop - r.start) / r.divisor) / 2
-    boundstep(r::FloatRange) = r.step / 2
-end
-
 """
-`rescale_gradient(r::Range)`
+`rescale_gradient(r::AbstractRange)`
 
 Implements the chain rule dy/dx = dy/du * du/dx for use when calculating gradients with scaled interpolation objects.
 """ rescale_gradient
 
 
 ### Iteration
-mutable struct ScaledIterator{CR<:CartesianRange,SITPT,X1,Deg,T}
+mutable struct ScaledIterator{CR<:CartesianIndices,SITPT,X1,Deg,T}
     rng::CR
     sitp::SITPT
     dx_1::X1
@@ -176,7 +171,7 @@ which should be more efficient than
 
 ```
     function bar!(dest, sitp)
-        for I in CartesianRange(size(dest))
+        for I in CartesianIndices(size(dest))
             dest[I] = sitp[I]
         end
         dest
@@ -190,11 +185,13 @@ function eachvalue(sitp::ScaledInterpolation{T,N}) where {T,N}
     BT = bsplinetype(iextract(IT, 1))
     itp_tail = eachvalue_zero(R, BT)
     dx_1 = coordlookup(sitp.ranges[1], 2) - coordlookup(sitp.ranges[1], 1)
-    ScaledIterator(CartesianRange(ssize(sitp)), sitp, dx_1, 0, zero(dx_1), itp_tail)
+    ScaledIterator(CartesianIndices(ssize(sitp)), sitp, dx_1, 0, zero(dx_1), itp_tail)
 end
 
-@inline start(iter::ScaledIterator) = start(iter.rng)
-@inline done(iter::ScaledIterator, state) = done(iter.rng, state)
+@static if VERSION < v"0.7.0-DEV.5126"
+    @inline start(iter::ScaledIterator) = start(iter.rng)
+    @inline done(iter::ScaledIterator, state) = done(iter.rng, state)
+end
 
 function index_gen1(::Union{Type{NoInterp}, Type{BSpline{Constant}}})
     quote
@@ -267,7 +264,7 @@ function next_gen(::Type{ScaledIterator{CR,SITPT,X1,Deg,T}}) where {CR,SITPT,X1,
     quote
         sitp = iter.sitp
         itp = sitp.itp
-        inds_itp = indices(itp)
+        inds_itp = axes(itp)
         if iter.nremaining > 0
             iter.nremaining -= 1
             iter.fx_1 += iter.dx_1
@@ -288,11 +285,24 @@ function next_gen(::Type{ScaledIterator{CR,SITPT,X1,Deg,T}}) where {CR,SITPT,X1,
     end
 end
 
-@generated function next(iter::ScaledIterator{CR,ITPT}, state::CartesianIndex{N}) where {CR,ITPT,N}
-    value_expr = next_gen(iter)
-    quote
-        $value_expr
-        (value, next(iter.rng, state)[2])
+@static if VERSION < v"0.7.0-DEV.5126"
+    @generated function next(iter::ScaledIterator{CR,ITPT}, state::CartesianIndex{N}) where {CR,ITPT,N}
+        value_expr = next_gen(iter)
+        quote
+            $value_expr
+            (value, next(iter.rng, state)[2])
+        end
+    end
+else
+    @generated function iterate(iter::ScaledIterator{CR,ITPT}, state::Union{Nothing,CartesianIndex{N}} = nothing) where {CR,ITPT,N}
+        value_expr = next_gen(iter)
+        quote
+            rng_next = state ≡ nothing ? iterate(iter.rng) : iterate(iter.rng, state)
+            rng_next ≡ nothing && return nothing
+            state = rng_next[2]
+            $value_expr
+            (value, state)
+        end
     end
 end
 

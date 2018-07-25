@@ -1,6 +1,6 @@
 module CubicTests
 
-using Base.Test
+using Compat.Test
 using Interpolations
 
 for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
@@ -55,7 +55,8 @@ end
 
 module CubicGradientTests
 
-using Interpolations, Base.Test
+using Interpolations, Compat.Test, Compat.LinearAlgebra
+using Compat: range
 
 ix = 1:15
 f(x) = cos((x-1)*2pi/(length(ix)-1))
@@ -69,7 +70,7 @@ for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
 
         itp = constructor(copier(A), BSpline(Cubic(BC())), GT())
         # test that inner region is close to data
-        for x in linspace(ix[5],ix[end-4],100)
+        for x in range(ix[5], stop=ix[end-4], length=100)
             @test ≈(g(x),(gradient(itp,x))[1],atol=cbrt(cbrt(eps(g(x)))))
         end
     end

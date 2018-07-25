@@ -1,6 +1,6 @@
 module ReadmeExampleTests
-# verify examples from README.md run 
-using Interpolations, Base.Test
+# verify examples from README.md run
+using Interpolations, Compat.Test
 
 ## Bsplines
 a = randn(5)

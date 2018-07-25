@@ -1,7 +1,7 @@
 module ScalingFunctionCallTests
 
-using Interpolations
-using Base.Test
+using Interpolations, Compat, Compat.Test
+using Compat: range
 
 # Model linear interpolation of y = -3 + .5x by interpolating y=x
 # and then scaling to the new x range
@@ -38,9 +38,27 @@ knots = map(d->1:10:21, 1:3)
 sitp = @inferred scale(itp, knots...)
 
 iter = @inferred(eachvalue(sitp))
-state = @inferred(start(iter))
-@test !(@inferred(done(iter, state)))
-val, state = @inferred(next(iter, state))
+
+@static if VERSION < v"0.7.0-DEV.5126"
+    state = @inferred(start(iter))
+    @test !(@inferred(done(iter, state)))
+    val, state = @inferred(next(iter, state))
+else
+    iter_next = iterate(iter)
+    @test iter_next isa Tuple
+    @test iter_next[1] isa Float64
+    state = iter_next[2]
+    inferred_next = Base.return_types(iterate, (typeof(iter),))
+    @test length(inferred_next) == 1
+    @test inferred_next[1] == Union{Nothing,Tuple{Float64,typeof(state)}}
+    iter_next = iterate(iter, state)
+    @test iter_next isa Tuple
+    @test iter_next[1] isa Float64
+    inferred_next = Base.return_types(iterate, (typeof(iter),typeof(state)))
+    state = iter_next[2]
+    @test length(inferred_next) == 1
+    @test inferred_next[1] == Union{Nothing,Tuple{Float64,typeof(state)}}
+end
 
 function foo!(dest, sitp)
     i = 0
@@ -50,12 +68,12 @@ function foo!(dest, sitp)
     dest
 end
 function bar!(dest, sitp)
-    for I in CartesianRange(size(dest))
+    for I in CartesianIndices(size(dest))
         dest[I] = sitp(I)
     end
     dest
 end
-rfoo = Array{Float64}( Interpolations.ssize(sitp))
+rfoo = Array{Float64}(undef, Interpolations.ssize(sitp))
 rbar = similar(rfoo)
 foo!(rfoo, sitp)
 bar!(rbar, sitp)
@@ -63,7 +81,7 @@ bar!(rbar, sitp)
 
 # with extrapolation
 END = 10
-xs = linspace(-5, 5, END)
+xs = range(-5, stop=5, length=END)
 ys = map(sin, xs)
 
 function run_tests(sut::Interpolations.AbstractInterpolation{T,N,IT,OnGrid}, itp) where {T,N,IT}
@@ -84,17 +102,17 @@ function run_tests(sut::Interpolations.AbstractInterpolation{T,N,IT,OnCell}, itp
 end
 
 for GT in (OnGrid, OnCell)
-    itp = interpolate(ys, BSpline(Quadratic(Flat())), GT())
+    itp3 = interpolate(ys, BSpline(Quadratic(Flat())), GT())
 
     # Test extrapolating, then scaling
-    eitp = extrapolate(itp, Flat())
+    eitp = extrapolate(itp3, Flat())
     seitp = scale(eitp, xs)
-    run_tests(seitp, itp)
+    run_tests(seitp, itp3)
 
     # Test scaling, then extrapolating
-    sitp = scale(itp, xs)
-    esitp = extrapolate(sitp, Flat())
-    run_tests(esitp, itp)
+    sitp3 = scale(itp3, xs)
+    esitp = extrapolate(sitp3, Flat())
+    run_tests(esitp, itp3)
 end
 
 end

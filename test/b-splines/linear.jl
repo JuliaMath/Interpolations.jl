@@ -1,7 +1,7 @@
 module LinearTests
 
 using Interpolations
-using Base.Test
+using Compat.Test
 
 xmax = 10
 g1(x) = sin((x-3)*2pi/(xmax-1)-1)

@@ -1,6 +1,6 @@
 module ExtrapFunctionCallSyntax
 
-using Base.Test, Interpolations, DualNumbers
+using Compat.Test, Interpolations, DualNumbers
 
 # Test if extrapolation by function syntax yields identical results
 f(x) = sin((x-3)*2pi/9 - 1)

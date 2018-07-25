@@ -1,6 +1,6 @@
 module ExtrapTypeStability
 
-using Base.Test, Interpolations, DualNumbers
+using Compat.Test, Interpolations, DualNumbers
 
 # Test type-stability of 1-dimensional extrapolation
 f(x) = sin((x-3)*2pi/9 - 1)
@@ -53,8 +53,8 @@ end
 A = [1 2; 3 4]
 Af = Float64.(A)
 for B in (A, Af)
-    itpg = interpolate(B, BSpline(Linear()), OnGrid())
-    etp = extrapolate(itpg, NaN)
+    itpg2 = interpolate(B, BSpline(Linear()), OnGrid())
+    etp = extrapolate(itpg2, NaN)
     @test typeof(@inferred(getindex(etp, dual(1.5,1), dual(1.5,1)))) ==
           typeof(@inferred(getindex(etp, dual(6.5,1), dual(3.5,1))))
 end

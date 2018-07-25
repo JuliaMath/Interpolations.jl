@@ -1,6 +1,6 @@
 module TypeInstantiationTests
 
-using Interpolations, Base.Test
+using Interpolations, Compat.Test
 
 # NO DIMSPECS
 # tests that we forward types correctly to the instance constructors

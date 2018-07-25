@@ -142,6 +142,18 @@ function index_gen(::Type{BSpline{Q}}, ::Type{IT}, N::Integer, offsets...) where
     end
 end
 
+function index_gen(::Type{BS}, ::Type{BS}, N::Integer, offsets...) where {BS<:BSpline{<:Quadratic}}
+    if length(offsets) < N
+        d = length(offsets)+1
+        symm, sym, symp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d)
+        return :($symm * $(index_gen(BS, BS, N, offsets...,-1)) + $sym * $(index_gen(BS, BS, N, offsets..., 0)) +
+                 $symp * $(index_gen(BS, BS, N, offsets..., 1)))
+    else
+        indices = [offsetsym(offsets[d], d) for d = 1:N]
+        return :(itp.coefs[$(indices...)])
+    end
+end
+
 padding(::Type{BSpline{Quadratic{BC}}}) where {BC<:Flag} = Val{1}()
 padding(::Type{BSpline{Quadratic{Periodic}}}) = Val{0}()
 
@@ -162,13 +174,13 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{BC}
     dl,d,du = inner_system_diags(T,n,Quadratic{BC})
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
-    lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TC, n)
+    lut!(dl, d, du), zeros(TC, n)
 end
 
 function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{InPlace}}, ::Type{OnCell}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,Quadratic{InPlace})
     d[1] = d[end] = convert(T, SimpleRatio(7,8))
-    lufact!(Tridiagonal(dl, d, du), Val{false}), zeros(TC, n)
+    lut!(dl, d, du), zeros(TC, n)
 end
 
 # InPlaceQ continues the quadratic at 2 all the way down to 1 (rather than 1.5)
@@ -183,7 +195,7 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{InP
     valspec[1,1] = valspec[2,2] = SimpleRatio(1,8)
     rowspec[1,1] = rowspec[n,2] = 1
     colspec[1,3] = colspec[2,n-2] = 1
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), rowspec, valspec, colspec), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), rowspec, valspec, colspec), zeros(TC, n)
 end
 
 """
@@ -202,7 +214,7 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{BC}
                                   (n, n-2, oneunit(T))
                                  )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -222,7 +234,7 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Lin
                                   (n, n-2, oneunit(T)),
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -243,7 +255,7 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Fre
                                     (n, n-2, 3),
                                     (n, n-3, -1))
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -262,5 +274,5 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, ::Type{Quadratic{Per
                                   (n, 1, dl[end])
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end

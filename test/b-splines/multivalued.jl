@@ -24,7 +24,7 @@ Base.promote_op(::typeof(*), ::Type{MyPair{T1}}, ::Type{T2}) where {T1,T2<:Numbe
 Base.promote_op(::typeof(*), ::Type{T1}, ::Type{MyPair{T2}}) where {T1<:Number,T2} = MyPair{promote_type(T1,T2)}
 
 # 1d
-A = reinterpret(MyPair{Float64}, rand(2, 10), (10,))
+A = reinterpret(MyPair{Float64}, rand(20))
 itp = interpolate(A, BSpline(Constant()), OnGrid())
 itp[3.2]
 itp = interpolate(A, BSpline(Linear()), OnGrid())
@@ -33,7 +33,7 @@ itp = interpolate(A, BSpline(Quadratic(Flat())), OnGrid())
 itp[3.2]
 
 # 2d
-A = reinterpret(MyPair{Float64}, rand(2, 10, 5), (10,5))
+A = reshape(reinterpret(MyPair{Float64}, rand(100)), (10,5))
 itp = interpolate(A, BSpline(Constant()), OnGrid())
 itp[3.2,1.8]
 itp = interpolate(A, BSpline(Linear()), OnGrid())

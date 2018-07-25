@@ -38,18 +38,19 @@ export
     # scaling/scaling.jl
 
 using Compat
-using Compat.LinearAlgebra
-using WoodburyMatrices, Ratios, AxisAlgorithms
+using Compat.LinearAlgebra, Compat.SparseArrays
+using WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
 
-import Base: convert, size, indices, getindex, gradient, promote_rule,
+import Base: convert, size, getindex, promote_rule,
              ndims, eltype, checkbounds
 
-# Julia v0.5 compatibility
-if isdefined(:scaling) import Base.scaling end
-if isdefined(:scale) import Base.scale end
-if !isdefined(Base, :oneunit)
-    const oneunit = one
+@static if VERSION < v"0.7.0-DEV.3449"
+    import Base: gradient
+else
+    import LinearAlgebra: gradient
 end
+
+import Compat: axes
 
 abstract type Flag end
 abstract type InterpolationType <: Flag end

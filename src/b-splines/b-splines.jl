@@ -18,8 +18,8 @@ struct BSplineInterpolation{T,N,TCoefs<:AbstractArray,IT<:DimSpec{BSpline},GT<:D
     coefs::TCoefs
 end
 function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, ::IT, ::GT, ::Val{pad}) where {N,Tel,TWeights<:Real,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},pad}
-    isleaftype(IT) || error("The b-spline type must be a leaf type (was $IT)")
-    isleaftype(typeof(A)) || warn("For performance reasons, consider using an array of a concrete type (typeof(A) == $(typeof(A)))")
+    isconcretetype(IT) || error("The b-spline type must be a leaf type (was $IT)")
+    isconcretetype(typeof(A)) || warn("For performance reasons, consider using an array of a concrete type (typeof(A) == $(typeof(A)))")
 
     c = zero(TWeights)
     for _ in 2:N
@@ -42,13 +42,13 @@ padextract(pad::Integer, d) = pad
 padextract(pad::Tuple{Vararg{Integer}}, d) = pad[d]
 
 lbound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnGrid}, d::Integer) where {T,N,TCoefs,IT} =
-    first(indices(itp, d))
+    first(axes(itp, d))
 ubound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnGrid}, d::Integer) where {T,N,TCoefs,IT} =
-    last(indices(itp, d))
+    last(axes(itp, d))
 lbound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d::Integer) where {T,N,TCoefs,IT} =
-    first(indices(itp, d)) - 0.5
+    first(axes(itp, d)) - 0.5
 ubound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d::Integer) where {T,N,TCoefs,IT} =
-    last(indices(itp, d))+0.5
+    last(axes(itp, d))+0.5
 
 lbound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnGrid}, d, inds) where {T,N,TCoefs,IT} =
     first(inds)
@@ -65,11 +65,11 @@ function size(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d) where {T,N,TCo
     d <= N ? size(itp.coefs, d) - 2*padextract(pad, d) : 1
 end
 
-@inline indices(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}) where {T,N,TCoefs,IT,GT,pad} =
-    indices_removepad.(indices(itp.coefs), pad)
+@inline axes(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}) where {T,N,TCoefs,IT,GT,pad} =
+    indices_removepad.(axes(itp.coefs), pad)
 
-function indices(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d) where {T,N,TCoefs,IT,GT,pad}
-    d <= N ? indices_removepad(indices(itp.coefs, d), padextract(pad, d)) : indices(itp.coefs, d)
+function axes(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d) where {T,N,TCoefs,IT,GT,pad}
+    d <= N ? indices_removepad(axes(itp.coefs, d), padextract(pad, d)) : axes(itp.coefs, d)
 end
 
 function interpolate(::Type{TWeights}, ::Type{TC}, A, it::IT, gt::GT) where {TWeights,TC,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
@@ -108,6 +108,12 @@ offsetsym(off, d) = off == -1 ? Symbol("ixm_", d) :
 @inline indices_addpad(inds::Base.OneTo, pad) = Base.OneTo(length(inds) + 2*pad)
 @inline indices_addpad(inds, pad) = oftype(inds, first(inds):last(inds) + 2*pad)
 @inline indices_interior(inds, pad) = first(inds)+pad:last(inds)-pad
+
+@static if VERSION < v"0.7.0-DEV.3449"
+    lut!(dl, d, du) = lufact!(Tridiagonal(dl, d, du), Val{false})
+else
+    lut!(dl, d, du) = lu!(Tridiagonal(dl, d, du), Val(false))
+end
 
 include("constant.jl")
 include("linear.jl")

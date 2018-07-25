@@ -1,9 +1,10 @@
 module MixedTests
 
-using Interpolations, Base.Test
+using Interpolations, Compat.Test
+using Compat: range
 
 A = rand(6,5)
-knots = (collect(linspace(1,size(A,1),size(A,1))),collect(linspace(1,size(A,2),size(A,2))))
+knots = (collect(range(1, stop=size(A,1), length=size(A,1))),collect(range(1, stop=size(A,2), length=size(A,2))))
 itp = @inferred(interpolate(knots, A, (Gridded(Linear()),NoInterp())))
 @inferred(getindex(itp, 2, 2))
 @inferred(getindex(itp, CartesianIndex((2,2))))

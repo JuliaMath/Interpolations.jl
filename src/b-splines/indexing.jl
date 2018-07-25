@@ -31,7 +31,7 @@ function getindex_impl(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}) wh
     quote
         $meta
         @nexprs $N d->(x_d = xs[d])
-        inds_itp = indices(itp)
+        inds_itp = axes(itp)
 
         # Calculate the indices of all coefficients that will be used
         # and define fx = x - xi in each dimension
@@ -60,7 +60,7 @@ function gradient_impl(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}) wh
     # For each component of the gradient, alternately calculate
     # coefficients and set component
     n = count_interp_dims(IT, N)
-    exs = Array{Expr, 1}(2n)
+    exs = Array{Expr, 1}(undef, 2n)
     cntr = 0
     for d = 1:N
         if count_interp_dims(iextract(IT, d), 1) > 0
@@ -74,7 +74,7 @@ function gradient_impl(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}) wh
         $meta
         length(g) == $n || throw(ArgumentError(string("The length of the provided gradient vector (", length(g), ") did not match the number of interpolating dimensions (", n, ")")))
         @nexprs $N d->(x_d = xs[d])
-        inds_itp = indices(itp)
+        inds_itp = axes(itp)
 
         # Calculate the indices of all coefficients that will be used
         # and define fx = x - xi in each dimension
@@ -115,7 +115,7 @@ for R in [:Real, :Any]
         xargs = [:(xs[$d]) for d in 1:length(xs)]
         quote
             Tg = $(Expr(:call, :promote_type, T, [x <: AbstractArray ? eltype(x) : x for x in xs]...))
-            gradient!(Array{Tg, 1}($n), itp, $(xargs...))
+            gradient!(Array{Tg, 1}(undef, $n), itp, $(xargs...))
         end
     end
 end
@@ -142,7 +142,7 @@ function hessian_impl(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}) whe
         $meta
         size(H) == ($n,$n) || throw(ArgumentError(string("The size of the provided Hessian matrix wasn't a square matrix of size ", size(H))))
         @nexprs $N d->(x_d = xs[d])
-        inds_itp = indices(itp)
+        inds_itp = axes(itp)
 
         $(define_indices(IT, N, Pad))
 
@@ -167,7 +167,7 @@ end
     xargs = [:(xs[$d]) for d in 1:length(xs)]
     quote
         TH = $(Expr(:call, :promote_type, T, [x <: AbstractArray ? eltype(x) : x for x in xs]...))
-        hessian!(Array{TH, 2}($n,$n), itp, $(xargs...))
+        hessian!(Array{TH, 2}(undef, $n,$n), itp, $(xargs...))
     end
 end
 

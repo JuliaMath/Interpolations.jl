@@ -1,6 +1,6 @@
 module ExtrapTests
 
-using Base.Test, DualNumbers
+using Compat.Test, DualNumbers
 using Interpolations
 
 
@@ -92,7 +92,7 @@ for E in [0,Flat(),Linear(),Periodic(),Reflect()]
 end
 
 # Issue #156
-F     = *(collect(1.:10.), collect(1:4)')
+F     = *(collect(1.0:10.0), collect(1:4)')
 itp   = interpolate(F, (BSpline(Linear()), NoInterp()), OnGrid());
 itps   = scale(itp, 1:10, 1:4)
 itpe   = extrapolate(itps, (Linear(), Interpolations.Throw()))

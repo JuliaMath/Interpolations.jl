@@ -1,6 +1,7 @@
 module ScalingNoInterpTests
 
-using Interpolations, Base.Test
+using Interpolations, Compat.Test, Compat.LinearAlgebra, Compat.Random
+using Compat: range
 
 xs = -pi:2pi/10:pi
 f1(x) = sin(x)
@@ -30,7 +31,7 @@ zb = copy(z0')
 itpa = interpolate(za, (BSpline(Linear()), NoInterp()), OnGrid())
 itpb = interpolate(zb, (NoInterp(), BSpline(Linear())), OnGrid())
 
-rng = linspace(1.0, 19.0, 10)
+rng = range(1.0, stop=19.0, length=10)
 sitpa = scale(itpa, rng, 1:10)
 sitpb = scale(itpb, 1:10, rng)
 @test gradient(sitpa, 3.0, 3) ==  gradient(sitpb, 3, 3.0)

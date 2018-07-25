@@ -1,6 +1,6 @@
 module GradientTests
 
-using Base.Test, Interpolations, DualNumbers
+using Compat, Compat.Test, Interpolations, DualNumbers, Compat.LinearAlgebra
 
 nx = 10
 f1(x) = sin((x-3)*2pi/(nx-1) - 1)
@@ -10,7 +10,7 @@ g1(x) = 2pi/(nx-1) * cos((x-3)*2pi/(nx-1) - 1)
 itp1 = interpolate(Float64[f1(x) for x in 1:nx-1],
             BSpline(Constant()), OnGrid())
 
-g = Array{Float64}( 1)
+g = Array{Float64}(undef, 1)
 
 for x in 1:nx
     @test gradient(itp1, x)[1] == 0
@@ -71,8 +71,8 @@ end
 c = 2.3
 a = 8.1
 o = 1.6
-qfunc = x -> a*(x-c).^2 + o
-dqfunc = x -> 2*a*(x-c)
+qfunc = x -> a*(x .- c).^2 .+ o
+dqfunc = x -> 2*a*(x .- c)
 xg = Float64[1:5;]
 y = qfunc(xg)
 
@@ -114,6 +114,7 @@ for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
     itp_d = interpolate(A2, (BSpline(Quadratic(BC())), NoInterp()), GT())
 
     for i = 1:10
+        global x, y
         x = rand()*(nx-2)+1.5
         y = rand()*(nx-2)+1.5
         xd = dual(x, 1)

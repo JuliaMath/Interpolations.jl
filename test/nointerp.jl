@@ -1,6 +1,6 @@
 module NoInterpTests
 println("Testing NoInterp...")
-using Interpolations, Base.Test
+using Interpolations, Compat.Test
 
 a = reshape(1:12, 3, 4)
 ai = interpolate(a, NoInterp(), OnGrid())

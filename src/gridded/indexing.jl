@@ -67,7 +67,7 @@ end
             @nexprs $N d->begin
                 xv_d = xv[d]
                 k_d = itp.knots[d]
-                ixv_d = Array{Int}( length(xv_d))  # ixv_d[i] is the smallest value such that k_d[ixv_d[i]] <= x_d[i]
+                ixv_d = Array{Int}(undef, length(xv_d))  # ixv_d[i] is the smallest value such that k_d[ixv_d[i]] <= x_d[i]
                 # If x_d is sorted and has quite a few entries, it's better to match
                 # entries of x_d and k_d by iterating through them both in unison.
                 l_d = length(k_d)   # FIXME: check l_d == 1 someday, see FIXME above
@@ -98,7 +98,7 @@ end
 end
 
 function getindex(itp::GriddedInterpolation{T,N,TCoefs,IT,K,P}, x...) where {T,N,TCoefs,IT<:DimSpec{Gridded},K,P}
-    dest = Array{T}( map(length, x))::Array{T,N}
+    dest = Array{T}(undef, map(length, x))::Array{T,N}
     getindex!(dest, itp, x...)
 end
 
@@ -107,7 +107,7 @@ function gradient_impl(itp::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}}) where
     # For each component of the gradient, alternately calculate
     # coefficients and set component
     n = count_interp_dims(IT, N)
-    exs = Array{Expr}( 2n)
+    exs = Array{Expr}(undef, 2n)
     cntr = 0
     for d = 1:N
         if count_interp_dims(iextract(IT, d), 1) > 0

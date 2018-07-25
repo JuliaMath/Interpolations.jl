@@ -1,6 +1,6 @@
 module ExtrapNon1
 
-using Base.Test, Interpolations, OffsetArrays
+using Compat.Test, Interpolations, OffsetArrays
 
 f(x) = sin((x-3)*2pi/9 - 1)
 xinds = -3:6

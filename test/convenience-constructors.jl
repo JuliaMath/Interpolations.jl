@@ -1,7 +1,7 @@
 ﻿module ConvenienceConstructorTests
 
 using Interpolations
-using Base.Test
+using Compat.Test
 using Base.Cartesian
 
 # unit test setup

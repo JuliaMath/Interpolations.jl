@@ -1,6 +1,6 @@
 module QuadraticTests
 
-using Interpolations, Base.Test
+using Interpolations, Compat.Test
 
 for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
     f(x) = sin((x-3)*2pi/9 - 1)
