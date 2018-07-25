@@ -77,7 +77,7 @@ coordlookup(r::UnitRange, x) = x - r.start + oneunit(eltype(r))
 coordlookup(i::Bool, r::Range, x) = i ? coordlookup(r, x) : convert(typeof(coordlookup(r,x)), x)
 coordlookup(r::StepRange, x) = (x - r.start) / r.step + oneunit(eltype(r))
 
-@static if isdefined(:StepRangeLen)
+@static if isdefined(Base, :StepRangeLen)
     coordlookup(r::StepRangeLen, x) = (x - first(r)) / step(r) + oneunit(eltype(r))
     boundstep(r::StepRangeLen) = 0.5*step(r)
     rescale_gradient(r::StepRangeLen, g) = g / step(r)
