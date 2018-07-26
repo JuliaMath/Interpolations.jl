@@ -51,15 +51,3 @@ function index_gen(::Type{BSpline{Constant}}, ::Type{IT}, N::Integer, offsets...
         return :(itp.coefs[$(indices...)])
     end
 end
-
-# FIXME: needed due to a Julia inference bug (in julia 0.7)
-function index_gen(::Type{BSpline{Constant}}, ::Type{BSpline{Constant}}, N::Integer, offsets...)
-    if (length(offsets) < N)
-        d = length(offsets)+1
-        sym = Symbol("c_", d)
-        return :($sym * $(index_gen(BSpline{Constant}, BSpline{Constant}, N, offsets..., 0)))
-    else
-        indices = [offsetsym(offsets[d], d) for d = 1:N]
-        return :(itp.coefs[$(indices...)])
-    end
-end

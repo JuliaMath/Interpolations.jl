@@ -142,18 +142,6 @@ function index_gen(::Type{BSpline{Q}}, ::Type{IT}, N::Integer, offsets...) where
     end
 end
 
-function index_gen(::Type{BS}, ::Type{BS}, N::Integer, offsets...) where {BS<:BSpline{<:Quadratic}}
-    if length(offsets) < N
-        d = length(offsets)+1
-        symm, sym, symp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d)
-        return :($symm * $(index_gen(BS, BS, N, offsets...,-1)) + $sym * $(index_gen(BS, BS, N, offsets..., 0)) +
-                 $symp * $(index_gen(BS, BS, N, offsets..., 1)))
-    else
-        indices = [offsetsym(offsets[d], d) for d = 1:N]
-        return :(itp.coefs[$(indices...)])
-    end
-end
-
 padding(::Type{BSpline{Quadratic{BC}}}) where {BC<:Flag} = Val{1}()
 padding(::Type{BSpline{Quadratic{Periodic}}}) = Val{0}()
 

@@ -159,19 +159,6 @@ function index_gen(::Type{BSpline{C}}, ::Type{IT}, N::Integer, offsets...) where
     end
 end
 
-# FIXME: needed due to a Julia inference bug (in julia 0.7)
-function index_gen(::Type{BS}, ::Type{BS}, N::Integer, offsets...) where {BS<:BSpline{<:Cubic}}
-    if length(offsets) < N
-        d = length(offsets)+1
-        symm, sym, symp, sympp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d), Symbol("cpp_",d)
-        return :($symm * $(index_gen(BS, BS, N, offsets...,-1)) + $sym * $(index_gen(BS, BS, N, offsets..., 0)) +
-                 $symp * $(index_gen(BS, BS, N, offsets..., 1)) + $sympp * $(index_gen(BS, BS, N, offsets..., 2)))
-    else
-        indices = [offsetsym(offsets[d], d) for d = 1:N]
-        return :(itp.coefs[$(indices...)])
-    end
-end
-
 # ------------ #
 # Prefiltering #
 # ------------ #

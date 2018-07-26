@@ -30,14 +30,3 @@ function index_gen(::Type{Gridded{Constant}}, ::Type{IT}, N::Integer, offsets...
         return :(itp.coefs[$(indices...)])
     end
 end
-
-function index_gen(::Type{Gridded{Constant}}, ::Type{Gridded{Constant}}, N::Integer, offsets...)
-    if (length(offsets) < N)
-        d = length(offsets)+1
-        sym = Symbol("c_", d)
-        return :($sym * $(index_gen(Gridded{Constant}, Gridded{Constant}, N, offsets..., 0)))
-    else
-        indices = [offsetsym(offsets[d], d) for d = 1:N]
-        return :(itp.coefs[$(indices...)])
-    end
-end
