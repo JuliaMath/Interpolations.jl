@@ -1,6 +1,6 @@
 module ScalingDimspecTests
 
-using Interpolations, DualNumbers, Base.Test
+using Interpolations, DualNumbers, Compat.Test, Compat.LinearAlgebra
 
 xs = -pi:(2pi/10):pi-2pi/10
 ys = -2:.1:2

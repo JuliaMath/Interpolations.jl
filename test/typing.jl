@@ -1,6 +1,6 @@
 module TypingTests
 
-using Interpolations, Base.Test
+using Interpolations, Compat.Test, Compat.LinearAlgebra
 
 nx = 10
 f(x) = convert(Float32, x^3/(nx-1))

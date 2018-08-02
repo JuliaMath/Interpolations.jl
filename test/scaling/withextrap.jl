@@ -1,9 +1,9 @@
-
 module ScalingWithExtrapTests
 
-using Interpolations, Base.Test
+using Interpolations, Compat.Test
+using Compat: range
 
-xs = linspace(-5, 5, 10)
+xs = range(-5, stop=5, length=10)
 ys = map(sin, xs)
 
 function run_tests(sut::Interpolations.AbstractInterpolation{T,N,IT,OnGrid}, itp) where {T,N,IT}

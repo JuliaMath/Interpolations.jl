@@ -18,7 +18,11 @@ Base.parent(A::FilledExtrapolation) = A.itp
 extrapolate(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue) where {T,N,IT,GT} = FilledExtrapolation(itp, fillvalue)
 
 @inline function getindex(fitp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, args::Vararg{Number,M}) where {T,N,ITP,IT,GT,FT,M}
-    inds, trailing = Base.IteratorsMD.split(args, Val{N})
+    @static if VERSION < v"0.7.0-DEV.843"
+        inds, trailing = Base.IteratorsMD.split(args, Val{N})
+    else
+        inds, trailing = Base.IteratorsMD.split(args, Val(N))
+    end
     @boundscheck all(x->x==1, trailing) || Base.throw_boundserror(fitp, args)
     Tret = typeof(prod(inds) * zero(T))
     checkbounds(Bool, fitp, inds...) && return convert(Tret, fitp.itp[inds...])
@@ -30,7 +34,7 @@ function (fitp::FilledExtrapolation{T,N,ITP,IT,GT,FT})(args...) where {T,N,ITP,I
     fitp[args...]
 end
 
-@inline Base.checkbounds(::Type{Bool}, A::FilledExtrapolation, I...) = _checkbounds(A, 1, indices(A), I)
+@inline Base.checkbounds(::Type{Bool}, A::FilledExtrapolation, I...) = _checkbounds(A, 1, axes(A), I)
 @inline _checkbounds(A, d::Int, IA::TT1, I::TT2) where {TT1,TT2} =
     (I[1] >= lbound(A, d, IA[1])) & (I[1] <= ubound(A, d, IA[1])) & _checkbounds(A, d+1, Base.tail(IA), Base.tail(I))
 _checkbounds(A, d::Int, ::Tuple{}, ::Tuple{}) = true

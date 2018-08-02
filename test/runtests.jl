@@ -1,6 +1,6 @@
 module RunTests
 
-using Base.Test
+using Compat.Test
 using Interpolations
 
 
@@ -23,11 +23,11 @@ include("gridded/runtests.jl")
 include("typing.jl")
 
 # Tests copied from Grid.jl's old test suite
-#include("grid.jl")
+# include("grid.jl")
 
 include("issues/runtests.jl")
 
-include("io.jl")
+# include("io.jl")
 include("convenience-constructors.jl")
 include("readme-examples.jl")
 

@@ -1,6 +1,6 @@
 module Issue34
 
-using Interpolations, Base.Test
+using Interpolations, Compat.Test
 
 A = rand(1:20, 100, 100)
 

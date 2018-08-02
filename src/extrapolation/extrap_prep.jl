@@ -39,7 +39,7 @@ value cases need to be implemented for each scheme.
 """ extrap_prep
 
 extrap_prep(::Type{T}, n::Val{1}) where {T} = quote
-    inds_etp = indices(etp)
+    inds_etp = axes(etp)
     $(extrap_prep(T, n, Val{1}()))
 end
 extrap_prep(::Type{Tuple{T}}, n::Val{1}) where {T} = extrap_prep(T, n)
@@ -47,7 +47,7 @@ extrap_prep(::Type{Tuple{T,T}}, n::Val{1}) where {T} = extrap_prep(T, n)
 extrap_prep(::Type{Tuple{Tuple{T,T}}}, n::Val{1}) where {T} = extrap_prep(T, n)
 function extrap_prep(::Type{Tuple{S,T}}, n::Val{1}) where {S,T}
     quote
-        inds_etp = indices(etp)
+        inds_etp = axes(etp)
         $(extrap_prep(S, n, Val{1}(), Val{:lo}()))
         $(extrap_prep(T, n, Val{1}(), Val{:hi}()))
     end
@@ -58,7 +58,7 @@ extrap_prep(::Type{Tuple{Tuple{S,T}}}, n::Val{1}) where {S,T} = extrap_prep(Tupl
 extrap_prep(::Type{T}, ::Val{1}) where {T<:Tuple} = :(throw(ArgumentError("The 1-dimensional extrap configuration $T is not supported")))
 
 function extrap_prep(::Type{T}, n::Val{N}) where {T,N}
-    exprs = [:(inds_etp = indices(etp))]
+    exprs = [:(inds_etp = axes(etp))]
     for d in 1:N
         push!(exprs, extrap_prep(T, n, Val{d}()))
     end
@@ -66,7 +66,7 @@ function extrap_prep(::Type{T}, n::Val{N}) where {T,N}
 end
 function extrap_prep(::Type{T}, n::Val{N}) where {N,T<:Tuple}
     length(T.parameters) == N || return :(throw(ArgumentError("The $N-dimensional extrap configuration $T is not supported - must be a tuple of length $N (was length $(length(T.parameters)))")))
-    exprs = [:(inds_etp = indices(etp))]
+    exprs = [:(inds_etp = axes(etp))]
     for d in 1:N
         Tdim = T.parameters[d]
         if Tdim <: Tuple

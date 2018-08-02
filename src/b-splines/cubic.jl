@@ -193,7 +193,7 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
     # Now Woodbury correction to set `[1, 3], [n, n-2] ==> 1`
     specs = WoodburyMatrices.sparse_factors(T, n, (1, 3, oneunit(T)), (n, n-2, oneunit(T)))
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -226,7 +226,7 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
                                   (n, n-3, oneunit(T))
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -255,7 +255,7 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
                                   (n, n-3, -oneunit(T))
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -277,7 +277,7 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
                                   (n, n-2, oneunit(T)),
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -297,7 +297,7 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
                                   (n, 1, dl[end])
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -316,5 +316,5 @@ function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
                                   (n, 1, dl[end])
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end

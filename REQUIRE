@@ -3,5 +3,6 @@ julia 0.6
 ShowItLikeYouBuildIt
 WoodburyMatrices 0.1.5
 Ratios
-AxisAlgorithms
-Compat 0.49
+AxisAlgorithms 0.3.0
+OffsetArrays
+Compat 0.59

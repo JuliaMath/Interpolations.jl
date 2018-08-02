@@ -1,6 +1,6 @@
 module MixedTests
 
-using Interpolations, Base.Test
+using Interpolations, Compat, Compat.Test, Compat.SharedArrays, Compat.Random
 
 N = 10
 
@@ -31,7 +31,7 @@ end
 makesharedarray(::Type{T}, dims; kwargs...) where {T} = SharedArray{T}(dims; kwargs...)
 function copyshared(A)
     B = makesharedarray(eltype(A), size(A))
-    copy!(B, A)
+    copyto!(B, A)
 end
 
 for (constructor, copier) in ((interpolate, x->x), (interpolate!, copyshared))

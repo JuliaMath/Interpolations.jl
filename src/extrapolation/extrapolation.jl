@@ -2,8 +2,6 @@ mutable struct Extrapolation{T,N,ITPT,IT,GT,ET} <: AbstractExtrapolation{T,N,ITP
     itp::ITPT
 end
 
-@deprecate Extrapolation{T,ITPT,IT,GT,ET}(::Type{T}, N, itp::ITPT, ::Type{IT}, ::Type{GT}, et::ET) Extrapolation{T,N,ITPT,IT,GT,ET}(itp)
-
 Base.parent(A::Extrapolation) = A.itp
 
 # DimSpec{Flag} is not enough for extrapolation dispatch, since we allow nested tuples
@@ -91,7 +89,7 @@ ubound(etp::Extrapolation, d) = ubound(etp.itp, d)
 lbound(etp::Extrapolation, d, inds) = lbound(etp.itp, d, inds)
 ubound(etp::Extrapolation, d, inds) = ubound(etp.itp, d, inds)
 size(etp::Extrapolation, d) = size(etp.itp, d)
-@inline indices(etp::AbstractExtrapolation) = indices(etp.itp)
-indices(etp::AbstractExtrapolation, d) = indices(etp.itp, d)
+@inline axes(etp::AbstractExtrapolation) = axes(etp.itp)
+axes(etp::AbstractExtrapolation, d) = axes(etp.itp, d)
 
 include("filled.jl")
