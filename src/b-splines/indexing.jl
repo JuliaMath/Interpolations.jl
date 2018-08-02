@@ -26,7 +26,7 @@ end
 
 function index_gen(::Type{IT}, N::Integer, offsets...) where {IT}
     idx = index_gen(iextract(IT, min(length(offsets)+1, N)), IT, N, offsets...)
-    if v"0.7-" ≤ VERSION < v"0.7.0-beta2.119"
+    @static if v"0.7-" ≤ VERSION < v"0.7.0-beta2.119"
         # this is to avoid https://github.com/JuliaLang/julia/issues/27907
         return convert(Union{Expr,Symbol}, idx)
     end
