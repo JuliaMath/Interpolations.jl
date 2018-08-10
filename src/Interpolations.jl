@@ -8,6 +8,7 @@ export
     extrapolate,
     scale,
 
+    gradient,
     gradient!,
     gradient1,
     hessian!,
