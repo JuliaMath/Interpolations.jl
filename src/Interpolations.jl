@@ -1,5 +1,3 @@
-VERSION < v"0.7.0-beta2.199" && __precompile__()
-
 module Interpolations
 
 export
@@ -7,12 +5,6 @@ export
     interpolate!,
     extrapolate,
     scale,
-
-    gradient!,
-    gradient1,
-    hessian!,
-    hessian,
-    hessian1,
 
     AbstractInterpolation,
     AbstractExtrapolation,
@@ -37,20 +29,11 @@ export
     # extrapolation/extrapolation.jl
     # scaling/scaling.jl
 
-using Compat
-using Compat.LinearAlgebra, Compat.SparseArrays
+using LinearAlgebra, SparseArrays
 using WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
 
-import Base: convert, size, getindex, promote_rule,
+import Base: convert, size, axes, getindex, promote_rule,
              ndims, eltype, checkbounds
-
-@static if VERSION < v"0.7.0-DEV.3449"
-    import Base: gradient
-else
-    import LinearAlgebra: gradient
-end
-
-import Compat: axes
 
 abstract type Flag end
 abstract type InterpolationType <: Flag end

@@ -3,7 +3,6 @@ module NonNumeric
 # Test interpolation with a multi-valued type
 
 using Interpolations
-using Compat
 
 import Base: +, -, *, /
 

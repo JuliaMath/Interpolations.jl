@@ -1,6 +1,6 @@
 module GridTests
 
-using Interpolations, Compat.Test
+using Interpolations, Test
 
 # On-grid values
 A = randn(4,10)

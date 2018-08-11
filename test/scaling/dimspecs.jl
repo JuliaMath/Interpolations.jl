@@ -1,6 +1,6 @@
 module ScalingDimspecTests
 
-using Interpolations, DualNumbers, Compat.Test, Compat.LinearAlgebra
+using Interpolations, DualNumbers, Test, LinearAlgebra
 
 xs = -pi:(2pi/10):pi-2pi/10
 ys = -2:.1:2
@@ -12,7 +12,7 @@ sitp = scale(itp, xs, ys)
 for (ix,x) in enumerate(xs), (iy,y) in enumerate(ys)
     @test ≈(sitp[x,y],f(x,y),atol=sqrt(eps(1.0)))
 
-    g = gradient(sitp, x, y)
+    g = Interpolations.gradient(sitp, x, y)
     fx = epsilon(sitp[dual(x,1), dual(y,0)])
     fy = epsilon(sitp[dual(x,0), dual(y,1)])
 

@@ -1,7 +1,6 @@
 module ScalingFunctionCallTests
 
-using Interpolations, Compat, Compat.Test
-using Compat: range
+using Interpolations, Test
 
 # Model linear interpolation of y = -3 + .5x by interpolating y=x
 # and then scaling to the new x range

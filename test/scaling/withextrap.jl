@@ -1,7 +1,6 @@
 module ScalingWithExtrapTests
 
-using Interpolations, Compat.Test
-using Compat: range
+using Interpolations, Test
 
 xs = range(-5, stop=5, length=10)
 ys = map(sin, xs)

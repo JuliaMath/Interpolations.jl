@@ -1,8 +1,8 @@
 module ExtrapTests
 
-using Compat.Test, DualNumbers
+using DualNumbers
 using Interpolations
-
+using Test
 
 f(x) = sin((x-3)*2pi/9 - 1)
 xmax = 10

@@ -1,6 +1,5 @@
 module RunTests
 
-using Compat.Test
 using Interpolations
 
 

@@ -1,6 +1,6 @@
 module MixedTests
 
-using Interpolations, Compat, Compat.Test, Compat.SharedArrays, Compat.Random
+using Interpolations, Test, SharedArrays, Random
 
 N = 10
 

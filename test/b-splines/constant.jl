@@ -1,7 +1,7 @@
 module ConstantTests
 
 using Interpolations
-using Compat.Test
+using Test
 
 # Instantiation
 N1 = 10

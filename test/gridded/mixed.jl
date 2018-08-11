@@ -1,7 +1,6 @@
 module MixedTests
 
-using Interpolations, Compat.Test
-using Compat: range
+using Interpolations, Test
 
 A = rand(6,5)
 knots = (collect(range(1, stop=size(A,1), length=size(A,1))),collect(range(1, stop=size(A,2), length=size(A,2))))

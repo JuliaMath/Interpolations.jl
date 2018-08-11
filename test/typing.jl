@@ -1,6 +1,6 @@
 module TypingTests
 
-using Interpolations, Compat.Test, Compat.LinearAlgebra
+using Interpolations, Test, LinearAlgebra
 
 nx = 10
 f(x) = convert(Float32, x^3/(nx-1))
@@ -22,10 +22,10 @@ end
 @test typeof(itp[3.5f0]) == Float32
 
 for x in 3.1:.2:4.3
-    @test ≈([g(x)], gradient(itp,x),atol=abs(0.1 * g(x)))
+    @test ≈([g(x)], Interpolations.gradient(itp,x),atol=abs(0.1 * g(x)))
 end
 
-@test typeof(gradient(itp, 3.5f0)[1]) == Float32
+@test typeof(Interpolations.gradient(itp, 3.5f0)[1]) == Float32
 
 # Rational element types
 R = Rational{Int}[x^2//10 for x in 1:10]

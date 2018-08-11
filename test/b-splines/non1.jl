@@ -1,7 +1,6 @@
 module Non1Tests
 
-using Interpolations, OffsetArrays, AxisAlgorithms, Compat.Test
-using Compat: axes
+using Interpolations, OffsetArrays, AxisAlgorithms, Test
 
 # At present, for a particular type of non-1 array you need to specialize this function
 function AxisAlgorithms.A_ldiv_B_md!(dest::OffsetArray, F, src::OffsetArray, dim::Integer, b::AbstractVector)

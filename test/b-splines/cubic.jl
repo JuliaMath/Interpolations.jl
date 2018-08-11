@@ -1,6 +1,6 @@
 module CubicTests
 
-using Compat.Test
+using Test
 using Interpolations
 
 for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
@@ -55,8 +55,7 @@ end
 
 module CubicGradientTests
 
-using Interpolations, Compat.Test, Compat.LinearAlgebra
-using Compat: range
+using Interpolations, Test, LinearAlgebra
 
 ix = 1:15
 f(x) = cos((x-1)*2pi/(length(ix)-1))
@@ -71,16 +70,16 @@ for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
         itp = constructor(copier(A), BSpline(Cubic(BC())), GT())
         # test that inner region is close to data
         for x in range(ix[5], stop=ix[end-4], length=100)
-            @test ≈(g(x),(gradient(itp,x))[1],atol=cbrt(cbrt(eps(g(x)))))
+            @test ≈(g(x),(Interpolations.gradient(itp,x))[1],atol=cbrt(cbrt(eps(g(x)))))
         end
     end
 end
 itp_flat_g = interpolate(A, BSpline(Cubic(Flat())), OnGrid())
-@test ≈((gradient(itp_flat_g,1))[1],0,atol=eps())
-@test ≈((gradient(itp_flat_g,ix[end]))[1],0,atol=eps())
+@test ≈((Interpolations.gradient(itp_flat_g,1))[1],0,atol=eps())
+@test ≈((Interpolations.gradient(itp_flat_g,ix[end]))[1],0,atol=eps())
 
 itp_flat_c = interpolate(A, BSpline(Cubic(Flat())), OnCell())
-@test ≈((gradient(itp_flat_c,0.5))[1],0,atol=eps())
-@test ≈((gradient(itp_flat_c,ix[end] + 0.5))[1],0,atol=eps())
+@test ≈((Interpolations.gradient(itp_flat_c,0.5))[1],0,atol=eps())
+@test ≈((Interpolations.gradient(itp_flat_c,ix[end] + 0.5))[1],0,atol=eps())
 
 end

@@ -1,6 +1,6 @@
 module ExtrapTypeStability
 
-using Compat.Test, Interpolations, DualNumbers
+using Test, Interpolations, DualNumbers
 
 # Test type-stability of 1-dimensional extrapolation
 f(x) = sin((x-3)*2pi/9 - 1)

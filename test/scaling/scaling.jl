@@ -1,7 +1,7 @@
 module ScalingTests
 
-using Interpolations, Compat
-using Compat.Test, Compat.LinearAlgebra
+using Interpolations
+using Test, LinearAlgebra
 
 # Model linear interpolation of y = -3 + .5x by interpolating y=x
 # and then scaling to the new x range
@@ -39,7 +39,7 @@ itp = interpolate(ys, BSpline(Linear()), OnGrid())
 sitp = @inferred scale(itp, xs)
 
 for x in -pi:.1:pi
-    g = @inferred(gradient(sitp, x))[1]
+    g = @inferred(Interpolations.gradient(sitp, x))[1]
     @test ≈(cos(x),g,atol=0.05)
 end
 

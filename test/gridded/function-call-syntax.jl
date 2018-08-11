@@ -1,7 +1,6 @@
 module GriddedFunctionCallSyntax
 
-using Interpolations, Compat.Test
-using Compat: range
+using Interpolations, Test
 
 for D in (Constant, Linear), G in (OnCell, OnGrid)
     ## 1D

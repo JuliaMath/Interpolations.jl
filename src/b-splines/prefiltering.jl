@@ -20,12 +20,7 @@ end
 padded_similar(::Type{TC}, inds::Tuple{Vararg{Base.OneTo{Int}}}) where TC = Array{TC}(undef, length.(inds))
 padded_similar(::Type{TC}, inds) where TC = OffsetArray{TC}(undef, inds)
 
-# despite Compat, julia doesn't support 0.6 copy! with CartesianIndices argument
-@static if isdefined(Base, :CartesianIndices)
-    ct!(coefs, indscp, A, indsA) = copyto!(coefs, CartesianIndices(indscp), A, CartesianIndices(indsA))
-else
-    ct!(coefs, indscp, A, indsA) = copyto!(coefs, CartesianRange(indscp), A, CartesianRange(indsA))
-end
+ct!(coefs, indscp, A, indsA) = copyto!(coefs, CartesianIndices(indscp), A, CartesianIndices(indsA))
 
 copy_with_padding(A, ::Type{IT}) where {IT} = copy_with_padding(eltype(A), A, IT)
 function copy_with_padding(::Type{TC}, A, ::Type{IT}) where {TC,IT<:DimSpec{InterpolationType}}

@@ -1,6 +1,6 @@
 module OnGridTests
 
-using Interpolations, Compat.Test
+using Interpolations, Test
 
 nx, ny, nz = 10, 8, 9
 xg, yg, zg = 1:nx, 1:ny, 1:nz
