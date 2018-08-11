@@ -23,7 +23,7 @@ end
 @test length(gradient(sitp, pi/3, 2)) == 1
 
 # check for case where initial/middle indices are NoInterp but later ones are <:BSpline
-srand(1234)
+isdefined(Random, :seed!) ? Random.seed!(1234) : srand(1234) # `srand` was renamed to `seed!`
 z0 = rand(10,10)
 za = copy(z0)
 zb = copy(z0')
