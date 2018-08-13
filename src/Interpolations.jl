@@ -8,12 +8,6 @@ export
     extrapolate,
     scale,
 
-    gradient!,
-    gradient1,
-    hessian!,
-    hessian,
-    hessian1,
-
     AbstractInterpolation,
     AbstractExtrapolation,
 
@@ -47,7 +41,7 @@ import Base: convert, size, getindex, promote_rule,
 @static if VERSION < v"0.7.0-DEV.3449"
     import Base: gradient
 else
-    import LinearAlgebra: gradient
+    function gradient end
 end
 
 import Compat: axes
