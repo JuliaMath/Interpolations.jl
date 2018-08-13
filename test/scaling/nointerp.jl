@@ -20,7 +20,7 @@ for (ix,x0) in enumerate(xs[1:end-1]), y0 in ys
     @test ≈(sitp[x,y],f(x,y),atol=0.05)
 end
 
-@test length(gradient(sitp, pi/3, 2)) == 1
+@test length(Interpolations.gradient(sitp, pi/3, 2)) == 1
 
 # check for case where initial/middle indices are NoInterp but later ones are <:BSpline
 isdefined(Random, :seed!) ? Random.seed!(1234) : srand(1234) # `srand` was renamed to `seed!`
@@ -34,6 +34,6 @@ itpb = interpolate(zb, (NoInterp(), BSpline(Linear())), OnGrid())
 rng = range(1.0, stop=19.0, length=10)
 sitpa = scale(itpa, rng, 1:10)
 sitpb = scale(itpb, 1:10, rng)
-@test gradient(sitpa, 3.0, 3) ==  gradient(sitpb, 3, 3.0)
+@test Interpolations.gradient(sitpa, 3.0, 3) ==  Interpolations.gradient(sitpb, 3, 3.0)
 
 end

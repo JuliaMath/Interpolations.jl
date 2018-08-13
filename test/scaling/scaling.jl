@@ -39,7 +39,7 @@ itp = interpolate(ys, BSpline(Linear()), OnGrid())
 sitp = @inferred scale(itp, xs)
 
 for x in -pi:.1:pi
-    g = @inferred(gradient(sitp, x))[1]
+    g = @inferred(Interpolations.gradient(sitp, x))[1]
     @test ≈(cos(x),g,atol=0.05)
 end
 
