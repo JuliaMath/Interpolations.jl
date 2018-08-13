@@ -14,23 +14,27 @@ BSpline(::D) where {D<:Degree} = BSpline{D}()
 
 bsplinetype(::Type{BSpline{D}}) where {D<:Degree} = D
 
-struct BSplineInterpolation{T,N,TCoefs<:AbstractArray,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},pad} <: AbstractInterpolation{T,N,IT,GT}
+struct BSplineInterpolation{T,N,TCoefs<:AbstractArray,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Axs<:Tuple{Vararg{AbstractUnitRange,N}}} <: AbstractInterpolation{T,N,IT,GT}
     coefs::TCoefs
+    parentaxes::Axs
+    it::IT
+    gt::GT
 end
-function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, ::IT, ::GT, ::Val{pad}) where {N,Tel,TWeights<:Real,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},pad}
-    isconcretetype(IT) || error("The b-spline type must be a leaf type (was $IT)")
-    isconcretetype(typeof(A)) || warn("For performance reasons, consider using an array of a concrete type (typeof(A) == $(typeof(A)))")
+function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, it::IT, gt::GT, axs) where {N,Tel,TWeights<:Real,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
+    # String interpolation causes allocation, noinline avoids that unless they get called
+    @noinline err_concrete(IT) = error("The b-spline type must be a concrete type (was $IT)")
+    @noinline warn_concrete(A) = @warn("For performance reasons, consider using an array of a concrete type (typeof(A) == $(typeof(A)))")
 
-    c = zero(TWeights)
-    for _ in 2:N
-        c *= c
-    end
+    isconcretetype(IT) || err_concrete(IT)
+    isconcretetype(typeof(A)) || warn_concrete(A)
+
+    # Compute the output element type when positions have type TWeights
     if isempty(A)
-        T = Base.promote_op(*, typeof(c), eltype(A))
+        T = Base.promote_op(*, TWeights, eltype(A))
     else
-        T = typeof(c * first(A))
+        T = typeof(zero(TWeights) * first(A))
     end
-    BSplineInterpolation{T,N,typeof(A),IT,GT,pad}(A)
+    BSplineInterpolation{T,N,typeof(A),IT,GT,typeof(axs)}(A, fix_axis.(axs), it, gt)
 end
 
 # Utilities for working either with scalars or tuples/tuple-types
@@ -68,13 +72,17 @@ end
 @inline axes(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}) where {T,N,TCoefs,IT,GT,pad} =
     indices_removepad.(axes(itp.coefs), pad)
 
+fix_axis(r::Base.OneTo) = r
+fix_axis(r::Base.Slice) = r
+fix_axis(r::UnitRange) = Base.Slice(r)
+fix_axis(r::AbstractUnitRange) = fix_axis(UnitRange(r))
 function axes(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d) where {T,N,TCoefs,IT,GT,pad}
     d <= N ? indices_removepad(axes(itp.coefs, d), padextract(pad, d)) : axes(itp.coefs, d)
 end
 
 function interpolate(::Type{TWeights}, ::Type{TC}, A, it::IT, gt::GT) where {TWeights,TC,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
-    Apad, Pad = prefilter(TWeights, TC, A, IT, GT)
-    BSplineInterpolation(TWeights, Apad, it, gt, Pad)
+    Apad = prefilter(TWeights, TC, A, it, gt)
+    BSplineInterpolation(TWeights, Apad, it, gt, axes(A))
 end
 function interpolate(A::AbstractArray, it::IT, gt::GT) where {IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
     interpolate(tweight(A), tcoef(A), A, it, gt)
@@ -91,7 +99,12 @@ tcoef(A::AbstractArray{Float32}) = Float32
 tcoef(A::AbstractArray{Rational{Int}}) = Rational{Int}
 tcoef(A::AbstractArray{T}) where {T<:Integer} = typeof(float(zero(T)))
 
-interpolate!(::Type{TWeights}, A, it::IT, gt::GT) where {TWeights,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}} = BSplineInterpolation(TWeights, prefilter!(TWeights, A, IT, GT), it, gt, Val{0}())
+function interpolate!(::Type{TWeights}, A, it::IT, gt::GT) where {TWeights,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
+    # Set the bounds of the interpolant inward, if necessary
+    axsA = axes(A)
+    axspad = padded_axes(axsA, it)
+    BSplineInterpolation(TWeights, prefilter!(TWeights, A, it, gt), it, gt, fix_axis.(padinset.(axsA, axspad)))
+end
 function interpolate!(A::AbstractArray, it::IT, gt::GT) where {IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
     interpolate!(tweight(A), A, it, gt)
 end
