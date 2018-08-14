@@ -16,10 +16,10 @@ itp = interpolate(A, BSpline(Quadratic(Flat())), OnCell())
 # ))
 
 for x in 3.1:.2:4.3
-    @test ≈(float(f(x)),float(itp[x]),atol=abs(0.1 * f(x)))
+    @test ≈(float(f(x)),float(itp(x)),atol=abs(0.1 * f(x)))
 end
 
-@test typeof(itp[3.5f0]) == Float32
+@test typeof(itp(3.5f0)) == Float32
 
 for x in 3.1:.2:4.3
     @test ≈([g(x)], Interpolations.gradient(itp,x),atol=abs(0.1 * g(x)))
@@ -30,9 +30,8 @@ end
 # Rational element types
 R = Rational{Int}[x^2//10 for x in 1:10]
 itp = interpolate(R, BSpline(Quadratic(Free())), OnCell())
-itp[11//10]
 
-@test typeof(itp[11//10]) == Rational{Int}
-@test itp[11//10] == (11//10)^2//10
+@test typeof(itp(11//10)) == Rational{Int}
+@test itp(11//10) == (11//10)^2//10
 
 end

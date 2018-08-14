@@ -3,6 +3,8 @@ import AxisAlgorithms: A_ldiv_B_md!, _A_ldiv_B_md!
 
 ### Tridiagonal inversion along a particular dimension, first offsetting the values by b
 
+A_ldiv_B_md!(dest, ::Nothing, src, dim::Integer, ::Nothing) = dest
+
 function A_ldiv_B_md!(dest, F, src, dim::Integer, b::AbstractVector)
     1 <= dim <= max(ndims(dest),ndims(src)) || throw(DimensionMismatch("The chosen dimension $dim is larger than $(ndims(src)) and $(ndims(dest))"))
     n = size(F, 1)

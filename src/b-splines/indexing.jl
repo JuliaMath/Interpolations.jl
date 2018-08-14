@@ -1,97 +1,236 @@
-using Base.Cartesian
+### Primary evaluation (indexing) entry points
 
-import Base.getindex
-
-Base.IndexStyle(::Type{<:AbstractInterpolation}) = IndexCartesian()
-
-define_indices(::Type{IT}, N, pad) where {IT} = Expr(:block, Expr[define_indices_d(iextract(IT, d), d, padextract(pad, d)) for d = 1:N]...)
-
-coefficients(::Type{IT}, N) where {IT} = Expr(:block, Expr[coefficients(iextract(IT, d), N, d) for d = 1:N]...)
-
-function gradient_coefficients(::Type{IT}, N, dim) where IT<:DimSpec{BSpline}
-    exs = Expr[d==dim ? gradient_coefficients(iextract(IT, dim), d) :
-                        coefficients(iextract(IT, d), N, d) for d = 1:N]
-    Expr(:block, exs...)
+@inline function (itp::BSplineInterpolation{T,N})(x::Vararg{Number,N}) where {T,N}
+    @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
+    expand_value(itp, x)
 end
-function hessian_coefficients(::Type{IT}, N, dim1, dim2) where IT<:DimSpec{BSpline}
-    exs = if dim1 == dim2
-        Expr[d==dim1==dim2 ? hessian_coefficients(iextract(IT, dim), d) :
-                             coefficients(iextract(IT, d), N, d) for d in 1:N]
-    else
-        Expr[d==dim1 || d==dim2 ? gradient_coefficients(iextract(IT, dim), d) :
-                                  coefficients(iextract(IT, d), N, d) for d in 1:N]
-    end
-    Expr(:block, exs...)
+@inline function (itp::BSplineInterpolation{T,1})(x::Integer, y::Integer) where T
+    @boundscheck (y == 1 || Base.throw_boundserror(itp, (x,y)))
+    expand_value(itp, (x,))
 end
 
-function index_gen(::Type{IT}, N::Integer, offsets...) where {IT}
-    idx = index_gen(iextract(IT, min(length(offsets)+1, N)), IT, N, offsets...)
-    @static if v"0.7-" ≤ VERSION < v"0.7.0-beta2.119"
-        # this is to avoid https://github.com/JuliaLang/julia/issues/27907
-        return convert(Union{Expr,Symbol}, idx)
-    end
-    return idx
+@inline function gradient(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
+    expand_gradient(itp, x)
+end
+@inline function gradient!(dest, itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
+    expand_gradient!(dest, itp, x)
+end
+@inline function hessian(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
+    expand_hessian(itp, x)
 end
 
-function getindex_impl(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}) where {T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}
-    meta = Expr(:meta, :inline)
-    quote
-        $meta
-        @nexprs $N d->(x_d = xs[d])
-        inds_itp = axes(itp)
+checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::Vararg{Number,N}) where N =
+    checklubounds(lbounds(itp), ubounds(itp), x)
 
-        # Calculate the indices of all coefficients that will be used
-        # and define fx = x - xi in each dimension
-        $(define_indices(IT, N, Pad))
-
-        # Calculate coefficient weights based on fx
-        $(coefficients(IT, N))
-
-        # Generate the indexing expression
-        @inbounds ret = $(index_gen(IT, N))
-        ret
-    end
+# Leftovers from AbstractInterpolation
+@inline function (itp::BSplineInterpolation)(x::Vararg{UnexpandedIndexTypes})
+    itp(to_indices(itp, x)...)
+end
+@inline function (itp::BSplineInterpolation)(x::Vararg{ExpandedIndexTypes})
+    itp.(Iterators.product(x...))
 end
 
-@generated function getindex(itp::BSplineInterpolation{T,N}, xs::Number...) where {T,N}
-    getindex_impl(itp)
+"""
+    val = expand_value(itp, x)
+
+Interpolate `itp` at `x`.
+"""
+function expand_value(itp::AbstractInterpolation, x::Tuple)
+    coefs = coefficients(itp)
+    degree = interpdegree(itp)
+    ixs, rxs = expand_indices_resid(degree, bounds(itp), x)
+    cxs = expand_weights(value_weights, degree, rxs)
+    expand(coefs, cxs, ixs)
 end
 
-function (itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad})(args...) where {T,N,TCoefs,IT,GT,pad}
-    # support function calls
-    itp[args...]
+"""
+    g = expand_gradient(itp, x)
+
+Calculate the interpolated gradient of `itp` at `x`.
+"""
+function expand_gradient(itp::AbstractInterpolation, x::Tuple)
+    coefs = coefficients(itp)
+    degree = interpdegree(itp)
+    ixs, rxs = expand_indices_resid(degree, bounds(itp), x)
+    cxs = expand_weights(value_weights, degree, rxs)
+    gxs = expand_weights(gradient_weights, degree, rxs)
+    expand(coefs, (cxs, gxs), ixs)
 end
 
-function gradient_impl(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}) where {T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}
-    meta = Expr(:meta, :inline)
-    # For each component of the gradient, alternately calculate
-    # coefficients and set component
-    n = count_interp_dims(IT, N)
-    exs = Array{Expr, 1}(undef, 2n)
-    cntr = 0
+function expand_gradient!(dest, itp::AbstractInterpolation, x::Tuple)
+    coefs = coefficients(itp)
+    degree = interpdegree(itp)
+    ixs, rxs = expand_indices_resid(degree, bounds(itp), x)
+    cxs = expand_weights(value_weights, degree, rxs)
+    gxs = expand_weights(gradient_weights, degree, rxs)
+    expand!(dest, coefs, (cxs, gxs), ixs)
+end
+
+"""
+    H = expand_hessian(itp, x)
+
+Calculate the interpolated hessian of `itp` at `x`.
+"""
+function expand_hessian(itp::AbstractInterpolation, x::Tuple)
+    coefs = coefficients(itp)
+    degree = interpdegree(itp)
+    ixs, rxs = expand_indices_resid(degree, axes(coefs), x)
+    cxs = expand_weights(value_weights, degree, rxs)
+    gxs = expand_weights(gradient_weights, degree, rxs)
+    hxs = expand_weights(hessian_weights, degree, rxs)
+    expand(coefs, (cxs, gxs, hxs), ixs)
+end
+
+"""
+    Weights{N}
+
+A type alias for an `N`-dimensional tuple of weights or indexes for interpolation.
+
+# Example
+
+If you are performing linear interpolation (degree 1) in three dimensions at the point
+`x = [5.1, 8.2, 4.3]`, then the floating-point residuals are `[0.1, 0.2, 0.3]`.
+For value interpoations, the corresponding `Weights` would be
+
+    ((0.9,0.1),  (0.8,0.2),  (0.7,0.3))    # (dim1,  dim2,  dim3)
+
+Note each "inner" tuple, for value interpolation, sums to 1. For gradient Weights,
+each inner tuple would be `(-1, 1)`, and for hessian Weights each would be `(0, 0)`.
+
+The same structure can be used for the integer indexes at which each coefficient is evaluated.
+For the example above (with `x = [5.1, 8.2, 4.3]`), the indexes would be
+
+    ((5,6), (8,9), (4,5))
+
+corresponding to the integer pairs that bracket each coordinate.
+
+When performing mixed interpolation (e.g., `Linear` along dimension 1 and `Cubic` along dimension 2),
+the inner tuples may not all be of the same length.
+"""
+const Weights{N} = NTuple{N,Tuple{Vararg{<:Number}}}
+
+"""
+    Indexes{N}
+
+The same as [`Weights`](@ref) for the integer-values used as evaluation locations for the
+coefficients array.
+"""
+const Indexes{N} = NTuple{N,Tuple{Vararg{<:Integer}}}
+
+"""
+    val = expand(coefs, vweights::Weights, ixs::Indexes)
+    g   = expand(coefs, (vweights, gweights), ixs)
+    H   = expand(coefs, (vweights, gweights, hweights), ixs)
+
+Calculate the value, gradient, or hessian of a separable AbstractInterpolation object.
+This function works recursively, processing one index at a time and calling itself as
+
+    ret = expand(coefs, <weights>, ixs, iexpanded...)
+
+(The `iexpanded` form is not intended to be called directly by users.) For example,
+for two-dimensional linear interpolation at a point `x = [5.1, 8.2]` the corresponding
+top-level call would be
+
+    #              weights                  ixs
+    expand(coefs,  ((0.9,0.1), (0.8,0.2)),  ((5,6), (8,9))
+
+After one round of recursion this becomes
+
+    #                  weights        ixs        iexpanded
+    0.9*expand(coefs,  ((0.8,0.2),),  ((8,9),),  5) +
+    0.1*expand(coefs,  ((0.8,0.2),),  ((8,9),),  6)
+
+(The first dimension has been processed.) After another round, this becomes
+
+    #                      wts ixs iexpanded
+    0.9*(0.8*expand(coefs, (), (), 5, 8) + 0.2*expand(coefs, (), (), 5, 9)) +
+    0.1*(0.8*expand(coefs, (), (), 6, 8) + 0.2*expand(coefs, (), (), 6, 9))
+
+Now that the weights and `ixs` are empty and all indices are in `iexpanded`,
+it finally resolves to
+
+    0.9*(0.8*coefs[5, 8] + 0.2*coefs[5, 9]) +
+    0.1*(0.8*coefs[6, 8] + 0.2*coefs[6, 9])
+
+which is the expression for bilinear interpolation at the given `x`.
+
+For calculating the components of the gradient and hessian, individual dimensions of
+`gweights` and/or `hweights` will be substituted into the appropriate slot. For example,
+in three dimensions
+
+    g[1] = expand(coefs, (gweights[1], vweights[2], vweights[3]), ixs)
+    g[2] = expand(coefs, (vweights[1], gweights[2], vweights[3]), ixs)
+    g[3] = expand(coefs, (vweights[1], vweights[2], gweights[3]), ixs)
+"""
+function expand(coefs::AbstractArray, vweights::Weights, ixs::Indexes, iexpanded::Vararg{Integer,M}) where {M}
+    w1, wrest = vweights[1], Base.tail(vweights)
+    ix1, ixrest = ixs[1], Base.tail(ixs)
+    _expand1(coefs, w1, ix1, wrest, ixrest, iexpanded)
+end
+function expand(coefs::AbstractArray{T,N}, vweights::Tuple{}, ixs::Tuple{}, iexpanded::Vararg{Integer,N}) where {T,N}
+    @inbounds coefs[iexpanded...]  # @inbounds is safe because we checked in the original call
+end
+
+# _expand1 handles the expansion of a single dimension weight list (of length L)
+@inline _expand1(coefs, w1, ix1, wrest, ixrest, iexpanded) =
+    w1[1] * expand(coefs, wrest, ixrest, iexpanded..., ix1[1]) +
+    _expand1(coefs, Base.tail(w1), Base.tail(ix1), wrest, ixrest, iexpanded)
+@inline _expand1(coefs, w1::Tuple{Number}, ix1::Tuple{Integer}, wrest, ixrest, iexpanded) =
+    w1[1] * expand(coefs, wrest, ixrest, iexpanded..., ix1[1])
+
+# Expansion of the gradient
+function expand(coefs, (vweights, gweights)::Tuple{Weights{N},Weights{N}}, ixs::Indexes{N}) where N
+    # We swap in one gradient dimension per call to expand
+    SVector(ntuple(d->expand(coefs, substitute(vweights, d, gweights), ixs), Val(N)))
+end
+function expand!(dest, coefs, (vweights, gweights)::Tuple{Weights{N},Weights{N}}, ixs::Indexes{N}) where N
+    # We swap in one gradient dimension per call to expand
     for d = 1:N
-        if count_interp_dims(iextract(IT, d), 1) > 0
-            cntr += 1
-            exs[2cntr-1] = gradient_coefficients(IT, N, d)
-            exs[2cntr] = :(@inbounds g[$cntr] = $(index_gen(IT, N)))
-        end
+        dest[d] = expand(coefs, substitute(vweights, d, gweights), ixs)
     end
-    gradient_exprs = Expr(:block, exs...)
-    quote
-        $meta
-        length(g) == $n || throw(ArgumentError(string("The length of the provided gradient vector (", length(g), ") did not match the number of interpolating dimensions (", n, ")")))
-        @nexprs $N d->(x_d = xs[d])
-        inds_itp = axes(itp)
-
-        # Calculate the indices of all coefficients that will be used
-        # and define fx = x - xi in each dimension
-        $(define_indices(IT, N, Pad))
-
-        $gradient_exprs
-
-        g
-    end
+    dest
 end
+
+function expand(coefs, (vweights, gweights, hweights)::NTuple{3,Weights{N}}, ixs::Indexes{N}) where N
+    error("not yet implemented")
+end
+
+function expand_indices_resid(degree, bounds, x)
+    ixbase, δxs = splitpaired(_base_rem(degree, bounds, x))
+    expand_indices(degree, ixbase, bounds, δxs), δxs
+end
+
+@inline _base_rem(degree::Union{Degree,NoInterp}, bounds, x) =
+    (base_rem(degree, bounds[1], x[1]), _base_rem(degree, Base.tail(bounds), Base.tail(x))...)
+@inline _base_rem(degree::Union{Degree,NoInterp}, ::Tuple{}, ::Tuple{}) = ()
+@inline _base_rem(degree::Tuple{Vararg{Union{Degree,NoInterp},N}}, bounds::Tuple{Vararg{Any,N}}, x::Tuple{Vararg{Number,N}}) where N =
+    (base_rem(degree[1], bounds[1], x[1]), _base_rem(Base.tail(degree), Base.tail(bounds), Base.tail(x))...)
+@inline _base_rem(::Tuple{}, ::Tuple{}, ::Tuple{}) = ()
+
+expand_weights(f, degree::Union{Degree,NoInterp}, ixs) =
+    (f(degree, ixs[1]), expand_weights(f, degree, Base.tail(ixs))...)
+expand_weights(f, degree::Union{Degree,NoInterp}, ::Tuple{}) = ()
+
+expand_weights(f, degree::Tuple{Vararg{Union{Degree,NoInterp},N}}, ixs::NTuple{N,Number}) where N =
+    f.(degree, ixs)
+
+expand_indices(degree::Union{Degree,NoInterp}, ixs, axs, δxs) =
+    (expand_index(degree, ixs[1], axs[1], δxs[1]), expand_indices(degree, Base.tail(ixs), Base.tail(axs), Base.tail(δxs))...)
+expand_indices(degree::Union{Degree,NoInterp}, ::Tuple{}, ::Tuple{}, ::Tuple{}) = ()
+
+expand_indices(degree::Tuple{Vararg{Union{Degree,NoInterp},N}}, ixs::NTuple{N,Number}, axs::NTuple{N,Tuple{Real,Real}}, δxs::NTuple{N,Number}) where N =
+    expand_index.(degree, ixs, axs, δxs)
+
+expand_index(degree, ixs, bounds::Tuple{Real,Real}, δxs) = expand_index(degree, ixs, axfrombounds(bounds), δxs)
+
+checklubounds(ls, us, xs) = _checklubounds(true, ls, us, xs)
+_checklubounds(tf::Bool, ls, us, xs) = _checklubounds(tf & (ls[1] <= xs[1] <= us[1]),
+                                                      Base.tail(ls), Base.tail(us), Base.tail(xs))
+_checklubounds(tf::Bool, ::Tuple{}, ::Tuple{}, ::Tuple{}) = tf
+
 
 # there is a Heisenbug, when Base.promote_op is inlined into getindex_return_type
 # thats why we use this @noinline fence
@@ -105,77 +244,15 @@ function getindex_return_type(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}
     _promote_mul(eltype(TCoefs), I)
 end
 
-@generated function gradient!(g::AbstractVector, itp::BSplineInterpolation{T,N}, xs::Number...) where {T,N}
-    length(xs) == N || error("Can only be called with $N indexes")
-    gradient_impl(itp)
+# This handles round-towards-the-middle for points on half-integer edges
+roundbounds(x, bounds::Tuple{Integer,Integer}) = round(x)
+roundbounds(x, (l, u)) = ifelse(x == l, ceil(l), ifelse(x == u, floor(u), round(x)))
+
+floorbounds(x, bounds::Tuple{Integer,Integer}) = floor(x)
+function floorbounds(x, (l, u))
+    ceill = ceil(l)
+    ifelse(l <= x <= ceill, ceill, floor(x))
 end
 
-@generated function gradient!(g::AbstractVector, itp::BSplineInterpolation{T,N}, index::CartesianIndex{N}) where {T,N}
-    args = [:(index[$d]) for d = 1:N]
-    :(gradient!(g, itp, $(args...)))
-end
-
-# @eval uglyness required for disambiguation with method in Base
-for R in [:Real, :Any]
-    @eval @generated function gradient(itp::AbstractInterpolation{T,N}, xs::$R...) where {T,N}
-        n = count_interp_dims(itp, N)
-        xargs = [:(xs[$d]) for d in 1:length(xs)]
-        quote
-            Tg = $(Expr(:call, :promote_type, T, [x <: AbstractArray ? eltype(x) : x for x in xs]...))
-            gradient!(Array{Tg, 1}(undef, $n), itp, $(xargs...))
-        end
-    end
-end
-
-gradient1(itp::AbstractInterpolation{T,1}, x) where {T} = gradient(itp, x)[1]
-
-function hessian_impl(itp::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}) where {T,N,TCoefs,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},Pad}
-    meta = Expr(:meta, :inline)
-    # For each component of the hessian, alternately calculate
-    # coefficients and set component
-    n = count_interp_dims(IT, N)
-    exs = Expr[]
-    cntr = 0
-    for d1 in 1:N, d2 in 1:N
-        if count_interp_dims(iextract(IT,d1), 1) > 0 && count_interp_dims(iextract(IT,d2),1) > 0
-            cntr += 1
-            push!(exs, hessian_coefficients(IT, N, d1, d2))
-            push!(exs, :(@inbounds H[$cntr] = $(index_gen(IT, N))))
-        end
-    end
-    hessian_exprs = Expr(:block, exs...)
-
-    quote
-        $meta
-        size(H) == ($n,$n) || throw(ArgumentError(string("The size of the provided Hessian matrix wasn't a square matrix of size ", size(H))))
-        @nexprs $N d->(x_d = xs[d])
-        inds_itp = axes(itp)
-
-        $(define_indices(IT, N, Pad))
-
-        $hessian_exprs
-
-        H
-    end
-end
-
-@generated function hessian!(H::AbstractMatrix, itp::BSplineInterpolation{T,N}, xs::Number...) where {T,N}
-    length(xs) == N || throw(ArgumentError("Can only be called with $N indexes"))
-    hessian_impl(itp)
-end
-
-@generated function hessian!(H::AbstractMatrix, itp::BSplineInterpolation{T,N}, index::CartesianIndex{N}) where {T,N}
-    args = [:(index[$d]) for d in 1:N]
-    :(hessian!(H, itp, $(args...)))
-end
-
-@generated function hessian(itp::AbstractInterpolation{T,N}, xs...) where {T,N}
-    n = count_interp_dims(itp,N)
-    xargs = [:(xs[$d]) for d in 1:length(xs)]
-    quote
-        TH = $(Expr(:call, :promote_type, T, [x <: AbstractArray ? eltype(x) : x for x in xs]...))
-        hessian!(Array{TH, 2}(undef, $n,$n), itp, $(xargs...))
-    end
-end
-
-hessian1(itp::AbstractInterpolation{T,1}, x) where {T} = hessian(itp, x)[1,1]
+axfrombounds((l, u)::Tuple{Integer,Integer}) = UnitRange(l, u)
+axfrombounds((l, u)) = UnitRange(ceil(Int, l), floor(Int, u))
