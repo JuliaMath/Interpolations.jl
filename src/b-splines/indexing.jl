@@ -174,6 +174,9 @@ function expand(coefs::AbstractArray{T,N}, vweights::Tuple{}, ixs::Tuple{}, iexp
     @inbounds coefs[iexpanded...]  # @inbounds is safe because we checked in the original call
 end
 
+const HasNoInterp{N} = NTuple{N,Tuple{Vararg{<:Union{Number,NoInterp}}}}
+expand(coefs::AbstractArray, vweights::HasNoInterp, ixs::Indexes, iexpanded::Vararg{Integer,M}) where {M} = NoInterp()
+
 # _expand1 handles the expansion of a single dimension weight list (of length L)
 @inline _expand1(coefs, w1, ix1, wrest, ixrest, iexpanded) =
     w1[1] * expand(coefs, wrest, ixrest, iexpanded..., ix1[1]) +
@@ -182,14 +185,17 @@ end
     w1[1] * expand(coefs, wrest, ixrest, iexpanded..., ix1[1])
 
 # Expansion of the gradient
-function expand(coefs, (vweights, gweights)::Tuple{Weights{N},Weights{N}}, ixs::Indexes{N}) where N
+function expand(coefs, (vweights, gweights)::Tuple{HasNoInterp{N},HasNoInterp{N}}, ixs::Indexes{N}) where N
     # We swap in one gradient dimension per call to expand
-    SVector(ntuple(d->expand(coefs, substitute(vweights, d, gweights), ixs), Val(N)))
+    SVector(skip_nointerp(ntuple(d->expand(coefs, substitute(vweights, d, gweights), ixs), Val(N))...))
 end
-function expand!(dest, coefs, (vweights, gweights)::Tuple{Weights{N},Weights{N}}, ixs::Indexes{N}) where N
+function expand!(dest, coefs, (vweights, gweights)::Tuple{HasNoInterp{N},HasNoInterp{N}}, ixs::Indexes{N}) where N
     # We swap in one gradient dimension per call to expand
+    i = 0
     for d = 1:N
-        dest[d] = expand(coefs, substitute(vweights, d, gweights), ixs)
+        w = substitute(vweights, d, gweights)
+        w isa Weights || continue   # must have a NoInterp in it
+        dest[i+=1] = expand(coefs, w, ixs)
     end
     dest
 end

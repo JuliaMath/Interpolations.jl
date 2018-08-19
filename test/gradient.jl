@@ -106,6 +106,7 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
     @test g[2] ≈ 2 * (4 - 1.75) ^ 2 * (3 - 1.75)
 
     A2 = rand(Float64, nx, nx) * 100
+    gni = [1.0]
     for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
         itp_a = interpolate(A2, (BSpline(Linear()), BSpline(Quadratic(BC()))), GT())
         itp_b = interpolate(A2, (BSpline(Quadratic(BC())), BSpline(Linear())), GT())
@@ -127,11 +128,17 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
             @test epsilon(itp_b(x,yd)) ≈ gtmp[2]
             ix, iy = round(Int, x), round(Int, y)
             gtmp = Interpolations.gradient(itp_c, ix, y)
-            @test_broken length(gtmp) == 1
-            @test_broken epsilon(itp_c(ix,yd)) ≈ gtmp[1]
+            @test length(gtmp) == 1
+            @test epsilon(itp_c(ix,yd)) ≈ gtmp[1]
+            gni[1] = NaN
+            Interpolations.gradient!(gni, itp_c, ix, y)
+            @test gni[1] ≈ gtmp[1]
             gtmp = Interpolations.gradient(itp_d, x, iy)
-            @test_broken length(gtmp) == 1
+            @test length(gtmp) == 1
             @test epsilon(itp_d(xd,iy)) ≈ gtmp[1]
+            gni[1] = NaN
+            Interpolations.gradient!(gni, itp_d, x, iy)
+            @test gni[1] ≈ gtmp[1]
         end
     end
 

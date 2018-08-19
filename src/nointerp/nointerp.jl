@@ -17,7 +17,7 @@ base_rem(::NoInterp, bounds, x::Number) = Int(x), 0
 expand_index(::NoInterp, xi::Number, ax::AbstractUnitRange, δx) = (xi,)
 
 value_weights(::NoInterp, δx) = (oneunit(δx),)
-gradient_weights(::NoInterp, δx) = (zero(δx),)
-hessian_weights(::NoInterp, δx) = (zero(δx),)
+gradient_weights(::NoInterp, δx) = (NoInterp(),)
+hessian_weights(::NoInterp, δx) = (NoInterp(),)
 
 padded_axis(ax::AbstractUnitRange, ::NoInterp) = ax

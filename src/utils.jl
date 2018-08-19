@@ -20,3 +20,7 @@ end
 function substitute(default::NTuple{N,Any}, d::Integer, val) where N
     ntuple(i->ifelse(i==d, val, default[i]), Val(N))
 end
+
+@inline skip_nointerp(x, rest...) = (x, skip_nointerp(rest...)...)
+@inline skip_nointerp(::NoInterp, rest...) = skip_nointerp(rest...)
+skip_nointerp() = ()
