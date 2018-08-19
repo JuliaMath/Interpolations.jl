@@ -1,37 +1,35 @@
-module TypingTests
-
 using Interpolations, Test, LinearAlgebra
 
-nx = 10
-f(x) = convert(Float32, x^3/(nx-1))
-g(x) = convert(Float32, 3x^2/(nx-1))
+@testset "Typing" begin
+    nx = 10
+    f(x) = convert(Float32, x^3/(nx-1))
+    g(x) = convert(Float32, 3x^2/(nx-1))
 
-A = Float32[f(x) for x in 1:nx]
+    A = Float32[f(x) for x in 1:nx]
 
-itp = interpolate(A, BSpline(Quadratic(Flat())), OnCell())
+    itp = interpolate(A, BSpline(Quadratic(Flat())), OnCell())
 
-# display(plot(
-#     layer(x=1:nx,y=[f(x) for x in 1:1//1:nx],Geom.point),
-#     layer(x=1:.1:nx,y=[itp[x] for x in 1:1//10:nx],Geom.path),
-# ))
+    # display(plot(
+    #     layer(x=1:nx,y=[f(x) for x in 1:1//1:nx],Geom.point),
+    #     layer(x=1:.1:nx,y=[itp[x] for x in 1:1//10:nx],Geom.path),
+    # ))
 
-for x in 3.1:.2:4.3
-    @test ≈(float(f(x)),float(itp(x)),atol=abs(0.1 * f(x)))
-end
+    for x in 3.1:.2:4.3
+        @test ≈(float(f(x)),float(itp(x)),atol=abs(0.1 * f(x)))
+    end
 
-@test typeof(itp(3.5f0)) == Float32
+    @test typeof(itp(3.5f0)) == Float32
 
-for x in 3.1:.2:4.3
-    @test ≈([g(x)], Interpolations.gradient(itp,x),atol=abs(0.1 * g(x)))
-end
+    for x in 3.1:.2:4.3
+        @test ≈([g(x)], Interpolations.gradient(itp,x),atol=abs(0.1 * g(x)))
+    end
 
-@test typeof(Interpolations.gradient(itp, 3.5f0)[1]) == Float32
+    @test typeof(Interpolations.gradient(itp, 3.5f0)[1]) == Float32
 
-# Rational element types
-R = Rational{Int}[x^2//10 for x in 1:10]
-itp = interpolate(R, BSpline(Quadratic(Free())), OnCell())
+    # Rational element types
+    R = Rational{Int}[x^2//10 for x in 1:10]
+    itp = interpolate(R, BSpline(Quadratic(Free())), OnCell())
 
-@test typeof(itp(11//10)) == Rational{Int}
-@test itp(11//10) == (11//10)^2//10
-
+    @test typeof(itp(11//10)) == Rational{Int}
+    @test itp(11//10) == (11//10)^2//10
 end
