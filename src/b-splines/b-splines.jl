@@ -45,6 +45,16 @@ coefficients(itp::BSplineInterpolation) = itp.coefs
 interpdegree(itp::BSplineInterpolation) = interpdegree(itpflag(itp))
 interpdegree(::BSpline{T}) where T = T()
 interpdegree(it::Tuple{Vararg{Union{BSpline,NoInterp},N}}) where N = interpdegree.(it)
+itpflag(itp::BSplineInterpolation) = itp.it
+gridflag(itp::BSplineInterpolation) = itp.gt
+
+size(itp::BSplineInterpolation) = map(length, itp.parentaxes)
+axes(itp::BSplineInterpolation) = itp.parentaxes
+
+lbounds(itp::BSplineInterpolation) = _lbounds(itp.parentaxes, itpflag(itp), gridflag(itp))
+ubounds(itp::BSplineInterpolation) = _ubounds(itp.parentaxes, itpflag(itp), gridflag(itp))
+_lbounds(axs::NTuple{N,Any}, itp, gt) where N = ntuple(d->lbound(axs[d], iextract(itp,d), iextract(gt,d)), Val(N))
+_ubounds(axs::NTuple{N,Any}, itp, gt) where N = ntuple(d->ubound(axs[d], iextract(itp,d), iextract(gt,d)), Val(N))
 
 # The unpadded defaults
 lbound(ax, ::BSpline, ::OnCell) = first(ax) - 0.5

@@ -77,28 +77,20 @@ const Natural = Line
 
 Base.IndexStyle(::Type{<:AbstractInterpolation}) = IndexCartesian()
 
-size(itp::AbstractInterpolation) = map(length, itp.parentaxes)
 size(exp::AbstractExtrapolation) = size(exp.itp)
-axes(itp::AbstractInterpolation) = itp.parentaxes
 axes(exp::AbstractExtrapolation) = axes(exp.itp)
 
-bounds(itp::AbstractInterpolation) = map(twotuple, lbounds(itp), ubounds(itp))
 twotuple(r::AbstractUnitRange) = (first(r), last(r))
 twotuple(x, y) = (x, y)
+bounds(itp::AbstractInterpolation) = map(twotuple, lbounds(itp), ubounds(itp))
 bounds(itp::AbstractInterpolation, d) = bounds(itp)[d]
-lbounds(itp::AbstractInterpolation) = _lbounds(itp.parentaxes, itpflag(itp), gridflag(itp))
-ubounds(itp::AbstractInterpolation) = _ubounds(itp.parentaxes, itpflag(itp), gridflag(itp))
-_lbounds(axs::NTuple{N,Any}, itp, gt) where N = ntuple(d->lbound(axs[d], iextract(itp,d), iextract(gt,d)), Val(N))
-_ubounds(axs::NTuple{N,Any}, itp, gt) where N = ntuple(d->ubound(axs[d], iextract(itp,d), iextract(gt,d)), Val(N))
 
 itptype(::Type{AbstractInterpolation{T,N,IT,GT}}) where {T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} = IT
 itptype(::Type{ITP}) where {ITP<:AbstractInterpolation} = itptype(supertype(ITP))
 itptype(itp::AbstractInterpolation) = itptype(typeof(itp))
-itpflag(itp::AbstractInterpolation) = itp.it
 gridtype(::Type{AbstractInterpolation{T,N,IT,GT}}) where {T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} = GT
 gridtype(::Type{ITP}) where {ITP<:AbstractInterpolation} = gridtype(supertype(ITP))
 gridtype(itp::AbstractInterpolation) = gridtype(typeof(itp))
-gridflag(itp::AbstractInterpolation) = itp.gt
 ndims(::Type{AbstractInterpolation{T,N,IT,GT}}) where {T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} = N
 ndims(::Type{ITP}) where {ITP<:AbstractInterpolation} = ndims(supertype(ITP))
 ndims(itp::AbstractInterpolation) = ndims(typeof(itp))
@@ -184,7 +176,7 @@ Base.to_index(::AbstractInterpolation, x::Number) = x
 
 # Commented out because you can't add methods to an abstract type.
 # @inline function (itp::AbstractInterpolation)(x::Vararg{UnexpandedIndexTypes})
-#     itp(to_indices(itp, x))
+#     itp(to_indices(itp, x)...)
 # end
 function gradient(itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
     gradient(itp, to_indices(itp, x)...)

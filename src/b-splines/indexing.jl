@@ -4,10 +4,10 @@
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     expand_value(itp, x)
 end
-@inline function (itp::BSplineInterpolation{T,1})(x::Integer, y::Integer) where T
-    @boundscheck (y == 1 || Base.throw_boundserror(itp, (x,y)))
-    expand_value(itp, (x,))
-end
+# @inline function (itp::BSplineInterpolation{T,1})(x::Integer, y::Integer) where T
+#     @boundscheck (y == 1 || Base.throw_boundserror(itp, (x,y)))
+#     expand_value(itp, (x,))
+# end
 
 @inline function gradient(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
