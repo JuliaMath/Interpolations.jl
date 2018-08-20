@@ -23,12 +23,12 @@ Linear
 
 function base_rem(::Linear, bounds, x)
     xf = floorbounds(x, bounds)
-    xf -= ifelse(xf >= floor(bounds[2]), oneunit(xf), zero(xf))
+    xf -= ifelse(xf >= last(bounds), oneunit(xf), zero(xf))
     δx = x - xf
     fast_trunc(Int, xf), δx
 end
 
-expand_index(::Linear, xi::Number, ax::AbstractUnitRange, δx) = (xi, xi+(δx>0))
+expand_index(::Linear, xi::Number, ax::AbstractUnitRange, δx) = (xi, xi + ((δx!=0) | (xi < last(ax))))
 
 value_weights(::Linear, δx) = (1-δx, δx)
 gradient_weights(::Linear, δx) = (-oneunit(δx), oneunit(δx))

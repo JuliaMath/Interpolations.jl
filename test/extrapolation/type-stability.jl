@@ -16,14 +16,14 @@ schemes = (
 )
 
 for etp in map(E -> @inferred(extrapolate(itpg, E())), schemes),
-    x in [
+    x in (
         # In-bounds evaluation
         3.4, 3, dual(3.1),
         # Out-of-bounds evaluation
         -3.4, -3, dual(-3,1),
         13.4, 13, dual(13,1)
-    ]
-    @inferred(getindex(etp, x))
+    )
+    @inferred(etp(x))
 end
 
 # Test type-stability of 2-dimensional extrapolation with homogeneous scheme
@@ -47,7 +47,7 @@ for (etp2,E) in map(E -> (extrapolate(itp2, E()), E), schemes),
         -2.1, -2, dual(-2.3, 1),
         12.1, 12, dual(12.1, 1)
     )
-    @inferred(getindex(etp2, x, y))
+    @inferred(etp2(x, y))
 end
 
 A = [1 2; 3 4]
@@ -55,8 +55,8 @@ Af = Float64.(A)
 for B in (A, Af)
     itpg2 = interpolate(B, BSpline(Linear()), OnGrid())
     etp = extrapolate(itpg2, NaN)
-    @test typeof(@inferred(getindex(etp, dual(1.5,1), dual(1.5,1)))) ==
-          typeof(@inferred(getindex(etp, dual(6.5,1), dual(3.5,1))))
+    @test typeof(@inferred(etp(dual(1.5,1), dual(1.5,1)))) ==
+          typeof(@inferred(etp(dual(6.5,1), dual(3.5,1))))
 end
 
 end

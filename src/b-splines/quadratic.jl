@@ -50,9 +50,9 @@ expand_index(::Quadratic{BC}, xi::Number, ax::AbstractUnitRange, δx) where BC<:
 padded_axis(ax::AbstractUnitRange, ::BSpline{<:Quadratic}) = first(ax)-1:last(ax)+1
 padded_axis(ax::AbstractUnitRange, ::BSpline{Quadratic{BC}}) where BC<:Union{Periodic,InPlace,InPlaceQ} = ax
 
-# Due to padding we can extend the bounds
-lbound(ax, ::BSpline{Quadratic{BC}}, ::OnGrid) where BC = first(ax) - 0.5
-ubound(ax, ::BSpline{Quadratic{BC}}, ::OnGrid) where BC = last(ax) + 0.5
+# # Due to padding we can extend the bounds
+# lbound(ax, ::BSpline{Quadratic{BC}}, ::OnGrid) where BC = first(ax) - 0.5
+# ubound(ax, ::BSpline{Quadratic{BC}}, ::OnGrid) where BC = last(ax) + 0.5
 
 function inner_system_diags(::Type{T}, n::Int, ::Quadratic) where {T}
     du = fill(convert(T, SimpleRatio(1,8)), n-1)

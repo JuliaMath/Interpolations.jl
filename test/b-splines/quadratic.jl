@@ -7,8 +7,8 @@
         for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
             itp1 = @inferred(constructor(copier(A), BSpline(Quadratic(BC())), GT()))
             ax1 = axes(itp1)[1]
-            @test Interpolations.lbounds(itp1) == (first(ax1) - 0.5,)
-            @test Interpolations.ubounds(itp1) == (last(ax1) + 0.5,)
+            @test Interpolations.lbounds(itp1) == (GT == OnGrid ? (first(ax1),) : (first(ax1) - 0.5,))
+            @test Interpolations.ubounds(itp1) == (GT == OnGrid ? (last(ax1),) : (last(ax1) + 0.5,))
             @test_throws ArgumentError parent(itp1)
             check_axes(itp1, A, isinplace)
             check_inbounds_values(itp1, A)

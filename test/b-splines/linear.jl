@@ -28,6 +28,8 @@
             check_inbounds_values(itp, A)
             check_oob(itp)
             can_eval_near_boundaries(itp)
+            I = first(eachindex(itp))
+            @test itp(I) == itp(Tuple(I)...)
         end
 
         # Just interpolation

@@ -1,5 +1,3 @@
-nindexes(N::Int) = N == 1 ? "1 index" : "$N indexes"
-
 mutable struct FilledExtrapolation{T,N,ITP<:AbstractInterpolation,IT,GT,FT} <: AbstractExtrapolation{T,N,ITP,IT,GT}
     itp::ITP
     fillvalue::FT
@@ -11,37 +9,34 @@ function FilledExtrapolation(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue) w
 end
 
 Base.parent(A::FilledExtrapolation) = A.itp
+etpflag(A::FilledExtrapolation) = A.fillvalue
 
 """
-`extrapolate(itp, fillvalue)` creates an extrapolation object that returns the `fillvalue` any time the indexes in `itp[x1,x2,...]` are out-of-bounds.
+`extrapolate(itp, fillvalue)` creates an extrapolation object that returns the `fillvalue` any time the indexes in `itp(x1,x2,...)` are out-of-bounds.
 """
 extrapolate(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue) where {T,N,IT,GT} = FilledExtrapolation(itp, fillvalue)
 
-@inline function getindex(fitp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, args::Vararg{Number,M}) where {T,N,ITP,IT,GT,FT,M}
-    @static if VERSION < v"0.7.0-DEV.843"
-        inds, trailing = Base.IteratorsMD.split(args, Val{N})
+@inline function (etp::FilledExtrapolation{T,N})(x::Vararg{Number,N}) where {T,N}
+    itp = parent(etp)
+    Tret = typeof(prod(x) * zero(T))
+    if checkbounds(Bool, itp, x...)
+        convert(Tret, expand_value(itp, x))
     else
-        inds, trailing = Base.IteratorsMD.split(args, Val(N))
+        convert(Tret, etp.fillvalue)
     end
-    @boundscheck all(x->x==1, trailing) || Base.throw_boundserror(fitp, args)
-    Tret = typeof(prod(inds) * zero(T))
-    checkbounds(Bool, fitp, inds...) && return convert(Tret, fitp.itp[inds...])
-    convert(Tret, fitp.fillvalue)
+end
+@inline function (etp::FilledExtrapolation{T,N})(args::Vararg{Number,M}) where {T,M,N}
+    inds, trailing = Base.IteratorsMD.split(args, Val(N))
+    @boundscheck all(x->x==1, trailing) || Base.throw_boundserror(etp, args)
+    @assert length(inds) == N
+    etp(inds...)
 end
 
-function (fitp::FilledExtrapolation{T,N,ITP,IT,GT,FT})(args...) where {T,N,ITP,IT,GT,FT}
-    # support function calls
-    fitp[args...]
-end
+expand_index_resid_etp(deg, fillvalue, (l, u), x, etp::FilledExtrapolation, xN) =
+    (l <= x <= u || Base.throw_boundserror(etp, xN))
 
-@inline Base.checkbounds(::Type{Bool}, A::FilledExtrapolation, I...) = _checkbounds(A, 1, axes(A), I)
-@inline _checkbounds(A, d::Int, IA::TT1, I::TT2) where {TT1,TT2} =
-    (I[1] >= lbound(A, d, IA[1])) & (I[1] <= ubound(A, d, IA[1])) & _checkbounds(A, d+1, Base.tail(IA), Base.tail(I))
-_checkbounds(A, d::Int, ::Tuple{}, ::Tuple{}) = true
-
-getindex(fitp::FilledExtrapolation{T,1}, x::Number, y::Int) where {T} = y == 1 ? fitp[x] : throw(BoundsError())
-
-lbound(etp::FilledExtrapolation, d) = lbound(etp.itp, d)
-ubound(etp::FilledExtrapolation, d) = ubound(etp.itp, d)
-lbound(etp::FilledExtrapolation, d, inds) = lbound(etp.itp, d, inds)
-ubound(etp::FilledExtrapolation, d, inds) = ubound(etp.itp, d, inds)
+# expand_etp_valueE(fv::FT, etp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, x) where {T,N,ITP,IT,GT,FT} = fv
+# expand_etp_gradientE(fv::FT, etp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, x) where {T,N,ITP,IT,GT,FT} =
+#     zero(SVector{N,FT})
+# expand_etp_hessianE(fv::FT, etp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, x) where {T,N,ITP,IT,GT,FT} =
+#     zero(Matrix{N,N,FT})

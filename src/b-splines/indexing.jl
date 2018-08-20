@@ -4,10 +4,12 @@
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     expand_value(itp, x)
 end
-# @inline function (itp::BSplineInterpolation{T,1})(x::Integer, y::Integer) where T
-#     @boundscheck (y == 1 || Base.throw_boundserror(itp, (x,y)))
-#     expand_value(itp, (x,))
-# end
+@propagate_inbounds function (itp::BSplineInterpolation{T,N})(x::Vararg{Number,M}) where {T,M,N}
+    inds, trailing = split_trailing(itp, x)
+    @boundscheck (check1(trailing) || Base.throw_boundserror(itp, x))
+    @assert length(inds) == N
+    itp(inds...)
+end
 
 @inline function gradient(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
@@ -46,7 +48,7 @@ Interpolate `itp` at `x`.
 function expand_value(itp::AbstractInterpolation, x::Tuple)
     coefs = coefficients(itp)
     degree = interpdegree(itp)
-    ixs, rxs = expand_indices_resid(degree, bounds(itp), x)
+    ixs, rxs = splitgrouped(expand_indices_resid(degree, axes(itp), x))
     cxs = expand_weights(value_weights, degree, rxs)
     expand(coefs, cxs, ixs)
 end
@@ -59,7 +61,7 @@ Calculate the interpolated gradient of `itp` at `x`.
 function expand_gradient(itp::AbstractInterpolation, x::Tuple)
     coefs = coefficients(itp)
     degree = interpdegree(itp)
-    ixs, rxs = expand_indices_resid(degree, bounds(itp), x)
+    ixs, rxs = splitgrouped(expand_indices_resid(degree, axes(itp), x))
     cxs = expand_weights(value_weights, degree, rxs)
     gxs = expand_weights(gradient_weights, degree, rxs)
     expand(coefs, (cxs, gxs), ixs)
@@ -68,7 +70,7 @@ end
 function expand_gradient!(dest, itp::AbstractInterpolation, x::Tuple)
     coefs = coefficients(itp)
     degree = interpdegree(itp)
-    ixs, rxs = expand_indices_resid(degree, bounds(itp), x)
+    ixs, rxs = splitgrouped(expand_indices_resid(degree, axes(itp), x))
     cxs = expand_weights(value_weights, degree, rxs)
     gxs = expand_weights(gradient_weights, degree, rxs)
     expand!(dest, coefs, (cxs, gxs), ixs)
@@ -82,7 +84,7 @@ Calculate the interpolated hessian of `itp` at `x`.
 function expand_hessian(itp::AbstractInterpolation, x::Tuple)
     coefs = coefficients(itp)
     degree = interpdegree(itp)
-    ixs, rxs = expand_indices_resid(degree, bounds(itp), x)
+    ixs, rxs = splitgrouped(expand_indices_resid(degree, axes(itp), x))
     cxs = expand_weights(value_weights, degree, rxs)
     gxs = expand_weights(gradient_weights, degree, rxs)
     hxs = expand_weights(hessian_weights, degree, rxs)
@@ -271,17 +273,16 @@ function expand!(dest, coefs, (vweights, gweights, hweights)::NTuple{3,HasNoInte
     dest
 end
 
-function expand_indices_resid(degree, bounds, x)
-    ixbase, δxs = splitpaired(_base_rem(degree, bounds, x))
-    expand_indices(degree, ixbase, bounds, δxs), δxs
+function expand_indices_resid(degree, axs, x)
+    item = expand_index_resid(getfirst(degree), axs[1], x[1])
+    (item, expand_indices_resid(getrest(degree), Base.tail(axs), Base.tail(x))...)
 end
+expand_indices_resid(degree, ::Tuple{}, ::Tuple{}) = ()
 
-@inline _base_rem(degree::Union{Degree,NoInterp}, bounds, x) =
-    (base_rem(degree, bounds[1], x[1]), _base_rem(degree, Base.tail(bounds), Base.tail(x))...)
-@inline _base_rem(degree::Union{Degree,NoInterp}, ::Tuple{}, ::Tuple{}) = ()
-@inline _base_rem(degree::Tuple{Vararg{Union{Degree,NoInterp},N}}, bounds::Tuple{Vararg{Any,N}}, x::Tuple{Vararg{Number,N}}) where N =
-    (base_rem(degree[1], bounds[1], x[1]), _base_rem(Base.tail(degree), Base.tail(bounds), Base.tail(x))...)
-@inline _base_rem(::Tuple{}, ::Tuple{}, ::Tuple{}) = ()
+function expand_index_resid(degree, ax, x::Number)
+    ix, δx = base_rem(degree, ax, x)
+    expand_index(degree, ix, ax, δx), δx
+end
 
 expand_weights(f, degree::Union{Degree,NoInterp}, ixs) =
     (f(degree, ixs[1]), expand_weights(f, degree, Base.tail(ixs))...)
@@ -290,14 +291,14 @@ expand_weights(f, degree::Union{Degree,NoInterp}, ::Tuple{}) = ()
 expand_weights(f, degree::Tuple{Vararg{Union{Degree,NoInterp},N}}, ixs::NTuple{N,Number}) where N =
     f.(degree, ixs)
 
-expand_indices(degree::Union{Degree,NoInterp}, ixs, axs, δxs) =
-    (expand_index(degree, ixs[1], axs[1], δxs[1]), expand_indices(degree, Base.tail(ixs), Base.tail(axs), Base.tail(δxs))...)
-expand_indices(degree::Union{Degree,NoInterp}, ::Tuple{}, ::Tuple{}, ::Tuple{}) = ()
+# expand_indices(degree::Union{Degree,NoInterp}, ixs, axs, δxs) =
+#     (expand_index(degree, ixs[1], axs[1], δxs[1]), expand_indices(degree, Base.tail(ixs), Base.tail(axs), Base.tail(δxs))...)
+# expand_indices(degree::Union{Degree,NoInterp}, ::Tuple{}, ::Tuple{}, ::Tuple{}) = ()
 
-expand_indices(degree::Tuple{Vararg{Union{Degree,NoInterp},N}}, ixs::NTuple{N,Number}, axs::NTuple{N,Tuple{Real,Real}}, δxs::NTuple{N,Number}) where N =
-    expand_index.(degree, ixs, axs, δxs)
+# expand_indices(degree::Tuple{Vararg{Union{Degree,NoInterp},N}}, ixs::NTuple{N,Number}, axs::NTuple{N,Tuple{Real,Real}}, δxs::NTuple{N,Number}) where N =
+#     expand_index.(degree, ixs, axs, δxs)
 
-expand_index(degree, ixs, bounds::Tuple{Real,Real}, δxs) = expand_index(degree, ixs, axfrombounds(bounds), δxs)
+# expand_index(degree, ixs, bounds::Tuple{Real,Real}, δxs) = expand_index(degree, ixs, axfrombounds(bounds), δxs)
 
 checklubounds(ls, us, xs) = _checklubounds(true, ls, us, xs)
 _checklubounds(tf::Bool, ls, us, xs) = _checklubounds(tf & (ls[1] <= xs[1] <= us[1]),
@@ -318,14 +319,19 @@ function getindex_return_type(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,Pad}}
 end
 
 # This handles round-towards-the-middle for points on half-integer edges
-roundbounds(x, bounds::Tuple{Integer,Integer}) = round(x)
-roundbounds(x, (l, u)) = ifelse(x == l, ceil(l), ifelse(x == u, floor(u), round(x)))
-
-floorbounds(x, bounds::Tuple{Integer,Integer}) = floor(x)
-function floorbounds(x, (l, u)::Tuple{Real,Real})
-    ceill = ceil(l)
-    ifelse(l <= x <= ceill, ceill, floor(x))
+roundbounds(x::Integer, bounds) = x
+function roundbounds(x, bounds)
+    l, u = first(bounds), last(bounds)
+    h = half(x)
+    xh = x+h
+    ifelse(x < u+half(u), floor(xh), ceil(xh)-1)
 end
 
-axfrombounds((l, u)::Tuple{Integer,Integer}) = UnitRange(l, u)
-axfrombounds((l, u)) = UnitRange(ceil(Int, l), floor(Int, u))
+floorbounds(x::Integer, ax) = x
+function floorbounds(x, ax)
+    l = first(ax)
+    h = half(x)
+    ifelse(x < l, floor(x+h), floor(x+zero(h)))
+end
+
+half(x) = oneunit(x)/2

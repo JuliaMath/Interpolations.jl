@@ -14,19 +14,15 @@
 
         for BC in (Line, Flat, Free, Periodic), GT in (OnGrid, OnCell)
             for (A, f) in ((A0, f0), (A1, f1))
-                global gitp, gA
                 itp1 = @inferred(constructor(copier(A), BSpline(Cubic(BC())), GT()))
-                gitp = itp1
-                gA = A
                 ax1 = axes(itp1)[1]
-                @test Interpolations.lbounds(itp1) == (first(ax1) - 0.5,)
-                @test Interpolations.ubounds(itp1) == (last(ax1) + 0.5,)
+                @test Interpolations.lbounds(itp1) == (GT == OnGrid ? (first(ax1),) : (first(ax1) - 0.5,))
+                @test Interpolations.ubounds(itp1) == (GT == OnGrid ? (last(ax1),) : (last(ax1) + 0.5,))
                 @test_throws ArgumentError parent(itp1)
                 check_axes(itp1, A, isinplace)
                 check_inbounds_values(itp1, A)
                 check_oob(itp1)
                 can_eval_near_boundaries(itp1)
-                InterpolationTestUtils.failstore[] = nothing
 
                 # test that inner region is close to data
                 for x in 3.1:.2:8.1
@@ -35,15 +31,11 @@
             end
 
             itp2 = @inferred(constructor(copier(A2), BSpline(Cubic(BC())), GT()))
-            global gitp, gA
-            gitp = itp2
-            gA = A2
             @test_throws ArgumentError parent(itp2)
             check_axes(itp2, A2, isinplace)
             check_inbounds_values(itp2, A2)
             check_oob(itp2)
             can_eval_near_boundaries(itp2)
-            InterpolationTestUtils.failstore[] = nothing
 
             for x in 3.1:.2:xmax2-3, y in 3.1:2:ymax2-3
                 @test f2(x,y) ≈ itp2(x,y) atol=abs(0.1 * f2(x,y))

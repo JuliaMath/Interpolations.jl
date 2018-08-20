@@ -204,9 +204,9 @@ end
 # getindex is supported only for Integer indices (deliberately)
 import Base: getindex
 @propagate_inbounds getindex(itp::AbstractInterpolation{T,N}, i::Vararg{Integer,N}) where {T,N} = itp(i...)
-@inline function getindex(itp::AbstractInterpolation{T,1}, i::Integer, j::Integer) where T
+@propagate_inbounds function getindex(itp::AbstractInterpolation{T,1}, i::Integer, j::Integer) where T
     @boundscheck (j == 1 || Base.throw_boundserror(itp, (i, j)))
-    @inbounds itp(i)
+    itp(i)
 end
 
 # deprecate getindex for other numeric indices
@@ -215,7 +215,7 @@ end
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
 # include("gridded/gridded.jl")
-# include("extrapolation/extrapolation.jl")
+include("extrapolation/extrapolation.jl")
 # include("scaling/scaling.jl")
 include("utils.jl")
 include("io.jl")

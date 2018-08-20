@@ -26,7 +26,7 @@ Cubic
 
 function base_rem(::Cubic, bounds, x)
     xf = floorbounds(x, bounds)
-    xf -= ifelse(xf > bounds[2]-1, oneunit(xf), zero(xf))
+    xf -= ifelse(xf > last(bounds)-1, oneunit(xf), zero(xf))
     δx = x - xf
     fast_trunc(Int, xf), δx
 end
@@ -71,9 +71,9 @@ hessian_weights(::Cubic, δx) = (1-δx, 3*δx-2, 3*(1-δx)-2, δx)
 padded_axis(ax::AbstractUnitRange, ::BSpline{<:Cubic}) = first(ax)-1:last(ax)+1
 padded_axis(ax::AbstractUnitRange, ::BSpline{Cubic{Periodic}}) = ax
 
-# Due to padding we can extend the bounds
-lbound(ax, ::BSpline{Cubic{BC}}, ::OnGrid) where BC = first(ax) - 0.5
-ubound(ax, ::BSpline{Cubic{BC}}, ::OnGrid) where BC = last(ax) + 0.5
+# # Due to padding we can extend the bounds
+# lbound(ax, ::BSpline{Cubic{BC}}, ::OnGrid) where BC = first(ax) - 0.5
+# ubound(ax, ::BSpline{Cubic{BC}}, ::OnGrid) where BC = last(ax) + 0.5
 
 """
 `Cubic`: continuity in function value, first and second derivatives yields

@@ -53,8 +53,10 @@ axes(itp::BSplineInterpolation) = itp.parentaxes
 
 lbounds(itp::BSplineInterpolation) = _lbounds(itp.parentaxes, itpflag(itp), gridflag(itp))
 ubounds(itp::BSplineInterpolation) = _ubounds(itp.parentaxes, itpflag(itp), gridflag(itp))
-_lbounds(axs::NTuple{N,Any}, itp, gt) where N = ntuple(d->lbound(axs[d], iextract(itp,d), iextract(gt,d)), Val(N))
-_ubounds(axs::NTuple{N,Any}, itp, gt) where N = ntuple(d->ubound(axs[d], iextract(itp,d), iextract(gt,d)), Val(N))
+_lbounds(axs, itp, gt) = (lbound(axs[1], getfirst(itp), getfirst(gt)), _lbounds(Base.tail(axs), getrest(itp), getrest(gt))...)
+_ubounds(axs, itp, gt) = (ubound(axs[1], getfirst(itp), getfirst(gt)), _ubounds(Base.tail(axs), getrest(itp), getrest(gt))...)
+_lbounds(::Tuple{}, itp, gt) = ()
+_ubounds(::Tuple{}, itp, gt) = ()
 
 # The unpadded defaults
 lbound(ax, ::BSpline, ::OnCell) = first(ax) - 0.5
