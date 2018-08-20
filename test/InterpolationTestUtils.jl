@@ -1,10 +1,11 @@
 module InterpolationTestUtils
 
-using Test, Interpolations
+using Test, Interpolations, ForwardDiff, StaticArrays
 using Interpolations: degree, itpflag, bounds, lbounds, ubounds
 using Interpolations: substitute
 
-export check_axes, check_inbounds_values, check_oob, can_eval_near_boundaries
+export check_axes, check_inbounds_values, check_oob, can_eval_near_boundaries,
+       check_gradient, check_hessian
 export MyPair
 
 const failstore = Ref{Any}(nothing)   # stash the inputs to failing tests here
@@ -105,7 +106,34 @@ function can_eval_near_boundaries(itp::AbstractInterpolation)
     end
 end
 
-# Used for multi-valued tests
+# Generate a grid of points [1.0, 1.3333, 1.6667, 2.0, 2.3333, ...] along each coordinate
+thirds(axs) = Iterators.product(_thirds(axs...)...)
+
+_thirds(a, axs...) =
+    (sort(Float64[a; (first(a):last(a)-1) .+ 1/3; (first(a)+1:last(a)) .- 1/3]), _thirds(axs...)...)
+_thirds() = ()
+
+function check_gradient(itp::AbstractInterpolation, gtmp)
+    val(x) = itp(Tuple(x)...)
+    g!(gstore, x) = ForwardDiff.gradient!(gstore, val, x)
+    gtmp2 = similar(gtmp)
+    for i in thirds(axes(itp))
+        @test Interpolations.gradient(itp, i...) ≈ g!(gtmp, SVector(i))
+        @test Interpolations.gradient!(gtmp2, itp, i...) ≈ gtmp
+    end
+end
+
+function check_hessian(itp::AbstractInterpolation, htmp)
+    val(x) = itp(Tuple(x)...)
+    h!(hstore, x) = ForwardDiff.hessian!(hstore, val, x)
+    htmp2 = similar(htmp)
+    for i in thirds(axes(itp))
+        @test Interpolations.hessian(itp, i...) ≈ h!(htmp, SVector(i))
+        @test Interpolations.hessian!(htmp2, itp, i...) ≈ htmp
+    end
+end
+
+## A type used for multi-valued tests
 import Base: +, -, *, /, ≈
 
 struct MyPair{T}

@@ -3,18 +3,40 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
 @testset "Gradients" begin
     nx = 10
     f1(x) = sin((x-3)*2pi/(nx-1) - 1)
-    g1(x) = 2pi/(nx-1) * cos((x-3)*2pi/(nx-1) - 1)
+    g1gt(x) = 2pi/(nx-1) * cos((x-3)*2pi/(nx-1) - 1)
+    A1 = Float64[f1(x) for x in 1:nx]
+    g1 = Array{Float64}(undef, 1)
+    A2 = rand(Float64, nx, nx) * 100
+    g2 = Array{Float64}(undef, 2)
 
-    # Gradient of Constant should always be 0
-    itp1 = interpolate(Float64[f1(x) for x in 1:nx],
-                       BSpline(Constant()), OnGrid())
+    for (A, g) in ((A1, g1), (A2, g2))
+        # Gradient of Constant should always be 0
+        itp = interpolate(A, BSpline(Constant()), OnGrid())
+        for x in InterpolationTestUtils.thirds(axes(A))
+            @test all(iszero, Interpolations.gradient(itp, x...))
+            @test all(iszero, Interpolations.gradient!(g, itp, x...))
+        end
 
-    g = Array{Float64}(undef, 1)
+        for GT in (OnGrid, OnCell)
+            itp = interpolate(A, BSpline(Linear()), GT())
+            check_gradient(itp, g)
+            I = first(eachindex(itp))
+            @test Interpolations.gradient(itp, I) == Interpolations.gradient(itp, Tuple(I)...)
+        end
 
-    for x in 1:nx
-        @test Interpolations.gradient(itp1, x)[1] == 0
-        @test Interpolations.gradient!(g, itp1, x)[1] == 0
-        @test g[1] == 0
+        for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
+            itp = interpolate(A, BSpline(Quadratic(BC())), GT())
+            check_gradient(itp, g)
+            I = first(eachindex(itp))
+            @test Interpolations.gradient(itp, I) == Interpolations.gradient(itp, Tuple(I)...)
+        end
+
+        for BC in (Line, Flat, Free, Periodic), GT in (OnGrid, OnCell)
+            itp = interpolate(A, BSpline(Cubic(BC())), GT())
+            check_gradient(itp, g)
+            I = first(eachindex(itp))
+            @test Interpolations.gradient(itp, I) == Interpolations.gradient(itp, Tuple(I)...)
+        end
     end
 
     # Since Linear is OnGrid in the domain, check the gradients between grid points
@@ -24,9 +46,9 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
     #             Gridded(Linear()))
     for itp in (itp1, )#itp2)
         for x in 2.5:nx-1.5
-            @test ≈(g1(x),(Interpolations.gradient(itp,x))[1],atol=abs(0.1 * g1(x)))
-            @test ≈(g1(x),(Interpolations.gradient!(g,itp,x))[1],atol=abs(0.1 * g1(x)))
-            @test ≈(g1(x),g[1],atol=abs(0.1 * g1(x)))
+            @test ≈(g1gt(x),(Interpolations.gradient(itp,x))[1],atol=abs(0.1 * g1gt(x)))
+            @test ≈(g1gt(x),(Interpolations.gradient!(g1,itp,x))[1],atol=abs(0.1 * g1gt(x)))
+            @test ≈(g1gt(x),g1[1],atol=abs(0.1 * g1gt(x)))
         end
 
         for i = 1:10
@@ -52,9 +74,9 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
     itp1 = interpolate(Float64[f1(x) for x in 1:nx-1],
                        BSpline(Quadratic(Periodic())), OnCell())
     for x in 2:nx-1
-        @test ≈(g1(x),(Interpolations.gradient(itp1,x))[1],atol=abs(0.05 * g1(x)))
-        @test ≈(g1(x),(Interpolations.gradient!(g,itp1,x))[1],atol=abs(0.05 * g1(x)))
-        @test ≈(g1(x),g[1],atol=abs(0.1 * g1(x)))
+        @test ≈(g1gt(x),(Interpolations.gradient(itp1,x))[1],atol=abs(0.05 * g1gt(x)))
+        @test ≈(g1gt(x),(Interpolations.gradient!(g1,itp1,x))[1],atol=abs(0.05 * g1gt(x)))
+        @test ≈(g1gt(x),g1[1],atol=abs(0.1 * g1gt(x)))
     end
 
     for i = 1:10

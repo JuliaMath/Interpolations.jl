@@ -23,6 +23,8 @@ using Interpolations
 
     # # test gradient evaluation
     include("gradient.jl")
+    # # test hessian evaluation
+    include("hessian.jl")
 
     # # gridded interpolation tests
     # include("gridded/runtests.jl")

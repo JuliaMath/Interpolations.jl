@@ -187,16 +187,16 @@ Base.to_index(::AbstractInterpolation, x::Number) = x
 #     itp(to_indices(itp, x))
 # end
 function gradient(itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
-    gradient(itp, to_indices(itp, x))
+    gradient(itp, to_indices(itp, x)...)
 end
 function gradient!(dest, itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
-    gradient!(dest, itp, to_indices(itp, x))
+    gradient!(dest, itp, to_indices(itp, x)...)
 end
 function hessian(itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
-    hessian(itp, to_indices(itp, x))
+    hessian(itp, to_indices(itp, x)...)
 end
 function hessian!(dest, itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
-    hessian!(dest, itp, to_indices(itp, x))
+    hessian!(dest, itp, to_indices(itp, x)...)
 end
 
 # @inline function (itp::AbstractInterpolation)(x::Vararg{ExpandedIndexTypes})

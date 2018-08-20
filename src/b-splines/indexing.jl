@@ -17,7 +17,12 @@ end
     @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
     expand_gradient!(dest, itp, x)
 end
+
 @inline function hessian(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
+    expand_hessian(itp, x)
+end
+@inline function hessian!(dest, itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
     expand_hessian(itp, x)
 end
@@ -77,7 +82,7 @@ Calculate the interpolated hessian of `itp` at `x`.
 function expand_hessian(itp::AbstractInterpolation, x::Tuple)
     coefs = coefficients(itp)
     degree = interpdegree(itp)
-    ixs, rxs = expand_indices_resid(degree, axes(coefs), x)
+    ixs, rxs = expand_indices_resid(degree, bounds(itp), x)
     cxs = expand_weights(value_weights, degree, rxs)
     gxs = expand_weights(gradient_weights, degree, rxs)
     hxs = expand_weights(hessian_weights, degree, rxs)
@@ -194,14 +199,76 @@ function expand!(dest, coefs, (vweights, gweights)::Tuple{HasNoInterp{N},HasNoIn
     i = 0
     for d = 1:N
         w = substitute(vweights, d, gweights)
-        w isa Weights || continue   # must have a NoInterp in it
+        w isa Weights || continue   # if this isn't true, it must have a NoInterp in it
         dest[i+=1] = expand(coefs, w, ixs)
     end
     dest
 end
 
-function expand(coefs, (vweights, gweights, hweights)::NTuple{3,Weights{N}}, ixs::Indexes{N}) where N
-    error("not yet implemented")
+# Expansion of the hessian
+# To handle the immutability of SMatrix we build static methods that visit just the entries we need,
+# which due to symmetry is just the upper triangular part
+ntuple_sym(f, ::Val{0}) = ()
+ntuple_sym(f, ::Val{1}) = (f(1,1),)
+ntuple_sym(f, ::Val{2}) = (f(1,1), f(1,2), f(2,2))
+ntuple_sym(f, ::Val{3}) = (f(1,1), f(1,2), f(2,2), f(1,3), f(2,3), f(3,3))
+ntuple_sym(f, ::Val{4}) = (f(1,1), f(1,2), f(2,2), f(1,3), f(2,3), f(3,3), f(1,4), f(2,4), f(3,4), f(4,4))
+@inline function ntuple_sym(f, ::Val{N}) where N
+    (ntuple_sym(f, Val(N-1))..., ntuple(i->f(i,N), Val(N))...)
+end
+
+sym2dense(t::Tuple{})              = t
+sym2dense(t::NTuple{1,T}) where T  = t
+sym2dense(t::NTuple{3,T}) where T  = (t[1], t[2], t[2], t[3])
+sym2dense(t::NTuple{6,T}) where T  = (t[1], t[2], t[4], t[2], t[3], t[5], t[4], t[5], t[6])
+sym2dense(t::NTuple{10,T}) where T = (t[1], t[2], t[4], t[7], t[2], t[3], t[5], t[8], t[4], t[5], t[6], t[9], t[7], t[8], t[9], t[10])
+function sym2dense(t::NTuple{L,T}) where {L,T}
+    # Warning: non-inferrable unless we make this @generated.
+    # Above 4 dims one might anyway prefer an Array, and use hessian!
+    N = ceil(Int, sqrt(2*L))
+    @assert (N*(N+1))÷2 == L
+    a = Vector{T}(undef, N*N)
+    idx = 0
+    for j = 1:N, i=1:N
+        iu, ju = ifelse(i>=j, (j, i), (i, j))  # index in the upper triangular
+        k = (ju*(ju+1))÷2 + iu
+        a[idx+=1] = t[k]
+    end
+    tuple(a...)
+end
+
+squarematrix(t::NTuple{1,T}) where T  = SMatrix{1,1,T}(t)
+squarematrix(t::NTuple{4,T}) where T  = SMatrix{2,2,T}(t)
+squarematrix(t::NTuple{9,T}) where T  = SMatrix{3,3,T}(t)
+squarematrix(t::NTuple{16,T}) where T = SMatrix{4,4,T}(t)
+function squarematrix(t::NTuple{L,T}) where {L,T}
+    # Warning: non-inferrable unless we make this @generated.
+    # Above 4 dims one might anyway prefer an Array, and use hessian!
+    N = floor(Int, sqrt(L))
+    @assert N*N == L
+    SMatrix{N,N,T}(t)
+end
+
+cumweights(w) = _cumweights(0, w...)
+_cumweights(c, w1, w...) = (c+1, _cumweights(c+1, w...)...)
+_cumweights(c, ::NoInterp, w...) = (c, _cumweights(c, w...)...)
+_cumweights(c) = ()
+
+function expand(coefs, (vweights, gweights, hweights)::NTuple{3,HasNoInterp{N}}, ixs::Indexes{N}) where N
+    coefs = ntuple_sym((i,j)->expand(coefs, substitute(vweights, i, j, gweights, hweights), ixs), Val(N))
+    squarematrix(sym2dense(skip_nointerp(coefs...)))
+end
+
+function expand!(dest, coefs, (vweights, gweights, hweights)::NTuple{3,HasNoInterp{N}}, ixs::Indexes{N}) where N
+    # The Hessian is nominally N × N, but if there are K NoInterp dims then it's N-K × N-K
+    indlookup = cumweights(hweights)   # for d in 1:N, indlookup[d] returns the appropriate index in 1:N-K
+    for d2 = 1:N, d1 = 1:d2
+        w = substitute(vweights, d1, d2, gweights, hweights)
+        w isa Weights || continue   # if this isn't true, it must have a NoInterp in it
+        i, j = indlookup[d1], indlookup[d2]
+        dest[i, j] = dest[j, i] = expand(coefs, w, ixs)
+    end
+    dest
 end
 
 function expand_indices_resid(degree, bounds, x)
@@ -255,7 +322,7 @@ roundbounds(x, bounds::Tuple{Integer,Integer}) = round(x)
 roundbounds(x, (l, u)) = ifelse(x == l, ceil(l), ifelse(x == u, floor(u), round(x)))
 
 floorbounds(x, bounds::Tuple{Integer,Integer}) = floor(x)
-function floorbounds(x, (l, u))
+function floorbounds(x, (l, u)::Tuple{Real,Real})
     ceill = ceil(l)
     ifelse(l <= x <= ceill, ceill, floor(x))
 end
