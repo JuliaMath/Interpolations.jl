@@ -59,13 +59,13 @@ function check_inbounds_values(itp, A)
         for i in eachindex(itp)
             @test itp[i,1] ≈ A[i]   # used in the AbstractArray display infrastructure
             @test_throws BoundsError itp[i,2]
-            if cb
-                @test_throws BoundsError getindexib(itp, i, 2)
-                @test_throws BoundsError callib(itp, i, 2)
-            else
-                @test getindexib(itp, i, 2) ≈ A[i]
-                @test callib(itp, i, 2) ≈ A[i]
-            end
+            # if cb
+            #     @test_throws BoundsError getindexib(itp, i, 2)
+            #     @test_throws BoundsError callib(itp, i, 2)
+            # else
+            #     @test getindexib(itp, i, 2) ≈ A[i]
+            #     @test callib(itp, i, 2) ≈ A[i]
+            # end
         end
     end
     nothing
