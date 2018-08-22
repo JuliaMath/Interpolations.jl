@@ -59,10 +59,10 @@ _lbounds(::Tuple{}, itp, gt) = ()
 _ubounds(::Tuple{}, itp, gt) = ()
 
 # The unpadded defaults
-lbound(ax, ::BSpline, ::OnCell) = first(ax) - 0.5
-ubound(ax, ::BSpline, ::OnCell) = last(ax) + 0.5
-lbound(ax, ::BSpline, ::OnGrid) = first(ax)
-ubound(ax, ::BSpline, ::OnGrid) = last(ax)
+lbound(ax::AbstractUnitRange, ::BSpline, ::OnCell) = first(ax) - 0.5
+ubound(ax::AbstractUnitRange, ::BSpline, ::OnCell) = last(ax) + 0.5
+lbound(ax::AbstractUnitRange, ::BSpline, ::OnGrid) = first(ax)
+ubound(ax::AbstractUnitRange, ::BSpline, ::OnGrid) = last(ax)
 
 fix_axis(r::Base.OneTo) = r
 fix_axis(r::Base.Slice) = r

@@ -4,6 +4,7 @@ struct Extrapolation{T,N,ITPT,IT,GT,ET} <: AbstractExtrapolation{T,N,ITPT,IT,GT}
 end
 
 Base.parent(A::Extrapolation) = A.itp
+itpflag(etp::Extrapolation) = itpflag(etp.itp)
 
 # DimSpec{Flag} is not enough for extrapolation dispatch, since we allow nested tuples
 # However, no tuples should be nested deeper than this; the first level is for different

@@ -10,6 +10,7 @@ end
 
 Base.parent(A::FilledExtrapolation) = A.itp
 etpflag(A::FilledExtrapolation) = A.fillvalue
+itpflag(A::FilledExtrapolation) = itpflag(A.itp)
 
 """
 `extrapolate(itp, fillvalue)` creates an extrapolation object that returns the `fillvalue` any time the indexes in `itp(x1,x2,...)` are out-of-bounds.

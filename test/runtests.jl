@@ -18,8 +18,8 @@ using Interpolations
     # extrapolation tests
     include("extrapolation/runtests.jl")
 
-    # # scaling tests
-    # include("scaling/runtests.jl")
+    # scaling tests
+    include("scaling/runtests.jl")
 
     # # test gradient evaluation
     include("gradient.jl")
