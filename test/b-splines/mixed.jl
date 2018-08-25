@@ -4,8 +4,8 @@
     for (constructor, copier) in ((interpolate, x->x), (interpolate!, copy))
         A2 = rand(Float64, N, N) * 100
         for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
-            itp_a = @inferred(constructor(copier(A2), (BSpline(Linear()), BSpline(Quadratic(BC()))), GT()))
-            itp_b = @inferred(constructor(copier(A2), (BSpline(Quadratic(BC())), BSpline(Linear())), GT()))
+            itp_a = @inferred(constructor(copier(A2), (BSpline(Linear()), BSpline(Quadratic(BC(GT()))))))
+            itp_b = @inferred(constructor(copier(A2), (BSpline(Quadratic(BC(GT()))), BSpline(Linear()))))
             isfullsize = constructor == interpolate || BC==Periodic
             if isfullsize
                 @test @inferred(size(itp_a)) == size(A2)
@@ -49,8 +49,8 @@
             A2[i] *= 100
         end
         for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
-            itp_a = @inferred(constructor(copier(A2), (BSpline(Linear()), BSpline(Quadratic(BC()))), GT()))
-            itp_b = @inferred(constructor(copier(A2), (BSpline(Quadratic(BC())), BSpline(Linear())), GT()))
+            itp_a = @inferred(constructor(copier(A2), (BSpline(Linear()), BSpline(Quadratic(BC(GT()))))))
+            itp_b = @inferred(constructor(copier(A2), (BSpline(Quadratic(BC(GT()))), BSpline(Linear()))))
             if constructor == interpolate!
                 @test isa(itp_a.coefs, SharedArray)
                 @test isa(itp_b.coefs, SharedArray)

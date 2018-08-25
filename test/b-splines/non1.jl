@@ -21,14 +21,14 @@ using AxisAlgorithms, OffsetArrays
         xinds, yinds = -2:28,0:9
         A2 = OffsetArray(Float64[f2(x,y) for x in xinds, y in yinds], xinds, yinds)
 
-        for GT in (OnGrid, OnCell), O in (Constant, Linear)
-            itp1 = @inferred(constructor(copier(A1), BSpline(O()), GT()))
+        for O in (Constant, Linear)
+            itp1 = @inferred(constructor(copier(A1), BSpline(O())))
             check_axes(itp1, A1, isinplace)
             check_inbounds_values(itp1, A1)
             check_oob(itp1)
             can_eval_near_boundaries(itp1)
 
-            itp2 = @inferred(constructor(copier(A2), BSpline(O()), GT()))
+            itp2 = @inferred(constructor(copier(A2), BSpline(O())))
             check_axes(itp2, A2, isinplace)
             check_inbounds_values(itp2, A2)
             check_oob(itp2)
@@ -36,13 +36,13 @@ using AxisAlgorithms, OffsetArrays
         end
 
         for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
-            itp1 = @inferred(constructor(copier(A1), BSpline(Quadratic(BC())), GT()))
+            itp1 = @inferred(constructor(copier(A1), BSpline(Quadratic(BC(GT())))))
             check_axes(itp1, A1, isinplace)
             check_inbounds_values(itp1, A1)
             check_oob(itp1)
             can_eval_near_boundaries(itp1)
 
-            itp2 = @inferred(constructor(copier(A2), BSpline(Quadratic(BC())), GT()))
+            itp2 = @inferred(constructor(copier(A2), BSpline(Quadratic(BC(GT())))))
             check_axes(itp2, A2, isinplace)
             check_inbounds_values(itp2, A2)
             check_oob(itp2)
@@ -50,13 +50,13 @@ using AxisAlgorithms, OffsetArrays
         end
 
         for BC in (Flat,Line,Free,Periodic), GT in (OnGrid, OnCell)
-            itp1 = @inferred(constructor(copier(A1), BSpline(Cubic(BC())), GT()))
+            itp1 = @inferred(constructor(copier(A1), BSpline(Cubic(BC(GT())))))
             check_axes(itp1, A1, isinplace)
             check_inbounds_values(itp1, A1)
             check_oob(itp1)
             can_eval_near_boundaries(itp1)
 
-            itp2 = @inferred(constructor(copier(A2), BSpline(Cubic(BC())), GT()))
+            itp2 = @inferred(constructor(copier(A2), BSpline(Cubic(BC(GT())))))
             check_axes(itp2, A2, isinplace)
             check_inbounds_values(itp2, A2)
             check_oob(itp2)
@@ -68,7 +68,7 @@ using AxisAlgorithms, OffsetArrays
         f(x) = sin((x-3)*2pi/9 - 1)
         inds = -7:2
         A = OffsetArray(Float64[f(x) for x in inds], inds)
-        itp1 = interpolate!(copy(A), BSpline(Quadratic(InPlace())), OnCell())
+        itp1 = interpolate!(copy(A), BSpline(Quadratic(InPlace(OnCell()))))
         check_axes(itp1, A)
         check_inbounds_values(itp1, A)
         check_oob(itp1)
@@ -77,7 +77,7 @@ using AxisAlgorithms, OffsetArrays
         f(x,y) = sin(x/10)*cos(y/6) + 0.1
         xinds, yinds = -2:28,0:9
         A2 = OffsetArray(Float64[f(x,y) for x in xinds, y in yinds], xinds, yinds)
-        itp2 = interpolate!(copy(A2), BSpline(Quadratic(InPlace())), OnCell())
+        itp2 = interpolate!(copy(A2), BSpline(Quadratic(InPlace(OnCell()))))
         check_axes(itp2, A2)
         check_inbounds_values(itp2, A2)
         check_oob(itp2)

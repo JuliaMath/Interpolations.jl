@@ -8,21 +8,21 @@ using Interpolations, Test
     A = randn(5, 5)
 
     # Nearest-neighbor interpolation
-    itp = interpolate(a, BSpline(Constant()), OnCell())
+    itp = interpolate(a, BSpline(Constant()))
     v = itp(5.4)   # returns a[5]
     @test v ≈ a[5]
 
     # (Multi)linear interpolation
-    itp = interpolate(A, BSpline(Linear()), OnGrid())
+    itp = interpolate(A, BSpline(Linear()))
     v = itp(3.2, 4.1)  # returns 0.9*(0.8*A[3,4]+0.2*A[4,4]) + 0.1*(0.8*A[3,5]+0.2*A[4,5])
     @test v ≈ (0.9*(0.8*A[3,4]+0.2*A[4,4]) + 0.1*(0.8*A[3,5]+0.2*A[4,5]))
 
     # Quadratic interpolation with reflecting boundary conditions
     # Quadratic is the lowest order that has continuous gradien
-    itp = interpolate(A, BSpline(Quadratic(Reflect())), OnCell())
+    itp = interpolate(A, BSpline(Quadratic(Reflect(OnCell()))))
 
     # Linear interpolation in the first dimension, and no interpolation (just lookup) in the second
-    itp = interpolate(A, (BSpline(Linear()), NoInterp()), OnGrid())
+    itp = interpolate(A, (BSpline(Linear()), NoInterp()))
     v = itp(3.65, 5)  # returns  0.35*A[3,5] + 0.65*A[4,5]
     @test v ≈ (0.35*A[3,5] + 0.65*A[4,5])
 
@@ -40,7 +40,7 @@ using Interpolations, Test
     A_x2 = 1:.5:20
     f(x1, x2) = log(x1+x2)
     A = [f(x1,x2) for x1 in A_x1, x2 in A_x2]
-    itp = interpolate(A, BSpline(Cubic(Line())), OnGrid())
+    itp = interpolate(A, BSpline(Cubic(Line(OnGrid()))))
     # sitp = scale(itp, A_x1, A_x2)
     # @test sitp(5., 10.) ≈ log(5 + 10) # exactly log(5 + 10)
     # @test sitp(5.6, 7.1) ≈ log(5.6 + 7.1) atol=.1 # approximately log(5.6 + 7.1)

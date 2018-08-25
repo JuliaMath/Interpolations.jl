@@ -14,7 +14,7 @@
 
         for BC in (Line, Flat, Free, Periodic), GT in (OnGrid, OnCell)
             for (A, f) in ((A0, f0), (A1, f1))
-                itp1 = @inferred(constructor(copier(A), BSpline(Cubic(BC())), GT()))
+                itp1 = @inferred(constructor(copier(A), BSpline(Cubic(BC(GT())))))
                 ax1 = axes(itp1)[1]
                 @test Interpolations.lbounds(itp1) == (GT == OnGrid ? (first(ax1),) : (first(ax1) - 0.5,))
                 @test Interpolations.ubounds(itp1) == (GT == OnGrid ? (last(ax1),) : (last(ax1) + 0.5,))
@@ -30,7 +30,7 @@
                 end
             end
 
-            itp2 = @inferred(constructor(copier(A2), BSpline(Cubic(BC())), GT()))
+            itp2 = @inferred(constructor(copier(A2), BSpline(Cubic(BC(GT())))))
             @test_throws ArgumentError parent(itp2)
             check_axes(itp2, A2, isinplace)
             check_inbounds_values(itp2, A2)
@@ -54,18 +54,18 @@
 
         for BC in (Line, Flat, Free, Periodic), GT in (OnGrid,OnCell)
 
-            itp = constructor(copier(A), BSpline(Cubic(BC())), GT())
+            itp = constructor(copier(A), BSpline(Cubic(BC(GT()))))
             # test that inner region is close to data
             for x in range(ix[5], stop=ix[end-4], length=100)
                 @test g(x) ≈ Interpolations.gradient1(itp,x) atol=cbrt(cbrt(eps(g(x))))
             end
         end
     end
-    itp_flat_g = interpolate(A, BSpline(Cubic(Flat())), OnGrid())
+    itp_flat_g = interpolate(A, BSpline(Cubic(Flat(OnGrid()))))
     @test Interpolations.gradient(itp_flat_g,1)[1] ≈ 0 atol=eps()
     @test Interpolations.gradient(itp_flat_g,ix[end])[1] ≈ 0 atol=eps()
 
-    itp_flat_c = interpolate(A, BSpline(Cubic(Flat())), OnCell())
+    itp_flat_c = interpolate(A, BSpline(Cubic(Flat(OnCell()))))
     @test Interpolations.gradient(itp_flat_c,0.5)[1] ≈ 0 atol=eps()
     @test Interpolations.gradient(itp_flat_c,ix[end] + 0.5)[1] ≈ 0 atol=eps()
 end

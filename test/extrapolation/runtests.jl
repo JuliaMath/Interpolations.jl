@@ -8,7 +8,7 @@ using Test
     xmax = 10
     A = Float64[f(x) for x in 1:xmax]
 
-    itpg = interpolate(A, BSpline(Linear()), OnGrid())
+    itpg = interpolate(A, BSpline(Linear()))
 
     etpg = extrapolate(itpg, Flat())
     @test typeof(etpg) <: AbstractExtrapolation
@@ -34,7 +34,7 @@ using Test
     x =  @inferred(etpf(dual(-2.5,1)))
     @test isa(x, Dual)
 
-    etpl = extrapolate(itpg, Linear())
+    etpl = extrapolate(itpg, Line())
     k_lo = A[2] - A[1]
     x_lo = -3.2
     @test etpl(x_lo) ≈ A[1] + k_lo * (x_lo - 1)
@@ -46,35 +46,27 @@ using Test
     xmax, ymax = 8,8
     g(x, y) = (x^2 + 3x - 8) * (-2y^2 + y + 1)
 
-    itp2g = interpolate(Float64[g(x,y) for x in 1:xmax, y in 1:ymax], (BSpline(Quadratic(Free())), BSpline(Linear())), OnGrid())
-    etp2g = extrapolate(itp2g, (Linear(), Flat()))
+    itp2g = interpolate(Float64[g(x,y) for x in 1:xmax, y in 1:ymax], (BSpline(Quadratic(Free(OnGrid()))), BSpline(Linear())))
+    etp2g = extrapolate(itp2g, (Line(), Flat()))
 
     @test @inferred(etp2g(-0.5,4)) ≈ itp2g(1,4) - 1.5 * epsilon(etp2g(dual(1,1),4))
     @test @inferred(etp2g(5,100)) ≈ itp2g(5,ymax)
 
-    etp2ud = extrapolate(itp2g, ((Linear(), Flat()), Flat()))
+    etp2ud = extrapolate(itp2g, ((Line(), Flat()), Flat()))
     @test @inferred(etp2ud(-0.5,4)) ≈ itp2g(1,4) - 1.5 * epsilon(etp2g(dual(1,1),4))
     @test @inferred(etp2ud(5, -4)) == etp2ud(5,1)
     @test @inferred(etp2ud(100, 4)) == etp2ud(8,4)
     @test @inferred(etp2ud(-.5, 100)) == itp2g(1,8) - 1.5 * epsilon(etp2g(dual(1,1),8))
 
-    etp2ll = extrapolate(itp2g, Linear())
+    etp2ll = extrapolate(itp2g, Line())
     @test @inferred(etp2ll(-0.5,100)) ≈ (itp2g(1,8) - 1.5 * epsilon(etp2ll(dual(1,1),8))) + (100 - 8) * epsilon(etp2ll(1,dual(8,1)))
 
     # Allow element types that don't support conversion to Int (#87):
-    etp87g = extrapolate(interpolate([1.0im, 2.0im, 3.0im], BSpline(Linear()), OnGrid()), 0.0im)
+    etp87g = extrapolate(interpolate([1.0im, 2.0im, 3.0im], BSpline(Linear())), 0.0im)
     @test @inferred(etp87g(1)) == 1.0im
     @test @inferred(etp87g(1.5)) == 1.5im
     @test @inferred(etp87g(0.75)) == 0.0im
     @test @inferred(etp87g(3.25)) == 0.0im
-
-    etp87c = extrapolate(interpolate([1.0im, 2.0im, 3.0im], BSpline(Linear()), OnCell()), 0.0im)
-    @test @inferred(etp87c(1)) == 1.0im
-    @test @inferred(etp87c(1.5)) == 1.5im
-    @test @inferred(etp87c(0.75)) == 0.75im
-    @test @inferred(etp87c(3.25)) == 3.25im
-    @test @inferred(etp87g(0)) == 0.0im
-    @test @inferred(etp87g(3.7)) == 0.0im
 
     # # Make sure it works with Gridded too
     # etp100g = extrapolate(interpolate(([10;20],),[100;110], Gridded(Linear())), Flat())
@@ -87,15 +79,15 @@ using Test
     # @test @inferred(etp(-1,0)) === 0.0+0.0im
 
     # check all extrapolations work with vectorized indexing
-    for E in [0,Flat(),Linear(),Periodic(),Reflect()]
-        @test_broken (@inferred(extrapolate(interpolate([0,0],BSpline(Linear()),OnGrid()),E))([1.2, 1.8, 3.1])) == [0,0,0]
+    for E in [0,Flat(),Line(),Periodic(),Reflect()]
+        @test_broken (@inferred(extrapolate(interpolate([0,0],BSpline(Linear())),E))([1.2, 1.8, 3.1])) == [0,0,0]
     end
 
     # # Issue #156
     # F     = *(collect(1.0:10.0), collect(1:4)')
     # itp   = interpolate(F, (BSpline(Linear()), NoInterp()), OnGrid());
     # itps   = scale(itp, 1:10, 1:4)
-    # itpe   = extrapolate(itps, (Linear(), Interpolations.Throw()))
+    # itpe   = extrapolate(itps, (Line(), Interpolations.Throw()))
     # @test itpe(10.1, 1) ≈ 10.1
     # @test_throws BoundsError itpe(9.9, 0)
 

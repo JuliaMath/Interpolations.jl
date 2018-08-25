@@ -10,7 +10,7 @@ using Interpolations, Test, LinearAlgebra, Random
 
     A = hcat(map(f1, xs), map(f2, xs), map(f3, xs))
 
-    itp = interpolate(A, (BSpline(Quadratic(Periodic())), NoInterp()), OnGrid())
+    itp = interpolate(A, (BSpline(Quadratic(Periodic(OnGrid()))), NoInterp()))
     sitp = scale(itp, xs, ys)
 
     for (ix,x0) in enumerate(xs[1:end-1]), y0 in ys
@@ -26,8 +26,8 @@ using Interpolations, Test, LinearAlgebra, Random
     za = copy(z0)
     zb = copy(z0')
 
-    itpa = interpolate(za, (BSpline(Linear()), NoInterp()), OnGrid())
-    itpb = interpolate(zb, (NoInterp(), BSpline(Linear())), OnGrid())
+    itpa = interpolate(za, (BSpline(Linear()), NoInterp()))
+    itpb = interpolate(zb, (NoInterp(), BSpline(Linear())))
 
     rng = range(1.0, stop=19.0, length=10)
     sitpa = scale(itpa, rng, 1:10)

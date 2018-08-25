@@ -7,7 +7,7 @@ using Interpolations, Test, LinearAlgebra
 
     A = Float32[f(x) for x in 1:nx]
 
-    itp = interpolate(A, BSpline(Quadratic(Flat())), OnCell())
+    itp = interpolate(A, BSpline(Quadratic(Flat(OnCell()))))
 
     # display(plot(
     #     layer(x=1:nx,y=[f(x) for x in 1:1//1:nx],Geom.point),
@@ -28,7 +28,7 @@ using Interpolations, Test, LinearAlgebra
 
     # Rational element types
     R = Rational{Int}[x^2//10 for x in 1:10]
-    itp = interpolate(R, BSpline(Quadratic(Free())), OnCell())
+    itp = interpolate(R, BSpline(Quadratic(Free(OnCell()))))
 
     @test typeof(itp(11//10)) == Rational{Int}
     @test itp(11//10) == (11//10)^2//10

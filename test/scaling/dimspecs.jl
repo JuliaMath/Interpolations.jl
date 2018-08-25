@@ -5,7 +5,7 @@ using Interpolations, DualNumbers, Test, LinearAlgebra
     ys = -2:.1:2
     f(x,y) = sin(x) * y^2
 
-    itp = interpolate(Float64[f(x,y) for x in xs, y in ys], (BSpline(Quadratic(Periodic())), BSpline(Linear())), OnGrid())
+    itp = interpolate(Float64[f(x,y) for x in xs, y in ys], (BSpline(Quadratic(Periodic(OnGrid()))), BSpline(Linear())))
     sitp = scale(itp, xs, ys)
 
     for (ix,x) in enumerate(xs), (iy,y) in enumerate(ys)

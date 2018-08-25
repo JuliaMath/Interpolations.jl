@@ -6,11 +6,11 @@ using Test, Interpolations, DualNumbers
 f(x) = sin((x-3)*2pi/9 - 1)
 xmax = 10
 A = Float64[f(x) for x in 1:xmax]
-itpg = interpolate(A, BSpline(Linear()), OnGrid())
+itpg = interpolate(A, BSpline(Linear()))
 
 schemes = (
     Flat,
-    Linear,
+    Line,
     Reflect,
     Periodic
 )
@@ -30,7 +30,7 @@ end
 g(y) = (y/100)^3
 ymax = 4
 A = Float64[f(x)*g(y) for x in 1:xmax, y in 1:ymax]
-itp2 = interpolate(A, BSpline(Linear()), OnGrid())
+itp2 = interpolate(A, BSpline(Linear()))
 
 for (etp2,E) in map(E -> (extrapolate(itp2, E()), E), schemes),
     x in (
@@ -53,7 +53,7 @@ end
 A = [1 2; 3 4]
 Af = Float64.(A)
 for B in (A, Af)
-    itpg2 = interpolate(B, BSpline(Linear()), OnGrid())
+    itpg2 = interpolate(B, BSpline(Linear()))
     etp = extrapolate(itpg2, NaN)
     @test typeof(@inferred(etp(dual(1.5,1), dual(1.5,1)))) ==
           typeof(@inferred(etp(dual(6.5,1), dual(3.5,1))))

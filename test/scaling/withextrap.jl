@@ -23,7 +23,7 @@ using Interpolations, Test
     end
 
     for GT in (OnGrid, OnCell)
-        itp = interpolate(ys, BSpline(Quadratic(Flat())), GT())
+        itp = interpolate(ys, BSpline(Quadratic(Flat(GT()))))
 
         # Test extrapolating, then scaling
         eitp = extrapolate(itp, Flat())

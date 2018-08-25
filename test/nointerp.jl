@@ -1,6 +1,6 @@
 @testset "NoInterp" begin
     a = reshape(1:12, 3, 4)
-    ai = interpolate(a, NoInterp(), OnGrid())
+    ai = interpolate(a, NoInterp())
     @test eltype(ai) == Int
     check_axes(ai, a)
     check_inbounds_values(ai, a)
