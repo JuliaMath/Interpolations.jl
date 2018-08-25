@@ -34,28 +34,27 @@ prefilter!(::Type{TWeights}, A::AbstractArray, ::BSpline{D}, ::GridType) where {
 
 function prefilter(
     ::Type{TWeights}, ::Type{TC}, A::AbstractArray,
-    it::Union{BSpline,Tuple{Vararg{Union{BSpline,NoInterp}}}},
-    gt::DimSpec{GridType}
+    it::Union{BSpline,Tuple{Vararg{Union{BSpline,NoInterp}}}}
     ) where {TWeights,TC}
     ret = copy_with_padding(TC, A, it)
-    prefilter!(TWeights, ret, it, gt)
+    prefilter!(TWeights, ret, it)
 end
 
 function prefilter!(
-    ::Type{TWeights}, ret::TCoefs, it::BSpline, gt::GridType
+    ::Type{TWeights}, ret::TCoefs, it::BSpline
     ) where {TWeights,TCoefs<:AbstractArray}
     local buf, shape, retrs
     sz = size(ret)
     first = true
     for dim in 1:ndims(ret)
-        M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[dim], degree(it), gt)
+        M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[dim], degree(it))
         A_ldiv_B_md!(popwrapper(ret), M, popwrapper(ret), dim, b)
     end
     ret
 end
 
 function prefilter!(
-    ::Type{TWeights}, ret::TCoefs, its::Tuple{Vararg{Union{BSpline,NoInterp}}}, gt::DimSpec{GridType}
+    ::Type{TWeights}, ret::TCoefs, its::Tuple{Vararg{Union{BSpline,NoInterp}}}
     ) where {TWeights,TCoefs<:AbstractArray}
     local buf, shape, retrs
     sz = size(ret)
@@ -63,7 +62,7 @@ function prefilter!(
     for dim in 1:ndims(ret)
         it = iextract(its, dim)
         if it != NoInterp
-            M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[dim], degree(it), iextract(gt, dim))
+            M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[dim], degree(it))
             if M != nothing
                 A_ldiv_B_md!(popwrapper(ret), M, popwrapper(ret), dim, b)
             end
@@ -72,7 +71,7 @@ function prefilter!(
     ret
 end
 
-prefiltering_system(::Any, ::Any, ::Any, ::Any, ::Any) = nothing, nothing
+prefiltering_system(::Any, ::Any, ::Any, ::Any) = nothing, nothing
 
 popwrapper(A) = A
 popwrapper(A::OffsetArray) = A.parent

@@ -1,5 +1,5 @@
-function interpolate(A::AbstractArray, ::NoInterp, gt::GT) where {GT<:DimSpec{GridType}}
-    interpolate(Int, eltype(A), A, NoInterp(), gt)
+function interpolate(A::AbstractArray, ::NoInterp)
+    interpolate(Int, eltype(A), A, NoInterp())
 end
 
 # How many non-NoInterp dimensions are there?
@@ -7,10 +7,12 @@ count_interp_dims(::Type{NoInterp}) = 0
 
 interpdegree(::NoInterp) = NoInterp()
 
-prefilter(::Type{TWeights}, ::Type{TC}, A::AbstractArray, ::NoInterp, ::GridType) where {TWeights, TC} = A
+iscomplete(::NoInterp) = true
 
-lbound(ax, ::NoInterp, ::GridType) = first(ax)
-ubound(ax, ::NoInterp, ::GridType) = last(ax)
+prefilter(::Type{TWeights}, ::Type{TC}, A::AbstractArray, ::NoInterp) where {TWeights, TC} = A
+
+lbound(ax, ::NoInterp) = first(ax)
+ubound(ax, ::NoInterp) = last(ax)
 
 base_rem(::NoInterp, bounds, x::Number) = Int(x), 0
 

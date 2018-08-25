@@ -1,5 +1,8 @@
-struct Quadratic{BC<:Flag} <: Degree{2} end
-Quadratic(::BC) where {BC<:Flag} = Quadratic{BC}()
+struct Quadratic{BC<:BoundaryCondition} <: DegreeBC{2}
+    bc::BC
+end
+(deg::Quadratic)(gt::GridType) = Quadratic(deg.bc(gt))
+
 
 """
 Assuming uniform knots with spacing 1, the `i`th piece of quadratic spline
@@ -29,20 +32,20 @@ function base_rem(::Quadratic, bounds, x)
     fast_trunc(Int, xm), δx
 end
 
-value_weights(::Quadratic, δx) = (
+value_weights(::BSpline{<:Quadratic}, δx) = (
     sqr(δx - SimpleRatio(1,2))/2,
     SimpleRatio(3,4) - sqr(δx),
     sqr(δx + SimpleRatio(1,2))/2)
 
-gradient_weights(::Quadratic, δx) = (
+gradient_weights(::BSpline{<:Quadratic}, δx) = (
     δx - SimpleRatio(1,2),
     -2 * δx,
     δx + SimpleRatio(1,2))
 
-hessian_weights(::Quadratic, δx) = (oneunit(δx), -2*oneunit(δx), oneunit(δx))
+hessian_weights(::BSpline{<:Quadratic}, δx) = (oneunit(δx), -2*oneunit(δx), oneunit(δx))
 
 expand_index(::Quadratic{BC}, xi::Number, ax::AbstractUnitRange, δx) where BC = (xi-1, xi, xi+1)
-expand_index(::Quadratic{Periodic}, xi::Number, ax::AbstractUnitRange, δx) =
+expand_index(::Quadratic{<:Periodic}, xi::Number, ax::AbstractUnitRange, δx) =
     (modrange(xi-1, ax), modrange(xi, ax), modrange(xi+1, ax))
 expand_index(::Quadratic{BC}, xi::Number, ax::AbstractUnitRange, δx) where BC<:Union{InPlace,InPlaceQ} =
     (max(xi-1, first(ax)), xi, min(xi+1, last(ax)))
@@ -67,21 +70,21 @@ end
 
     -cm + c = 0
 """
-function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{BC}, ::OnCell) where {T,TC,BC<:Union{Flat,Reflect}}
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{BC}) where {T,TC,BC<:Union{Flat{OnCell},Reflect{OnCell}}}
     dl,d,du = inner_system_diags(T,n,degree)
     d[1] = d[end] = -1
     du[1] = dl[end] = 1
     lut!(dl, d, du), zeros(TC, n)
 end
 
-function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{InPlace}, ::OnCell) where {T,TC}
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{InPlace{OnCell}}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,degree)
     d[1] = d[end] = convert(T, SimpleRatio(7,8))
     lut!(dl, d, du), zeros(TC, n)
 end
 
 # InPlaceQ continues the quadratic at 2 all the way down to 1 (rather than 1.5)
-function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{InPlaceQ}, ::OnCell) where {T,TC}
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{InPlaceQ{OnCell}}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,degree)
     d[1] = d[end] = SimpleRatio(9,8)
     dl[end] = du[1] = SimpleRatio(-1,4)
@@ -101,7 +104,7 @@ end
 
     -cm + cp = 0
 """
-function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{BC}, ::OnGrid) where {T,TC,BC<:Union{Flat,Reflect}}
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{BC}) where {T,TC,BC<:Union{Flat{OnGrid},Reflect{OnGrid}}}
     dl,d,du = inner_system_diags(T,n,degree)
     d[1] = d[end] = -1
     du[1] = dl[end] = 0
@@ -121,7 +124,7 @@ of `x` for a quadratic b-spline, these both yield
 
     1 cm -2 c + 1 cp = 0
 """
-function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{Line}, ::GridType) where {T,TC}
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{<:Line}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,degree)
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
@@ -141,7 +144,7 @@ that `y_1''(3/2) = y_2''(3/2)`, yielding
 
     1 cm -3 c + 3 cp - cpp = 0
 """
-function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{Free}, ::GridType) where {T,TC}
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{<:Free}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,degree)
     d[1] = d[end] = 1
     du[1] = dl[end] = -3
@@ -163,7 +166,7 @@ by looking at the coefficients themselves as periodic, yielding
 
 where `N` is the number of data points.
 """
-function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{Periodic}, ::GridType) where {T,TC}
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int, degree::Quadratic{<:Periodic}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,degree)
 
     specs = WoodburyMatrices.sparse_factors(T, n,

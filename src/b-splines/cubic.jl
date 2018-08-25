@@ -1,5 +1,8 @@
-struct Cubic{BC<:Flag} <: Degree{3} end
-Cubic(::BC) where {BC<:Flag} = Cubic{BC}()
+struct Cubic{BC<:BoundaryCondition} <: DegreeBC{3}
+    bc::BC
+end
+
+(deg::Cubic)(gt::GridType) = Cubic(deg.bc(gt))
 
 """
 Assuming uniform knots with spacing 1, the `i`th piece of cubic spline
@@ -32,7 +35,7 @@ function base_rem(::Cubic, bounds, x)
 end
 
 expand_index(::Cubic{BC}, xi::Number, ax::AbstractUnitRange, δx) where BC = (xi-1, xi, xi+1, xi+2)
-expand_index(::Cubic{Periodic}, xi::Number, ax::AbstractUnitRange, δx) =
+expand_index(::Cubic{Periodic{GT}}, xi::Number, ax::AbstractUnitRange, δx) where GT<:GridType =
     (modrange(xi-1, ax), modrange(xi, ax), modrange(xi+1, ax), modrange(xi+2, ax))
 
 # expand_coefs(::Type{BSpline{Cubic{BC}}}, δx) = cvcoefs(δx)
@@ -45,7 +48,7 @@ expand_index(::Cubic{Periodic}, xi::Number, ax::AbstractUnitRange, δx) =
 #     end
 # end
 
-function value_weights(::Cubic, δx)
+function value_weights(::BSpline{<:Cubic}, δx)
     x3, xcomp3 = cub(δx), cub(1-δx)
     (SimpleRatio(1,6) * xcomp3,
      SimpleRatio(2,3) - sqr(δx) + SimpleRatio(1,2)*x3,
@@ -53,7 +56,7 @@ function value_weights(::Cubic, δx)
      SimpleRatio(1,6) * x3)
 end
 
-function gradient_weights(::Cubic, δx)
+function gradient_weights(::BSpline{<:Cubic}, δx)
     x2, xcomp2 = sqr(δx), sqr(1-δx)
     (-SimpleRatio(1,2) * xcomp2,
      -2*δx + SimpleRatio(3,2)*x2,
@@ -61,7 +64,7 @@ function gradient_weights(::Cubic, δx)
      SimpleRatio(1,2) * x2)
 end
 
-hessian_weights(::Cubic, δx) = (1-δx, 3*δx-2, 3*(1-δx)-2, δx)
+hessian_weights(::BSpline{<:Cubic}, δx) = (1-δx, 3*δx-2, 3*(1-δx)-2, δx)
 
 
 # ------------ #
@@ -69,7 +72,7 @@ hessian_weights(::Cubic, δx) = (1-δx, 3*δx-2, 3*(1-δx)-2, δx)
 # ------------ #
 
 padded_axis(ax::AbstractUnitRange, ::BSpline{<:Cubic}) = first(ax)-1:last(ax)+1
-padded_axis(ax::AbstractUnitRange, ::BSpline{Cubic{Periodic}}) = ax
+padded_axis(ax::AbstractUnitRange, ::BSpline{Cubic{Periodic{GT}}}) where GT<:GridType = ax
 
 # # Due to padding we can extend the bounds
 # lbound(ax, ::BSpline{Cubic{BC}}, ::OnGrid) where BC = first(ax) - 0.5
@@ -97,7 +100,7 @@ Applying this condition yields
     -cm + cp = 0
 """
 function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
-                             degree::Cubic{Flat}, ::OnGrid) where {T,TC}
+                             degree::Cubic{Flat{OnGrid}}) where {T,TC}
     dl, d, du = inner_system_diags(T, n, degree)
     d[1] = d[end] = -oneunit(T)
     du[1] = dl[end] = zero(T)
@@ -123,7 +126,7 @@ were to use `y_0'(x)` we would have to introduce new coefficients, so that would
 close the system. Instead, we extend the outermost polynomial for an extra half-cell.)
 """
 function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
-                             degree::Cubic{Flat}, ::OnCell) where {T,TC}
+                             degree::Cubic{Flat{OnCell}}) where {T,TC}
     dl, d, du = inner_system_diags(T,n,degree)
     d[1] = d[end] = -9
     du[1] = dl[end] = 11
@@ -152,7 +155,7 @@ were to use `y_0'(x)` we would have to introduce new coefficients, so that would
 close the system. Instead, we extend the outermost polynomial for an extra half-cell.)
 """
 function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
-                             degree::Cubic{Line}, ::OnCell) where {T,TC}
+                             degree::Cubic{Line{OnCell}}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,degree)
     d[1] = d[end] = 3
     du[1] = dl[end] = -7
@@ -177,7 +180,7 @@ condition gives:
     1 cm -2 c + 1 cp = 0
 """
 function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
-                             degree::Cubic{Line}, ::OnGrid) where {T,TC}
+                             degree::Cubic{Line{OnGrid}}) where {T,TC}
     dl,d,du = inner_system_diags(T,n,degree)
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
@@ -201,7 +204,7 @@ as periodic, yielding
 where `N` is the number of data points.
 """
 function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
-                             degree::Cubic{Periodic}, ::GridType) where {T,TC}
+                             degree::Cubic{<:Periodic}) where {T,TC}
     dl, d, du = inner_system_diags(T,n,degree)
 
     specs = WoodburyMatrices.sparse_factors(T, n,
@@ -220,7 +223,7 @@ continuous derivative at the second-to-last cell boundary; this means
     1 cm -3 c + 3 cp -1 cpp = 0
 """
 function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
-                             degree::Cubic{Free}, ::GridType) where {T,TC}
+                             degree::Cubic{<:Free}) where {T,TC}
     dl, d, du = inner_system_diags(T,n,degree)
 
     specs = WoodburyMatrices.sparse_factors(T, n,

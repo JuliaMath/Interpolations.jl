@@ -1,4 +1,4 @@
-struct Linear <: Degree{1} end
+struct Linear <: Degree{1} end  # boundary conditions not supported
 
 """
 Assuming uniform knots with spacing 1, the `i`th peice of linear b-spline

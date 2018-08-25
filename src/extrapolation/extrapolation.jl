@@ -1,4 +1,4 @@
-struct Extrapolation{T,N,ITPT,IT,GT,ET} <: AbstractExtrapolation{T,N,ITPT,IT,GT}
+struct Extrapolation{T,N,ITPT,IT,ET} <: AbstractExtrapolation{T,N,ITPT,IT}
     itp::ITPT
     et::ET
 end
@@ -10,10 +10,10 @@ itpflag(etp::Extrapolation) = itpflag(etp.itp)
 # However, no tuples should be nested deeper than this; the first level is for different
 # schemes in different dimensions, and the second level is for different schemes in
 # different directions.
-const ExtrapDimSpec = Union{Flag,Tuple{Vararg{Union{Flag,NTuple{2,Flag}}}}}
+const ExtrapDimSpec = Union{BoundaryCondition,Tuple{Vararg{Union{BoundaryCondition,NTuple{2,BoundaryCondition}}}}}
 
-etptype(::Extrapolation{T,N,ITPT,IT,GT,ET}) where {T,N,ITPT,IT,GT,ET} = ET
-etpflag(etp::Extrapolation{T,N,ITPT,IT,GT,ET}) where {T,N,ITPT,IT,GT,ET} = etp.et
+etptype(::Extrapolation{T,N,ITPT,IT,ET}) where {T,N,ITPT,IT,ET} = ET
+etpflag(etp::Extrapolation{T,N,ITPT,IT,ET}) where {T,N,ITPT,IT,ET} = etp.et
 
 """
 `extrapolate(itp, scheme)` adds extrapolation behavior to an interpolation object, according to the provided scheme.
@@ -22,16 +22,16 @@ The scheme can take any of these values:
 
 * `Throw` - throws a BoundsError for out-of-bounds indices
 * `Flat` - for constant extrapolation, taking the closest in-bounds value
-* `Linear` - linear extrapolation (the wrapped interpolation object must support gradient)
+* `Line - linear extrapolation (the wrapped interpolation object must support gradient)
 * `Reflect` - reflecting extrapolation (indices must support `mod`)
 * `Periodic` - periodic extrapolation (indices must support `mod`)
 
-You can also combine schemes in tuples. For example, the scheme `(Linear(), Flat())` will use linear extrapolation in the first dimension, and constant in the second.
+You can also combine schemes in tuples. For example, the scheme `(Line), Flat())` will use linear extrapolation in the first dimension, and constant in the second.
 
-Finally, you can specify different extrapolation behavior in different direction. `((Linear(),Flat()), Flat())` will extrapolate linearly in the first dimension if the index is too small, but use constant etrapolation if it is too large, and always use constant extrapolation in the second dimension.
+Finally, you can specify different extrapolation behavior in different direction. `((Line),Flat()), Flat())` will extrapolate linearly in the first dimension if the index is too small, but use constant etrapolation if it is too large, and always use constant extrapolation in the second dimension.
 """
-extrapolate(itp::AbstractInterpolation{T,N,IT,GT}, et::ET) where {T,N,IT,GT,ET<:ExtrapDimSpec} =
-    Extrapolation{T,N,typeof(itp),IT,GT,ET}(itp, et)
+extrapolate(itp::AbstractInterpolation{T,N,IT}, et::ET) where {T,N,IT,ET<:ExtrapDimSpec} =
+    Extrapolation{T,N,typeof(itp),IT,ET}(itp, et)
 
 count_interp_dims(::Type{<:Extrapolation{T,N,ITPT}}, n) where {T,N,ITPT} = count_interp_dims(ITPT, n)
 
@@ -71,10 +71,10 @@ function inbounds_index((flagl,flagu)::Tuple{Nothing,Throw}, (l,u), x, etp, xN)
     x
 end
 
-function inbounds_index((flagl,flagu)::Tuple{Union{Flat,Linear},Flag}, (l,u), x, etp, xN)
+function inbounds_index((flagl,flagu)::Tuple{Union{Flat,Line},Flag}, (l,u), x, etp, xN)
     inbounds_index((nothing,flagu), (l,u), maxp(x,l), etp, xN)
 end
-function inbounds_index((flagl,flagu)::Tuple{Nothing,Union{Flat,Linear}}, (l,u), x, etp, xN)
+function inbounds_index((flagl,flagu)::Tuple{Nothing,Union{Flat,Line}}, (l,u), x, etp, xN)
     minp(x,u)
 end
 
@@ -112,15 +112,15 @@ end
 extrapolate_value(::Any, ::Tuple{}, ::Tuple{}, ::Tuple{}, val) = val
 
 extrapolate_axis(::Flag, x, xs, g, val) = val
-extrapolate_axis(::Linear, x, xs, g, val) = val + (x-xs)*g
+extrapolate_axis(::Line, x, xs, g, val) = val + (x-xs)*g
 
 extrapolate_axis((flagl,flagu)::Tuple{Flag,Flag}, x, xs, g, val) =
     extrapolate_axis((nothing,flagu), x, xs, g, val)
 extrapolate_axis((flagl,flagu)::Tuple{Nothing,Flag}, x, xs, g, val) = val
 
-extrapolate_axis((flagl,flagu)::Tuple{Linear,Flag}, x, xs, g, val) =
+extrapolate_axis((flagl,flagu)::Tuple{Line, Flag}, x, xs, g, val) =
     extrapolate_axis((nothing,flagu), x, xs, g, ifelse(x < xs, val + (x-xs)*g, val))
-extrapolate_axis((flagl,flagu)::Tuple{Nothing,Linear}, x, xs, g, val) =
+extrapolate_axis((flagl,flagu)::Tuple{Nothing, Line}, x, xs, g, val) =
     ifelse(x > xs, val + (x-xs)*g, val)
 
 extrapolate_gradient(::Flat, x, xs, g) = ifelse(x==xs, g, zero(g))

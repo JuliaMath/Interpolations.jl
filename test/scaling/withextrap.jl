@@ -5,7 +5,7 @@ using Interpolations, Test
     xs = range(-5, stop=5, length=10)
     ys = map(sin, xs)
 
-    function run_tests(sut::Interpolations.AbstractInterpolation{T,N,IT,OnGrid}, itp) where {T,N,IT}
+    function run_tests(sut::Interpolations.AbstractInterpolation{T,N,IT}, itp) where {T,N,IT}
         for x in xs
             @test ≈(sut(x),sin(x),atol=sqrt(eps(sin(x))))
         end
@@ -13,12 +13,12 @@ using Interpolations, Test
         @test sut(5) == sut(5.1) == sut(15.8) == sut(Inf) == itp[end]
     end
 
-    function run_tests(sut::Interpolations.AbstractInterpolation{T,N,IT,OnCell}, itp) where {T,N,IT}
+    function run_tests(sut::Interpolations.AbstractInterpolation{T,N,IT}, itp) where {T,N,IT}
         halfcell = (xs[2] - xs[1]) / 2
-        axs1 = axes(itp)[1]
+        itps, axs = Interpolations.itpinfo(itp)
         for x in (5 + halfcell, 5 + 1.1halfcell, 15.8, Inf)
-            @test sut(-x) == itp(.5)
-            @test sut(x) == itp(last(axs1)+0.5)
+            @test sut(-x) == itp(Interpolations.lbound(axs[1], itps[1]))
+            @test sut(x) == itp(Interpolations.ubound(axs[1], itps[1]))
         end
     end
 

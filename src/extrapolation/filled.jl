@@ -1,11 +1,11 @@
-mutable struct FilledExtrapolation{T,N,ITP<:AbstractInterpolation,IT,GT,FT} <: AbstractExtrapolation{T,N,ITP,IT,GT}
+mutable struct FilledExtrapolation{T,N,ITP<:AbstractInterpolation,IT,FT} <: AbstractExtrapolation{T,N,ITP,IT}
     itp::ITP
     fillvalue::FT
 end
 
-function FilledExtrapolation(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue) where {T,N,IT,GT}
+function FilledExtrapolation(itp::AbstractInterpolation{T,N,IT}, fillvalue) where {T,N,IT}
     Te = promote_type(T,typeof(fillvalue))
-    FilledExtrapolation{Te,N,typeof(itp),IT,GT,typeof(fillvalue)}(itp, fillvalue)
+    FilledExtrapolation{Te,N,typeof(itp),IT,typeof(fillvalue)}(itp, fillvalue)
 end
 
 Base.parent(A::FilledExtrapolation) = A.itp
@@ -15,7 +15,7 @@ itpflag(A::FilledExtrapolation) = itpflag(A.itp)
 """
 `extrapolate(itp, fillvalue)` creates an extrapolation object that returns the `fillvalue` any time the indexes in `itp(x1,x2,...)` are out-of-bounds.
 """
-extrapolate(itp::AbstractInterpolation{T,N,IT,GT}, fillvalue) where {T,N,IT,GT} = FilledExtrapolation(itp, fillvalue)
+extrapolate(itp::AbstractInterpolation{T,N,IT}, fillvalue) where {T,N,IT} = FilledExtrapolation(itp, fillvalue)
 
 @inline function (etp::FilledExtrapolation{T,N})(x::Vararg{Number,N}) where {T,N}
     itp = parent(etp)
@@ -36,8 +36,8 @@ end
 expand_index_resid_etp(deg, fillvalue, (l, u), x, etp::FilledExtrapolation, xN) =
     (l <= x <= u || Base.throw_boundserror(etp, xN))
 
-# expand_etp_valueE(fv::FT, etp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, x) where {T,N,ITP,IT,GT,FT} = fv
-# expand_etp_gradientE(fv::FT, etp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, x) where {T,N,ITP,IT,GT,FT} =
+# expand_etp_valueE(fv::FT, etp::FilledExtrapolation{T,N,ITP,IT,FT}, x) where {T,N,ITP,IT,FT} = fv
+# expand_etp_gradientE(fv::FT, etp::FilledExtrapolation{T,N,ITP,IT,FT}, x) where {T,N,ITP,IT,FT} =
 #     zero(SVector{N,FT})
-# expand_etp_hessianE(fv::FT, etp::FilledExtrapolation{T,N,ITP,IT,GT,FT}, x) where {T,N,ITP,IT,GT,FT} =
+# expand_etp_hessianE(fv::FT, etp::FilledExtrapolation{T,N,ITP,IT,FT}, x) where {T,N,ITP,IT,FT} =
 #     zero(Matrix{N,N,FT})

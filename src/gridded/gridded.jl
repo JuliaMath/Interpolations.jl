@@ -9,11 +9,11 @@ const GridIndex{T} = Union{AbstractVector{T}, Tuple}
 
 # Because Ranges check bounds on getindex, it's actually faster to convert the
 # knots to Vectors. It's also good to take a copy, so it doesn't get modified later.
-struct GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{Vector}},pad} <: AbstractInterpolation{T,N,IT,OnGrid}
+struct GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{AbstractVector}}} <: AbstractInterpolation{T,N,IT,OnGrid}
     knots::K
     coefs::Array{TCoefs,N}
 end
-function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{TCoefs,N}, ::IT, ::Val{pad}) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}
+function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{TCoefs,N}, it::IT) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}
     isconcretetype(IT) || error("The b-spline type must be a leaf type (was $IT)")
     isconcretetype(TCoefs) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
 
@@ -33,7 +33,7 @@ function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::A
     else
         T = typeof(c * first(A))
     end
-    GriddedInterpolation{T,N,TCoefs,IT,typeof(knts),pad}(knts, A)
+    GriddedInterpolation{T,N,TCoefs,IT,typeof(knots)}(knots, A, it)
 end
 
 Base.parent(A::GriddedInterpolation) = A.coefs

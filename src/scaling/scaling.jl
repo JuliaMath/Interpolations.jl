@@ -2,7 +2,7 @@ export ScaledInterpolation, eachvalue
 
 import Base: iterate
 
-struct ScaledInterpolation{T,N,ITPT,IT,GT,RT} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT}
+struct ScaledInterpolation{T,N,ITPT,IT,RT} <: AbstractInterpolationWrapper{T,N,ITPT,IT}
     itp::ITPT
     ranges::RT
 end
@@ -17,9 +17,9 @@ The parameters `xs` etc must be either ranges or linspaces, and there must be on
 
 For every `NoInterp` dimension of the interpolation object, the range must be exactly `1:size(itp, d)`.
 """
-function scale(itp::AbstractInterpolation{T,N,IT,GT}, ranges::Vararg{AbstractRange,N}) where {T,N,IT,GT}
+function scale(itp::AbstractInterpolation{T,N,IT}, ranges::Vararg{AbstractRange,N}) where {T,N,IT}
     check_ranges(itpflag(itp), axes(itp), ranges)
-    ScaledInterpolation{T,N,typeof(itp),IT,GT,typeof(ranges)}(itp, ranges)
+    ScaledInterpolation{T,N,typeof(itp),IT,typeof(ranges)}(itp, ranges)
 end
 
 function check_ranges(flags, axs, ranges)
@@ -75,7 +75,7 @@ coordlookup(r::StepRangeLen, x) = (x - first(r)) / step(r) + oneunit(eltype(r))
 boundstep(r::StepRangeLen) = 0.5*step(r)
 rescale_gradient(r::StepRangeLen, g) = g / step(r)
 
-basetype(::Type{ScaledInterpolation{T,N,ITPT,IT,GT,RT}}) where {T,N,ITPT,IT,GT,RT} = ITPT
+basetype(::Type{ScaledInterpolation{T,N,ITPT,IT,RT}}) where {T,N,ITPT,IT,RT} = ITPT
 basetype(sitp::ScaledInterpolation) = basetype(typeof(sitp))
 
 
@@ -98,9 +98,9 @@ rescale_gradient_components(flags, ::Tuple{}, ::Tuple{}) = ()
 
 # # @eval uglyness required for disambiguation with method in b-splies/indexing.jl
 # # also, GT is only specified to avoid disambiguation warnings on julia 0.4
-# gradient(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs::Real...) where {T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} =
+# gradient(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Real...) where {T,N,ITPT,IT<:DimSpec{InterpolationType}<:DimSpec{GridType}} =
 #         gradient!(Array{T}(undef, count_interp_dims(IT,N)), sitp, xs...)
-# gradient(sitp::ScaledInterpolation{T,N,ITPT,IT,GT}, xs...) where {T,N,ITPT,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} =
+# gradient(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs...) where {T,N,ITPT,IT<:DimSpec{InterpolationType}<:DimSpec{GridType}} =
 #         gradient!(Array{T}(undef, count_interp_dims(IT,N)), sitp, xs...)
 # @generated function gradient!(g, sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...) where {T,N,ITPT,IT}
 #     ndims(g) == 1 || throw(DimensionMismatch("g must be a vector (but had $(ndims(g)) dimensions)"))

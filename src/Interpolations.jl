@@ -44,36 +44,51 @@ struct OnCell <: GridType end
 
 const DimSpec{T} = Union{T,Tuple{Vararg{Union{T,NoInterp}}},NoInterp}
 
-abstract type AbstractInterpolation{T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} <: AbstractArray{T,N} end
-abstract type AbstractInterpolationWrapper{T,N,ITPT,IT,GT} <: AbstractInterpolation{T,N,IT,GT} end
-abstract type AbstractExtrapolation{T,N,ITPT,IT,GT} <: AbstractInterpolationWrapper{T,N,ITPT,IT,GT} end
+abstract type AbstractInterpolation{T,N,IT<:DimSpec{InterpolationType}} <: AbstractArray{T,N} end
+abstract type AbstractInterpolationWrapper{T,N,ITPT,IT} <: AbstractInterpolation{T,N,IT} end
+abstract type AbstractExtrapolation{T,N,ITPT,IT} <: AbstractInterpolationWrapper{T,N,ITPT,IT} end
 
 """
     BoundaryCondition
 
 An abstract type with one of the following values (see the help for each for details):
 
-- `Throw()`
-- `Flat()`
-- `Line()`
-- `Free()`
-- `Periodic()`
-- `Reflect()`
-- `InPlace()`
-- `InPlaceQ()`
+- `Throw(gt)`
+- `Flat(gt)`
+- `Line(gt)`
+- `Free(gt)`
+- `Periodic(gt)`
+- `Reflect(gt)`
+- `InPlace(gt)`
+- `InPlaceQ(gt)`
+
+where `gt` is the grid type, e.g., `OnGrid()` or `OnCell()`. `OnGrid` means that the boundary
+condition "activates" at the first and/or last integer location within the interpolation region,
+`OnCell` means the interpolation extends a half-integer beyond the edge before
+activating the boundary condition.
 """
 abstract type BoundaryCondition <: Flag end
-struct Throw <: BoundaryCondition end
-struct Flat <: BoundaryCondition end
-struct Line <: BoundaryCondition end
-struct Free <: BoundaryCondition end
-struct Periodic <: BoundaryCondition end
-struct Reflect <: BoundaryCondition end
-struct InPlace <: BoundaryCondition end
+# Put the gridtype into the boundary condition, since that's all it affects (see issue #228)
+# Nothing is used for extrapolation
+struct Throw{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+struct Flat{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+struct Line{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+struct Free{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+struct Periodic{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+struct Reflect{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+struct InPlace{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
 # InPlaceQ is exact for an underlying quadratic. This is nice for ground-truth testing
 # of in-place (unpadded) interpolation.
-struct InPlaceQ <: BoundaryCondition end
+struct InPlaceQ{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
 const Natural = Line
+
+(::Type{BC})() where BC<:BoundaryCondition = BC(nothing)
+function Base.show(io::IO, bc::BoundaryCondition)
+    print(io, nameof(typeof(bc)), '(')
+    bc.gt === nothing || show(io, bc.gt)
+    print(io, ')')
+end
+
 
 Base.IndexStyle(::Type{<:AbstractInterpolation}) = IndexCartesian()
 
@@ -85,16 +100,16 @@ twotuple(x, y) = (x, y)
 bounds(itp::AbstractInterpolation) = map(twotuple, lbounds(itp), ubounds(itp))
 bounds(itp::AbstractInterpolation, d) = bounds(itp)[d]
 
-itptype(::Type{AbstractInterpolation{T,N,IT,GT}}) where {T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} = IT
+itptype(::Type{AbstractInterpolation{T,N,IT}}) where {T,N,IT<:DimSpec{InterpolationType}} = IT
 itptype(::Type{ITP}) where {ITP<:AbstractInterpolation} = itptype(supertype(ITP))
 itptype(itp::AbstractInterpolation) = itptype(typeof(itp))
-gridtype(::Type{AbstractInterpolation{T,N,IT,GT}}) where {T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} = GT
+gridtype(::Type{AbstractInterpolation{T,N,IT}}) where {T,N,IT<:DimSpec{InterpolationType}} = GT
 gridtype(::Type{ITP}) where {ITP<:AbstractInterpolation} = gridtype(supertype(ITP))
 gridtype(itp::AbstractInterpolation) = gridtype(typeof(itp))
-ndims(::Type{AbstractInterpolation{T,N,IT,GT}}) where {T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} = N
+ndims(::Type{AbstractInterpolation{T,N,IT}}) where {T,N,IT<:DimSpec{InterpolationType}} = N
 ndims(::Type{ITP}) where {ITP<:AbstractInterpolation} = ndims(supertype(ITP))
 ndims(itp::AbstractInterpolation) = ndims(typeof(itp))
-eltype(::Type{AbstractInterpolation{T,N,IT,GT}}) where {T,N,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType}} = T
+eltype(::Type{AbstractInterpolation{T,N,IT}}) where {T,N,IT<:DimSpec{InterpolationType}} = T
 eltype(::Type{ITP}) where {ITP<:AbstractInterpolation} = eltype(supertype(ITP))
 eltype(itp::AbstractInterpolation) = eltype(typeof(itp))
 
@@ -209,9 +224,6 @@ import Base: getindex
     itp(i)
 end
 
-# deprecate getindex for other numeric indices
-@deprecate getindex(itp::AbstractInterpolation{T,N}, i::Vararg{Number,N}) where {T,N} itp(i...)
-
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
 # include("gridded/gridded.jl")
@@ -220,5 +232,6 @@ include("scaling/scaling.jl")
 include("utils.jl")
 include("io.jl")
 include("convenience-constructors.jl")
+include("deprecations.jl")
 
 end # module
