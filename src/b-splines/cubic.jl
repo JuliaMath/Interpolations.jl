@@ -27,28 +27,18 @@ When we derive boundary conditions we will use derivatives `y_0'(x)` and
 """
 Cubic
 
-function base_rem(::Cubic, bounds, x)
-    xf = floorbounds(x, bounds)
-    xf -= ifelse(xf > last(bounds)-1, oneunit(xf), zero(xf))
+function positions(deg::Cubic, ax, x)
+    xf = floorbounds(x, ax)
+    xf -= ifelse(xf > last(ax)-1, oneunit(xf), zero(xf))
     δx = x - xf
-    fast_trunc(Int, xf), δx
+    expand_index(deg, fast_trunc(Int, xf), ax, δx), δx
 end
 
-expand_index(::Cubic{BC}, xi::Number, ax::AbstractUnitRange, δx) where BC = (xi-1, xi, xi+1, xi+2)
+expand_index(::Cubic{BC}, xi::Number, ax::AbstractUnitRange, δx) where BC = xi-1
 expand_index(::Cubic{Periodic{GT}}, xi::Number, ax::AbstractUnitRange, δx) where GT<:GridType =
     (modrange(xi-1, ax), modrange(xi, ax), modrange(xi+1, ax), modrange(xi+2, ax))
 
-# expand_coefs(::Type{BSpline{Cubic{BC}}}, δx) = cvcoefs(δx)
-# expand_coefs(::Type{BSpline{Cubic{BC}}}, dref, d, δx) = ifelse(d==dref, cgcoefs(δx), cvcoefs(δx))
-# function expand_coefs(::Type{BSpline{Cubic{BC}}}, dref1, dref2, d, δx)
-#     if dref1 == dref2
-#         d == dref1 ? chcoefs(δx) : cvcoefs(δx)
-#     else
-#         d == dref1 | d == dref2 ? cgcoefs(δx) : cvcoefs(δx)
-#     end
-# end
-
-function value_weights(::BSpline{<:Cubic}, δx)
+function value_weights(::Cubic, δx)
     x3, xcomp3 = cub(δx), cub(1-δx)
     (SimpleRatio(1,6) * xcomp3,
      SimpleRatio(2,3) - sqr(δx) + SimpleRatio(1,2)*x3,
@@ -56,7 +46,7 @@ function value_weights(::BSpline{<:Cubic}, δx)
      SimpleRatio(1,6) * x3)
 end
 
-function gradient_weights(::BSpline{<:Cubic}, δx)
+function gradient_weights(::Cubic, δx)
     x2, xcomp2 = sqr(δx), sqr(1-δx)
     (-SimpleRatio(1,2) * xcomp2,
      -2*δx + SimpleRatio(3,2)*x2,
@@ -64,7 +54,7 @@ function gradient_weights(::BSpline{<:Cubic}, δx)
      SimpleRatio(1,2) * x2)
 end
 
-hessian_weights(::BSpline{<:Cubic}, δx) = (1-δx, 3*δx-2, 3*(1-δx)-2, δx)
+hessian_weights(::Cubic, δx) = (1-δx, 3*δx-2, 3*(1-δx)-2, δx)
 
 
 # ------------ #

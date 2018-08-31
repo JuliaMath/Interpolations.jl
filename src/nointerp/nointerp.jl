@@ -14,12 +14,12 @@ prefilter(::Type{TWeights}, ::Type{TC}, A::AbstractArray, ::NoInterp) where {TWe
 lbound(ax, ::NoInterp) = first(ax)
 ubound(ax, ::NoInterp) = last(ax)
 
-base_rem(::NoInterp, bounds, x::Number) = Int(x), 0
+weightedindex_parts(fs, ::NoInterp, ax, x::Number) = Int(x)
 
-expand_index(::NoInterp, xi::Number, ax::AbstractUnitRange, δx) = (xi,)
+# positions(::NoInterp, ax, x) = (Int(x),), 0
 
-value_weights(::NoInterp, δx) = (oneunit(δx),)
-gradient_weights(::NoInterp, δx) = (NoInterp(),)
-hessian_weights(::NoInterp, δx) = (NoInterp(),)
+# value_weights(::NoInterp, δx) = (oneunit(δx),)
+# gradient_weights(::NoInterp, δx) = (NoInterp(),)
+# hessian_weights(::NoInterp, δx) = (NoInterp(),)
 
 padded_axis(ax::AbstractUnitRange, ::NoInterp) = ax

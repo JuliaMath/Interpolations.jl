@@ -1,7 +1,7 @@
 struct Linear <: Degree{1} end  # boundary conditions not supported
 
 """
-Assuming uniform knots with spacing 1, the `i`th peice of linear b-spline
+Assuming uniform knots with spacing 1, the `i`th piece of linear b-spline
 implemented here is defined as follows.
 
     y_i(x) = c p(x) + cp p(1-x)
@@ -21,14 +21,13 @@ a piecewise linear function connecting each pair of neighboring data points.
 """
 Linear
 
-function base_rem(::Linear, bounds, x)
-    xf = floorbounds(x, bounds)
-    xf -= ifelse(xf >= last(bounds), oneunit(xf), zero(xf))
-    δx = x - xf
-    fast_trunc(Int, xf), δx
+function positions(::Linear, ax, x)
+    f = floor(x)
+    # When x == last(ax) we want to use the x-1, x pair
+    f = ifelse(x == last(ax), f - oneunit(f), f)
+    fi = fast_trunc(Int, f)
+    return fi, x-f
 end
-
-expand_index(::Linear, xi::Number, ax::AbstractUnitRange, δx) = (xi, xi + ((δx!=0) | (xi < last(ax))))
 
 value_weights(::Linear, δx) = (1-δx, δx)
 gradient_weights(::Linear, δx) = (-oneunit(δx), oneunit(δx))

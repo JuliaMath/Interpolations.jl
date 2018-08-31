@@ -80,12 +80,12 @@ _ubounds(axs, itp) = (ubound(axs[1], getfirst(itp)), _ubounds(Base.tail(axs), ge
 _lbounds(::Tuple{}, itp) = ()
 _ubounds(::Tuple{}, itp) = ()
 
-lbound(ax::AbstractUnitRange, bs::BSpline)   = lbound(ax, degree(bs))
-lbound(ax::AbstractUnitRange, deg::Degree)   = first(ax)
-lbound(ax::AbstractUnitRange, deg::DegreeBC) = lbound(ax, deg, deg.bc.gt)
-ubound(ax::AbstractUnitRange, bs::BSpline)   = ubound(ax, degree(bs))
-ubound(ax::AbstractUnitRange, deg::Degree)   = last(ax)
-ubound(ax::AbstractUnitRange, deg::DegreeBC) = ubound(ax, deg, deg.bc.gt)
+lbound(ax::AbstractRange, bs::BSpline)   = lbound(ax, degree(bs))
+lbound(ax::AbstractRange, deg::Degree)   = first(ax)
+lbound(ax::AbstractRange, deg::DegreeBC) = lbound(ax, deg, deg.bc.gt)
+ubound(ax::AbstractRange, bs::BSpline)   = ubound(ax, degree(bs))
+ubound(ax::AbstractRange, deg::Degree)   = last(ax)
+ubound(ax::AbstractRange, deg::DegreeBC) = ubound(ax, deg, deg.bc.gt)
 
 lbound(ax::AbstractUnitRange, ::DegreeBC, ::OnCell) = first(ax) - 0.5
 ubound(ax::AbstractUnitRange, ::DegreeBC, ::OnCell) = last(ax) + 0.5

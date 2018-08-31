@@ -34,16 +34,16 @@ check_range(::Any, ax, r) = length(ax) == length(r) || throw(ArgumentError("The 
 size(sitp::ScaledInterpolation) = size(sitp.itp)
 axes(sitp::ScaledInterpolation) = axes(sitp.itp)
 
-lbounds(sitp::ScaledInterpolation) = _lbounds(sitp.ranges, itpflag(sitp.itp), gridflag(sitp.itp))
-ubounds(sitp::ScaledInterpolation) = _ubounds(sitp.ranges, itpflag(sitp.itp), gridflag(sitp.itp))
-
-lbound(ax, ::BSpline, ::OnCell) = first(ax) - boundstep(ax)
-ubound(ax, ::BSpline, ::OnCell) = last(ax) + boundstep(ax)
-lbound(ax, ::BSpline, ::OnGrid) = first(ax)
-ubound(ax, ::BSpline, ::OnGrid) = last(ax)
+lbounds(sitp::ScaledInterpolation) = _lbounds(sitp.ranges, itpflag(sitp.itp))
+ubounds(sitp::ScaledInterpolation) = _ubounds(sitp.ranges, itpflag(sitp.itp))
 
 boundstep(r::StepRange) = r.step / 2
 boundstep(r::UnitRange) = 1//2
+
+lbound(ax::AbstractRange, ::DegreeBC, ::OnCell) = first(ax) - boundstep(ax)
+ubound(ax::AbstractRange, ::DegreeBC, ::OnCell) = last(ax) + boundstep(ax)
+lbound(ax::AbstractRange, ::DegreeBC, ::OnGrid) = first(ax)
+ubound(ax::AbstractRange, ::DegreeBC, ::OnGrid) = last(ax)
 
 """
 Returns *half* the width of one step of the range.

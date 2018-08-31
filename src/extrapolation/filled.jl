@@ -21,7 +21,8 @@ extrapolate(itp::AbstractInterpolation{T,N,IT}, fillvalue) where {T,N,IT} = Fill
     itp = parent(etp)
     Tret = typeof(prod(x) * zero(T))
     if checkbounds(Bool, itp, x...)
-        convert(Tret, expand_value(itp, x))
+        wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
+        convert(Tret, itp.coefs[wis...])
     else
         convert(Tret, etp.fillvalue)
     end

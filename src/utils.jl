@@ -4,6 +4,10 @@
 modrange(x, r::AbstractUnitRange) = mod(x-first(r), length(r)) + first(r)
 modrange(x, (l, u)::Tuple{Real,Real}) = mod(x-l, u-l+1) + l
 
+fmap(fs, x...) = _fmap(x, fs...)
+@inline _fmap(x, f, fs...) = (f(x...), _fmap(x, fs...)...)
+@inline _fmap(x) = ()
+
 split_flag(f::Flag) = f, f
 split_flag(t::Tuple) = t[1], Base.tail(t)
 
@@ -11,6 +15,10 @@ getfirst(f::Flag) = f
 getfirst(t::Tuple) = t[1]
 getrest(f::Flag) = f
 getrest(t::Tuple) = Base.tail(t)
+
+tcollect(f, itp::AbstractInterpolation{T,N}) where {T,N} = _tcollect(ntuple(d->true, Val(N)), f(itp))
+@inline _tcollect(ruler, prop) = (getfirst(prop), _tcollect(Base.tail(ruler), getrest(prop))...)
+_tcollect(::Tuple{}, prop) = ()
 
 split_trailing(::AbstractArray{T,N}, x) where {T,N} = Base.IteratorsMD.split(x, Val(N))
 check1(args) = _check1(true, args...)
@@ -29,18 +37,12 @@ middle(t::Tuple{Any,Any,Any}) = t[2]
 fast_trunc(::Type{Int}, x) = unsafe_trunc(Int, x)
 fast_trunc(::Type{Int}, x::Rational) = x.num ÷ x.den
 
-# Substitution for gradient components
-function substitute(default::NTuple{N,Any}, d::Integer, subst::NTuple{N,Any}) where N
-    ntuple(i->ifelse(i==d, subst[i], default[i]), Val(N))
-end
-function substitute(default::NTuple{N,Any}, d::Integer, val) where N
-    ntuple(i->ifelse(i==d, val, default[i]), Val(N))
-end
-
-# Substitution for hessian components
-function substitute(default::NTuple{N,Any}, d1::Integer, d2::Integer, subst1::NTuple{N,Any}, subst2::NTuple{N,Any}) where N
-    ntuple(i->ifelse(i==d1==d2, subst2[i], ifelse(i==d1, subst1[i], ifelse(i==d2, subst1[i], default[i]))), Val(N))
-end
+# Slot-substitution guided by a `ruler` tuple. Substitution occurs when `default` has the same
+# length as `ruler`.
+@inline substitute_ruled(default, ruler, subst) = (default[1], substitute_ruled(Base.tail(default), ruler, Base.tail(subst))...)
+@inline substitute_ruled(default::NTuple{N,Any}, ruler::NTuple{N,Any}, subst) where N =
+    (subst[1], substitute_ruled(Base.tail(default), ruler, Base.tail(subst))...)
+substitute_ruled(default::Tuple{}, ruler::NTuple{N,Any}, subst) where N = ()
 
 @inline skip_nointerp(x, rest...) = (x, skip_nointerp(rest...)...)
 @inline skip_nointerp(::NoInterp, rest...) = skip_nointerp(rest...)

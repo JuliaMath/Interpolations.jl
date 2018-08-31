@@ -127,6 +127,80 @@ count_interp_dims(it::Type{IT}, n) where IT<:Tuple{Vararg{InterpolationType,N}} 
     _count_interp_dims(c + count_interp_dims(IT1), args...)
 _count_interp_dims(c) = c
 
+
+"""
+    wi = WeightedIndex(indexes, weights)
+
+Construct a weighted index `wi`, which can be thought of as a generalization of an
+ordinary array index to the context of interpolation.
+For an ordinary vector `a`, `a[i]` extracts the element at index `i`.
+When interpolating, one is typically interested in a range of indexes and the output is
+some weighted combination of array values at these indexes.
+For example, for linear interpolation between `i` and `i+1` we have
+
+    ret = (1-f)*a[i] + f*a[i]
+
+This can be represented `a[wi]`, where
+
+    wi = WeightedIndex(i:i+1, (1-f, f))
+
+i.e.,
+
+    ret = sum(a[indexes] .* weights)
+
+Linear interpolation thus constructs weighted indices using a 2-tuple for `weights` and
+a length-2 `indexes` range.
+Higher-order interpolation would involve more positions and weights (e.g., 3-tuples for
+quadratic interpolation, 4-tuples for cubic).
+
+In multiple dimensions, separable interpolation schemes are implemented in terms
+of multiple weighted indices, accessing `A[wi1, wi2, ...]` where each `wi` is the
+`WeightedIndex` along the corresponding dimension.
+
+For value interpolation, `weights` will typically sum to 1.
+However, for gradient and Hessian computation this will not necessarily be true.
+For example, the gradient of one-dimensional linear interpolation can be represented as
+
+    gwi = WeightedIndex(i:i+1, (-1, 1))
+    g1 = a[gwi]
+
+For a three-dimensional array `A`, one might compute `∂A/∂x₂` (the second component
+of the gradient) as `A[wi1, gwi2, wi3]`, where `wi1` and `wi3` are "value" weights
+and `gwi2` "gradient" weights.
+
+`indexes` may be supplied as a range or as a tuple of the same length as `weights`.
+The latter is applicable, e.g., for periodic boundary conditions.
+"""
+abstract type WeightedIndex{L,W} end
+
+# Type to use when array locations are adjacent. This may offer more opportunities
+# for compiler optimizations (e.g., SIMD).
+struct WeightedAdjIndex{L,W} <: WeightedIndex{L,W}
+    istart::Int
+    weights::NTuple{L,W}
+end
+# Type to use with non-adjacent locations. E.g., periodic boundary conditions.
+struct WeightedArbIndex{L,W} <: WeightedIndex{L,W}
+    indexes::NTuple{L,Int}
+    weights::NTuple{L,W}
+end
+
+function WeightedIndex(indexes::AbstractUnitRange{<:Integer}, weights::NTuple{L,Any}) where L
+    @noinline mismatch(indexes, weights) = throw(ArgumentError("the length of indexes must match weights, got $indexes vs $weights"))
+    length(indexes) == L || mismatch(indexes, weights)
+    WeightedAdjIndex(first(indexes), promote(weights...))
+end
+WeightedIndex(istart::Integer, weights::NTuple{L,Any}) where L =
+    WeightedAdjIndex(istart, promote(weights...))
+WeightedIndex(indexes::NTuple{L,Integer}, weights::NTuple{L,Any}) where L =
+    WeightedArbIndex(indexes, promote(weights...))
+
+weights(wi::WeightedIndex) = wi.weights
+indexes(wi::WeightedAdjIndex) = wi.istart
+indexes(wi::WeightedArbIndex) = wi.indexes
+
+
+
 """
     w = value_weights(degree, δx)
 

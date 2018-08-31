@@ -26,25 +26,26 @@ When we derive boundary conditions we will use derivatives `y_1'(x-1)` and
 """
 Quadratic
 
-function base_rem(::Quadratic, bounds, x)
-    xm = roundbounds(x, bounds)
+function positions(deg::Quadratic, ax, x)
+    xm = roundbounds(x, ax)
     δx = x - xm
-    fast_trunc(Int, xm), δx
+    expand_index(deg, fast_trunc(Int, xm), ax, δx), δx
 end
 
-value_weights(::BSpline{<:Quadratic}, δx) = (
+value_weights(::Quadratic, δx) = (
     sqr(δx - SimpleRatio(1,2))/2,
     SimpleRatio(3,4) - sqr(δx),
     sqr(δx + SimpleRatio(1,2))/2)
 
-gradient_weights(::BSpline{<:Quadratic}, δx) = (
+gradient_weights(::Quadratic, δx) = (
     δx - SimpleRatio(1,2),
     -2 * δx,
     δx + SimpleRatio(1,2))
 
-hessian_weights(::BSpline{<:Quadratic}, δx) = (oneunit(δx), -2*oneunit(δx), oneunit(δx))
+hessian_weights(::Quadratic, δx) = (oneunit(δx), -2*oneunit(δx), oneunit(δx))
 
-expand_index(::Quadratic{BC}, xi::Number, ax::AbstractUnitRange, δx) where BC = (xi-1, xi, xi+1)
+expand_index(::Quadratic, xi::Number, ax::AbstractUnitRange, δx) = xi-1  # uses WeightedAdjIndex
+# Others use WeightedArbIndex
 expand_index(::Quadratic{<:Periodic}, xi::Number, ax::AbstractUnitRange, δx) =
     (modrange(xi-1, ax), modrange(xi, ax), modrange(xi+1, ax))
 expand_index(::Quadratic{BC}, xi::Number, ax::AbstractUnitRange, δx) where BC<:Union{InPlace,InPlaceQ} =

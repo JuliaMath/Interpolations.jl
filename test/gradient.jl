@@ -13,8 +13,8 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
         # Gradient of Constant should always be 0
         itp = interpolate(A, BSpline(Constant()))
         for x in InterpolationTestUtils.thirds(axes(A))
-            @test all(iszero, Interpolations.gradient(itp, x...))
-            @test all(iszero, Interpolations.gradient!(g, itp, x...))
+            @test all(iszero, @inferred(Interpolations.gradient(itp, x...)))
+            @test all(iszero, @inferred(Interpolations.gradient!(g, itp, x...)))
         end
 
         itp = interpolate(A, BSpline(Linear()))
@@ -25,8 +25,8 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
         for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
             itp = interpolate(A, BSpline(Quadratic(BC(GT()))))
             check_gradient(itp, g)
-            I = first(eachindex(itp))
-            @test Interpolations.gradient(itp, I) == Interpolations.gradient(itp, Tuple(I)...)
+            i = first(eachindex(itp))
+            @test Interpolations.gradient(itp, i) == Interpolations.gradient(itp, Tuple(i)...)
         end
 
         for BC in (Line, Flat, Free, Periodic), GT in (OnGrid, OnCell)

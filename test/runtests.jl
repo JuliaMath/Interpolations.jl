@@ -21,9 +21,9 @@ using Interpolations
     # scaling tests
     include("scaling/runtests.jl")
 
-    # # test gradient evaluation
+    # test gradient evaluation
     include("gradient.jl")
-    # # test hessian evaluation
+    # test hessian evaluation
     include("hessian.jl")
 
     # # gridded interpolation tests

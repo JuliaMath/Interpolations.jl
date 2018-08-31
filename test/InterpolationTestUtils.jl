@@ -2,7 +2,6 @@ module InterpolationTestUtils
 
 using Test, Interpolations, ForwardDiff, StaticArrays
 using Interpolations: degree, itpflag, bounds, lbounds, ubounds
-using Interpolations: substitute
 
 export check_axes, check_inbounds_values, check_oob, can_eval_near_boundaries,
        check_gradient, check_hessian
@@ -51,6 +50,8 @@ function check_axes(itp, A, isinplace=false)
 end
 
 function check_inbounds_values(itp, A)
+    i = first(eachindex(itp))
+    @test A[i] ≈ @inferred(itp[i]) == @inferred(itp[Tuple(i)...]) ≈ @inferred(itp(i)) ≈ @inferred(itp(float.(Tuple(i))...))
     for i in eachindex(itp)
         @test A[i] ≈ itp[i] == itp[Tuple(i)...] ≈ itp(i) ≈ itp(float.(Tuple(i))...)
     end
@@ -91,7 +92,7 @@ function can_eval_near_boundaries(itp::AbstractInterpolation{T,1}) where T
 end
 
 function can_eval_near_boundaries(itp::AbstractInterpolation)
-    l, u = lbounds(itp), ubounds(itp)
+    l, u = Float64.(lbounds(itp)), Float64.(ubounds(itp))
     for d = 1:ndims(itp)
         nearl = substitute(l, d, l[d]+0.1)
         # @show summary(itp) nearl
@@ -106,6 +107,11 @@ function can_eval_near_boundaries(itp::AbstractInterpolation)
     end
 end
 
+function substitute(default::NTuple{N,T}, d::Integer, val::T) where {T,N}
+    ntuple(i->ifelse(i==d, val, default[i]), Val(N))
+end
+
+
 # Generate a grid of points [1.0, 1.3333, 1.6667, 2.0, 2.3333, ...] along each coordinate
 thirds(axs) = Iterators.product(_thirds(axs...)...)
 
@@ -117,6 +123,8 @@ function check_gradient(itp::AbstractInterpolation, gtmp)
     val(x) = itp(Tuple(x)...)
     g!(gstore, x) = ForwardDiff.gradient!(gstore, val, x)
     gtmp2 = similar(gtmp)
+    i = first(thirds(axes(itp)))
+    @inferred(Interpolations.gradient(itp, i...))
     for i in thirds(axes(itp))
         @test Interpolations.gradient(itp, i...) ≈ g!(gtmp, SVector(i))
         @test Interpolations.gradient!(gtmp2, itp, i...) ≈ gtmp
@@ -127,6 +135,8 @@ function check_hessian(itp::AbstractInterpolation, htmp)
     val(x) = itp(Tuple(x)...)
     h!(hstore, x) = ForwardDiff.hessian!(hstore, val, x)
     htmp2 = similar(htmp)
+    i = first(thirds(axes(itp)))
+    @inferred(Interpolations.hessian(itp, i...))
     for i in thirds(axes(itp))
         @test Interpolations.hessian(itp, i...) ≈ h!(htmp, SVector(i))
         @test Interpolations.hessian!(htmp2, itp, i...) ≈ htmp
