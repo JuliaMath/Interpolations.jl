@@ -88,8 +88,8 @@ end
 end
 
 
-function weightedindexes(fs::F, itpflags::NTuple{N,Flag}, axs::NTuple{N,AbstractUnitRange}, xs::NTuple{N,Number}) where {F,N}
-    parts = map((flag, ax, x)->weightedindex_parts(fs, flag, ax, x), itpflags, axs, xs)
+function weightedindexes(fs::F, itpflags::NTuple{N,Flag}, knots::NTuple{N,AbstractVector}, xs::NTuple{N,Number}) where {F,N}
+    parts = map((flag, knotvec, x)->weightedindex_parts(fs, flag, knotvec, x), itpflags, knots, xs)
     weightedindexes(parts...)
 end
 
@@ -179,7 +179,7 @@ slot_substitute(kind1::Tuple{}, kind2::Tuple{}, p, v, g, h) = ()
 weightedindex_parts(fs::F, itpflag::BSpline, ax, x) where F =
     weightedindex_parts(fs, degree(itpflag), ax, x)
 
-function weightedindex_parts(fs::F, deg::Degree, ax, x) where F
+function weightedindex_parts(fs::F, deg::Degree, ax::AbstractUnitRange{<:Integer}, x) where F
     pos, δx = positions(deg, ax,  x)
     (position=pos, coefs=fmap(fs, deg, δx))
 end
@@ -198,16 +198,22 @@ function getindex_return_type(::Type{BSplineInterpolation{T,N,TCoefs,IT,Axs}}, :
 end
 
 # This handles round-towards-the-middle for points on half-integer edges
-roundbounds(x::Integer, bounds) = x
-function roundbounds(x, bounds)
+roundbounds(x::Integer, bounds::Tuple{Real,Real}) = x
+roundbounds(x::Integer, bounds::AbstractUnitRange) = x
+roundbounds(x::Number, bounds::Tuple{Real,Real}) = _roundbounds(x, bounds)
+roundbounds(x::Number, bounds::AbstractUnitRange) = _roundbounds(x, bounds)
+function _roundbounds(x::Number, bounds::Union{Tuple{Real,Real}, AbstractUnitRange})
     l, u = first(bounds), last(bounds)
     h = half(x)
     xh = x+h
     ifelse(x < u+half(u), floor(xh), ceil(xh)-1)
 end
 
-floorbounds(x::Integer, ax) = x
-function floorbounds(x, ax)
+floorbounds(x::Integer, ax::Tuple{Real,Real}) = x
+floorbounds(x::Integer, ax::AbstractUnitRange) = x
+floorbounds(x, ax::Tuple{Real,Real}) = _floorbounds(x, ax)
+floorbounds(x, ax::AbstractUnitRange) = _floorbounds(x, ax)
+function _floorbounds(x, ax::Union{Tuple{Real,Real}, AbstractUnitRange})
     l = first(ax)
     h = half(x)
     ifelse(x < l, floor(x+h), floor(x+zero(h)))

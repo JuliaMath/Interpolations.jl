@@ -33,7 +33,7 @@ using LinearAlgebra, SparseArrays
 using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
 
 using Base: @propagate_inbounds
-import Base: convert, size, axes, promote_rule, ndims, eltype, checkbounds
+import Base: convert, size, axes, promote_rule, ndims, eltype, checkbounds, axes1
 
 abstract type Flag end
 abstract type InterpolationType <: Flag end
@@ -300,7 +300,7 @@ end
 
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
-# include("gridded/gridded.jl")
+include("gridded/gridded.jl")
 include("extrapolation/extrapolation.jl")
 include("scaling/scaling.jl")
 include("utils.jl")

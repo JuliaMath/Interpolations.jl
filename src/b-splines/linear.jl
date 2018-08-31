@@ -21,7 +21,7 @@ a piecewise linear function connecting each pair of neighboring data points.
 """
 Linear
 
-function positions(::Linear, ax, x)
+function positions(::Linear, ax::AbstractUnitRange{<:Integer}, x)
     f = floor(x)
     # When x == last(ax) we want to use the x-1, x pair
     f = ifelse(x == last(ax), f - oneunit(f), f)

@@ -1,3 +1,11 @@
+function base_rem(::Constant, knotv, ki, x)
+    l, u = knotv[ki], knotv[ki+1]
+
+    xm = roundbounds(x, bounds)
+    δx = x - xm
+    fast_trunc(Int, xm), δx
+end
+
 function define_indices_d(::Type{Gridded{Constant}}, d, pad)
     symix, symx = Symbol("ix_",d), Symbol("x_",d)
     symk, symkix = Symbol("k_",d), Symbol("kix_",d)
