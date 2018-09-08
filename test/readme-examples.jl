@@ -4,7 +4,7 @@ using Interpolations, Test
 @testset "Readme Examples" begin
 
     ## Bsplines
-    a = randn(5)
+    a = randn(6)
     A = randn(5, 5)
 
     # Nearest-neighbor interpolation
