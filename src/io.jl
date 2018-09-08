@@ -1,11 +1,8 @@
-# after this, functionality was incorporated into Base
 function Base.showarg(io::IO, A::BSplineInterpolation{T,N,TW,ST,GT}, toplevel) where {T,N,TW,ST,GT}
     print(io, "interpolate(")
     Base.showarg(io, A.coefs, false)
     print(io, ", ")
-    _showtypeparam(io, ST)
-    print(io, ", ")
-    _showtypeparam(io, GT)
+    show(io, itpflag(A))
     if toplevel
         print(io, ") with element type ",T)
     else
@@ -66,32 +63,3 @@ end
 #         print(io, " with element type ",T)
 #     end
 # end
-
-_showtypeparam(io, ::Type{T}) where {T} =
-    print(io, T.name.name, "()")
-_showtypeparam(io, ::Type{Quadratic{T}}) where {T} =
-    print(io, "Quadratic(", T.name.name, "())")
-_showtypeparam(io, ::Type{Cubic{T}}) where {T} =
-    print(io, "Cubic(",     T.name.name, "())")
-
-function _showtypeparam(io, ::Type{BSpline{T}}) where T
-    print(io, "BSpline(")
-    _showtypeparam(io, T)
-    print(io, ')')
-end
-
-# function _showtypeparam(io, ::Type{Gridded{T}}) where T
-#     print(io, "Gridded(")
-#     _showtypeparam(io, T)
-#     print(io, ')')
-# end
-
-function _showtypeparam(io, types::Type{TTup}) where TTup<:Tuple
-    print(io, '(')
-    N = length(types.types)
-    for (i, T) in enumerate(types.types)
-        _showtypeparam(io, T)
-        i < N && print(io, ", ")
-    end
-    print(io, ')')
-end
