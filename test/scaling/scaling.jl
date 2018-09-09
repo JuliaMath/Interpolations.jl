@@ -50,45 +50,29 @@ using Test, LinearAlgebra
     sitp32 = @inferred scale(interpolate(Float32[testfunction(x,y) for x in -5:.5:5, y in -4:.2:4], BSpline(Quadratic(Flat(OnGrid())))), -5f0:.5f0:5f0, -4f0:.2f0:4f0)
     @test typeof(@inferred(sitp32(-3.4f0, 1.2f0))) == Float32
 
-    # # Iteration
-    # itp = interpolate(rand(3,3,3), BSpline(Quadratic(Flat())), OnCell())
-    # knots = map(d->1:10:21, 1:3)
-    # sitp = @inferred scale(itp, knots...)
+    # Iteration
+    itp = interpolate(rand(3,3,3), BSpline(Quadratic(Flat(OnCell()))))
+    knots = map(d->1:10:21, 1:3)
+    sitp = @inferred scale(itp, knots...)
 
-    # iter = @inferred(eachvalue(sitp))
+    iter = @inferred(eachvalue(sitp))
 
-    # iter_next = iterate(iter)
-    # @test iter_next isa Tuple
-    # @test iter_next[1] isa Float64
-    # state = iter_next[2]
-    # inferred_next = Base.return_types(iterate, (typeof(iter),))
-    # @test length(inferred_next) == 1
-    # @test inferred_next[1] == Union{Nothing,Tuple{Float64,typeof(state)}}
-    # iter_next = iterate(iter, state)
-    # @test iter_next isa Tuple
-    # @test iter_next[1] isa Float64
-    # inferred_next = Base.return_types(iterate, (typeof(iter),typeof(state)))
-    # state = iter_next[2]
-    # @test length(inferred_next) == 1
-    # @test inferred_next[1] == Union{Nothing,Tuple{Float64,typeof(state)}}
-
-    # function foo!(dest, sitp)
-    #     i = 0
-    #     for s in eachvalue(sitp)
-    #         dest[i+=1] = s
-    #     end
-    #     dest
-    # end
-    # function bar!(dest, sitp)
-    #     for I in CartesianIndices(size(dest))
-    #         dest[I] = sitp[I]
-    #     end
-    #     dest
-    # end
-    # rfoo = Array{Float64}(undef, Interpolations.ssize(sitp))
-    # rbar = similar(rfoo)
-    # foo!(rfoo, sitp)
-    # bar!(rbar, sitp)
-    # @test rfoo ≈ rbar
-
+    function foo!(dest, sitp)
+        i = 0
+        for s in eachvalue(sitp)
+            dest[i+=1] = s
+        end
+        dest
+    end
+    function bar!(dest, sitp)
+        for I in CartesianIndices(size(dest))
+            dest[I] = sitp(I)
+        end
+        dest
+    end
+    rfoo = Array{Float64}(undef, Interpolations.ssize(sitp))
+    rbar = similar(rfoo)
+    foo!(rfoo, sitp)
+    bar!(rbar, sitp)
+    @test rfoo ≈ rbar
 end

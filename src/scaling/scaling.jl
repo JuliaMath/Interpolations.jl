@@ -31,29 +31,37 @@ check_ranges(::Any, ::Tuple{}, ::Tuple{}) = nothing
 check_range(::NoInterp, ax, r) = ax == r || throw(ArgumentError("The range $r did not equal the corresponding axis of the interpolation object $ax"))
 check_range(::Any, ax, r) = length(ax) == length(r) || throw(ArgumentError("The range $r is incommensurate with the corresponding axis $ax"))
 
+# With regards to size and [], ScaledInterpolation behaves like the underlying interpolation object
 size(sitp::ScaledInterpolation) = size(sitp.itp)
 axes(sitp::ScaledInterpolation) = axes(sitp.itp)
+
+@propagate_inbounds function Base.getindex(sitp::ScaledInterpolation{T,N}, i::Vararg{Int,N}) where {T,N}
+    sitp.itp[i...]
+end
 
 lbounds(sitp::ScaledInterpolation) = _lbounds(sitp.ranges, itpflag(sitp.itp))
 ubounds(sitp::ScaledInterpolation) = _ubounds(sitp.ranges, itpflag(sitp.itp))
 
 boundstep(r::StepRange) = r.step / 2
 boundstep(r::UnitRange) = 1//2
-
-lbound(ax::AbstractRange, ::DegreeBC, ::OnCell) = first(ax) - boundstep(ax)
-ubound(ax::AbstractRange, ::DegreeBC, ::OnCell) = last(ax) + boundstep(ax)
-lbound(ax::AbstractRange, ::DegreeBC, ::OnGrid) = first(ax)
-ubound(ax::AbstractRange, ::DegreeBC, ::OnGrid) = last(ax)
-
 """
 Returns *half* the width of one step of the range.
 
 This function is used to calculate the upper and lower bounds of `OnCell` interpolation objects.
 """ boundstep
 
+lbound(ax::AbstractRange, ::DegreeBC, ::OnCell) = first(ax) - boundstep(ax)
+ubound(ax::AbstractRange, ::DegreeBC, ::OnCell) = last(ax) + boundstep(ax)
+lbound(ax::AbstractRange, ::DegreeBC, ::OnGrid) = first(ax)
+ubound(ax::AbstractRange, ::DegreeBC, ::OnGrid) = last(ax)
+
+# For (), we scale the evaluation point
 function (sitp::ScaledInterpolation{T,N})(xs::Vararg{Number,N}) where {T,N}
     xl = coordslookup(itpflag(sitp.itp), sitp.ranges, xs)
     sitp.itp(xl...)
+end
+@inline function (sitp::ScaledInterpolation)(x::Vararg{UnexpandedIndexTypes})
+    sitp(to_indices(sitp, x)...)
 end
 
 (sitp::ScaledInterpolation{T,1}, x::Number, y::Int) where {T} = y == 1 ? sitp(x) : Base.throw_boundserror(sitp, (x, y))
@@ -134,167 +142,85 @@ rescale_gradient(r::UnitRange, g) = g
 Implements the chain rule dy/dx = dy/du * du/dx for use when calculating gradients with scaled interpolation objects.
 """ rescale_gradient
 
+### Iteration
 
-# ### Iteration
-# mutable struct ScaledIterator{CR<:CartesianIndices,SITPT,X1,Deg,T}
-#     rng::CR
-#     sitp::SITPT
-#     dx_1::X1
-#     nremaining::Int
-#     fx_1::X1
-#     itp_tail::NTuple{Deg,T}
-# end
+struct ScaledIterator{SITPT,CI,WIS}
+    sitp::SITPT   # ScaledInterpolation object
+    ci::CI        # the CartesianIndices object
+    wis::WIS      # WeightedIndex vectors
+    breaks1::Vector{Int}   # breaks along dimension 1 where new evaluations must occur
+end
 
-# nelements(::Union{Type{NoInterp},Type{Constant}}) = 1
-# nelements(::Type{Linear}) = 2
-# nelements(::Type{Q}) where {Q<:Quadratic} = 3
+Base.IteratorSize(::Type{ScaledIterator{SITPT,CI,WIS}}) where {SITPT,CI<:CartesianIndices{N},WIS} where N = Base.HasShape{N}()
+Base.axes(iter::ScaledIterator) = axes(iter.ci)
+Base.size(iter::ScaledIterator) = size(iter.ci)
 
-# eachvalue_zero(::Type{R}, ::Type{BT}) where {R,BT<:Union{Type{NoInterp},Type{Constant}}} =
-#     (zero(R),)
-# eachvalue_zero(::Type{R}, ::Type{Linear}) where {R} = (zero(R),zero(R))
-# eachvalue_zero(::Type{R}, ::Type{Q}) where {R,Q<:Quadratic} = (zero(R),zero(R),zero(R))
+struct ScaledIterState{N,V}
+    cistate::CartesianIndex{N}
+    ibreak::Int
+    cached_evaluations::NTuple{N,V}
+end
 
-# """
-# `eachvalue(sitp)` constructs an iterator for efficiently visiting each
-# grid point of a ScaledInterpolation object in which a small grid is
-# being "scaled up" to a larger one.  For example, suppose you have a
-# core `BSpline` object defined on a 5x7x4 grid, and you are scaling it
-# to a 100x120x20 grid (via `linspace(1,5,100), linspace(1,7,120),
-# linspace(1,4,20)`).  You can perform interpolation at each of these
-# grid points via
+function eachvalue(sitp::ScaledInterpolation{T,N}) where {T,N}
+    itps = tcollect(itpflag, sitp.itp)
+    newaxes = map(r->Base.Slice(ceil(Int, first(r)):floor(Int, last(r))), sitp.ranges)
+    wis = dimension_wis(value_weights, itps, axes(sitp.itp), newaxes, sitp.ranges)
+    wis1 = wis[1]
+    i1 = first(axes(wis1, 1))
+    breaks1 = [i1]
+    for i in Iterators.drop(axes(wis1, 1), 1)
+        if indexes(wis1[i]) != indexes(wis1[i-1])
+            push!(breaks1, i)
+        end
+    end
+    push!(breaks1, last(axes(wis1, 1))+1)
+    ScaledIterator(sitp, CartesianIndices(newaxes), wis, breaks1)
+end
 
-# ```
-#     function foo!(dest, sitp)
-#         i = 0
-#         for s in eachvalue(sitp)
-#             dest[i+=1] = s
-#         end
-#         dest
-#     end
-# ```
+function dimension_wis(f::F, itps, axs, newaxes, ranges) where F
+    itpflag, ax, nax, r = itps[1], axs[1], newaxes[1], ranges[1]
+    function makewi(x)
+        pos, coefs = weightedindex_parts((f,), itpflag, ax, coordlookup(r, x))
+        maybe_weightedindex(pos, coefs[1])
+    end
+    (makewi.(nax), dimension_wis(f, Base.tail(itps), Base.tail(axs), Base.tail(newaxes), Base.tail(ranges))...)
+end
+dimension_wis(f, ::Tuple{}, ::Tuple{}, ::Tuple{}, ::Tuple{}) = ()
 
-# which should be more efficient than
+function Base.iterate(iter::ScaledIterator)
+    ret = iterate(iter.ci)
+    ret === nothing && return nothing
+    item, cistate = ret
+    wis = getindex.(iter.wis, Tuple(item))
+    ces = cache_evaluations(iter.sitp.itp.coefs, indexes(wis[1]), weights(wis[1]), Base.tail(wis))
+    return _reduce(+, weights(wis[1]).*ces), ScaledIterState(cistate, first(iter.breaks1), ces)
+end
 
-# ```
-#     function bar!(dest, sitp)
-#         for I in CartesianIndices(size(dest))
-#             dest[I] = sitp[I]
-#         end
-#         dest
-#     end
-# ```
-# """
-# function eachvalue(sitp::ScaledInterpolation{T,N}) where {T,N}
-#     ITPT = basetype(sitp)
-#     IT = itptype(ITPT)
-#     R = getindex_return_type(ITPT, Int)
-#     BT = bsplinetype(iextract(IT, 1))
-#     itp_tail = eachvalue_zero(R, BT)
-#     dx_1 = coordlookup(sitp.ranges[1], 2) - coordlookup(sitp.ranges[1], 1)
-#     ScaledIterator(CartesianIndices(ssize(sitp)), sitp, dx_1, 0, zero(dx_1), itp_tail)
-# end
+function Base.iterate(iter::ScaledIterator, state)
+    ret = iterate(iter.ci, state.cistate)
+    ret === nothing && return nothing
+    item, cistate = ret
+    i1 = item[1]
+    isnext1 = i1 == state.cistate[1]+1
+    if isnext1 && i1 < iter.breaks1[state.ibreak+1]
+        # We can use the previously cached values
+        wis1 = iter.wis[1][i1]
+        return _reduce(+, weights(wis1).*state.cached_evaluations), ScaledIterState(cistate, state.ibreak, state.cached_evaluations)
+    end
+    # Re-evaluate. We're being a bit lazy here: in some cases, some of the cached values could be reused
+    wis = getindex.(iter.wis, Tuple(item))
+    ces = cache_evaluations(iter.sitp.itp.coefs, indexes(wis[1]), weights(wis[1]), Base.tail(wis))
+    return _reduce(+, weights(wis[1]).*ces), ScaledIterState(cistate, isnext1 ? state.ibreak+1 : first(iter.breaks1), ces)
+end
 
-# function index_gen1(::Union{Type{NoInterp}, Type{BSpline{Constant}}})
-#     quote
-#         value = iter.itp_tail[1]
-#     end
-# end
+_reduce(op, list) = op(list[1], _reduce(op, Base.tail(list)))
+_reduce(op, list::Tuple{Number}) = list[1]
+_reduce(op, list::Tuple{}) = error("cannot reduce an empty list")
 
-# function index_gen1(::Type{BSpline{Linear}})
-#     quote
-#         p = iter.itp_tail
-#         value = c_1*p[1] + cp_1*p[2]
-#     end
-# end
+# We use weights only as a ruler to determine when we are done
+cache_evaluations(coefs, i::Int, weights, rest) = (coefs[i, rest...], cache_evaluations(coefs, i+1, Base.tail(weights), rest)...)
+cache_evaluations(coefs, indexes, weights, rest) = (coefs[indexes[1], rest...], cache_evaluations(coefs, Base.tail(indexes), Base.tail(weights), rest)...)
+cache_evaluations(coefs, ::Int, ::Tuple{}, rest) = ()
+cache_evaluations(coefs, ::Any, ::Tuple{}, rest) = ()
 
-# function index_gen1(::Type{BSpline{Q}}) where Q<:Quadratic
-#     quote
-#         p = iter.itp_tail
-#         value = cm_1*p[1] + c_1*p[2] + cp_1*p[3]
-#     end
-# end
-# function index_gen_tail(B::Union{Type{NoInterp}, Type{BSpline{Constant}}}, ::Type{IT}, N) where IT
-#     [index_gen(B, IT, N, 0)]
-# end
-
-# function index_gen_tail(::Type{BSpline{Linear}}, ::Type{IT}, N) where IT
-#     [index_gen(BS1, IT, N, i) for i = 0:1]
-# end
-
-# function index_gen_tail(::Type{BSpline{Q}}, ::Type{IT}, N) where {IT,Q<:Quadratic}
-#     [index_gen(BSpline{Q}, IT, N, i) for i = -1:1]
-# end
-# function nremaining_gen(::Union{Type{BSpline{Constant}}, Type{BSpline{Q}}}) where Q<:Quadratic
-#     quote
-#         EPS = 0.001*iter.dx_1
-#         floor(Int, iter.dx_1 >= 0 ?
-#               (min(length(range1)+EPS, round(Int,x_1) + 0.5) - x_1)/iter.dx_1 :
-#               (max(1-EPS, round(Int,x_1) - 0.5) - x_1)/iter.dx_1)
-#     end
-# end
-
-# function nremaining_gen(::Type{BSpline{Linear}})
-#     quote
-#         EPS = 0.001*iter.dx_1
-#         floor(Int, iter.dx_1 >= 0 ?
-#               (min(length(range1)+EPS, floor(Int,x_1) + 1) - x_1)/iter.dx_1 :
-#               (max(1-EPS, floor(Int,x_1)) - x_1)/iter.dx_1)
-#     end
-# end
-# function next_gen(::Type{ScaledIterator{CR,SITPT,X1,Deg,T}}) where {CR,SITPT,X1,Deg,T}
-#     N = ndims(CR)
-#     ITPT = basetype(SITPT)
-#     IT = itptype(ITPT)
-#     BS1 = iextract(IT, 1)
-#     BS1 == NoInterp && error("eachvalue is not implemented (and does not make sense) for NoInterp along the first dimension")
-#     pad = padding(ITPT)
-#     x_syms = [Symbol("x_", i) for i = 1:N]
-#     interp_index(IT, i) = iextract(IT, i) != NoInterp ?
-#         :($(x_syms[i]) = coordlookup(sitp.ranges[$i], state[$i])) :
-#         :($(x_syms[i]) = state[$i])
-#     # Calculations for the first dimension
-#     interp_index1 = interp_index(IT, 1)
-#     indices1 = define_indices_d(BS1, 1, padextract(pad, 1))
-#     coefexprs1 = coefficients(BS1, N, 1)
-#     nremaining_expr = nremaining_gen(BS1)
-#     # Calculations for the rest of the dimensions
-#     interp_indices_tail = map(i -> interp_index(IT, i), 2:N)
-#     indices_tail = [define_indices_d(iextract(IT, i), i, padextract(pad, i)) for i = 2:N]
-#     coefexprs_tail = [coefficients(iextract(IT, i), N, i) for i = 2:N]
-#     value_exprs_tail = index_gen_tail(BS1, IT, N)
-#     quote
-#         sitp = iter.sitp
-#         itp = sitp.itp
-#         inds_itp = axes(itp)
-#         if iter.nremaining > 0
-#             iter.nremaining -= 1
-#             iter.fx_1 += iter.dx_1
-#         else
-#             range1 = sitp.ranges[1]
-#             $interp_index1
-#             $indices1
-#             iter.nremaining = $nremaining_expr
-#             iter.fx_1 = fx_1
-#             $(interp_indices_tail...)
-#             $(indices_tail...)
-#             $(coefexprs_tail...)
-#             @inbounds iter.itp_tail = ($(value_exprs_tail...),)
-#         end
-#         fx_1 = iter.fx_1
-#         $coefexprs1
-#         $(index_gen1(BS1))
-#     end
-# end
-
-# @generated function iterate(iter::ScaledIterator{CR,ITPT}, state::Union{Nothing,CartesianIndex{N}} = nothing) where {CR,ITPT,N}
-#     value_expr = next_gen(iter)
-#     quote
-#         rng_next = state ≡ nothing ? iterate(iter.rng) : iterate(iter.rng, state)
-#         rng_next ≡ nothing && return nothing
-#         state = rng_next[2]
-#         $value_expr
-#         (value, state)
-#     end
-# end
-
-# ssize(sitp::ScaledInterpolation{T,N}) where {T,N} = map(r->round(Int, last(r)-first(r)+1), sitp.ranges)::NTuple{N,Int}
+ssize(sitp::ScaledInterpolation{T,N}) where {T,N} = map(r->round(Int, last(r)-first(r)+1), sitp.ranges)::NTuple{N,Int}
