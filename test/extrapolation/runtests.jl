@@ -68,28 +68,28 @@ using Test
     @test @inferred(etp87g(0.75)) == 0.0im
     @test @inferred(etp87g(3.25)) == 0.0im
 
-    # # Make sure it works with Gridded too
-    # etp100g = extrapolate(interpolate(([10;20],),[100;110], Gridded(Linear())), Flat())
-    # @test @inferred(etp100g(5)) == 100
-    # @test @inferred(etp100g(15)) == 105
-    # @test @inferred(etp100g(25)) == 110
-    # # issue #178
-    # a = randn(10,10) + im*rand(10,10)
-    # etp = @inferred(extrapolate(interpolate((1:10, 1:10), a, Gridded(Linear())), 0.0))
-    # @test @inferred(etp(-1,0)) === 0.0+0.0im
+    # Make sure it works with Gridded too
+    etp100g = extrapolate(interpolate(([10;20],),[100;110], Gridded(Linear())), Flat())
+    @test @inferred(etp100g(5)) == 100
+    @test @inferred(etp100g(15)) == 105
+    @test @inferred(etp100g(25)) == 110
+    # issue #178
+    a = randn(10,10) + im*rand(10,10)
+    etp = @inferred(extrapolate(interpolate((1:10, 1:10), a, Gridded(Linear())), 0.0))
+    @test @inferred(etp(-1,0)) === 0.0+0.0im
 
     # check all extrapolations work with vectorized indexing
     for E in [0,Flat(),Line(),Periodic(),Reflect()]
-        @test_broken (@inferred(extrapolate(interpolate([0,0],BSpline(Linear())),E))([1.2, 1.8, 3.1])) == [0,0,0]
+        @test (@inferred(extrapolate(interpolate([0,0],BSpline(Linear())),E))([1.2, 1.8, 3.1])) == [0,0,0]
     end
 
-    # # Issue #156
-    # F     = *(collect(1.0:10.0), collect(1:4)')
-    # itp   = interpolate(F, (BSpline(Linear()), NoInterp()), OnGrid());
-    # itps   = scale(itp, 1:10, 1:4)
-    # itpe   = extrapolate(itps, (Line(), Interpolations.Throw()))
-    # @test itpe(10.1, 1) ≈ 10.1
-    # @test_throws BoundsError itpe(9.9, 0)
+    # Issue #156
+    F     = *(collect(1.0:10.0), collect(1:4)')
+    itp   = interpolate(F, (BSpline(Linear()), NoInterp()));
+    itps   = scale(itp, 1:10, 1:4)
+    itpe   = extrapolate(itps, (Line(), Throw()))
+    @test itpe(10.1, 1) ≈ 10.1
+    @test_throws BoundsError itpe(9.9, 0)
 
     include("type-stability.jl")
     include("non1.jl")

@@ -20,6 +20,7 @@ export
     Natural,
     InPlace,
     InPlaceQ,
+    Throw,
 
     LinearInterpolation,
     CubicSplineInterpolation
@@ -199,7 +200,50 @@ weights(wi::WeightedIndex) = wi.weights
 indexes(wi::WeightedAdjIndex) = wi.istart
 indexes(wi::WeightedArbIndex) = wi.indexes
 
+# Make them iterable just like numbers are
+Base.iterate(x::WeightedIndex) = (x, nothing)
+Base.iterate(x::WeightedIndex, ::Any) = nothing
+Base.isempty(x::WeightedIndex) = false
+Base.length(x::WeightedIndex) = 1
 
+### Indexing with WeightedIndex
+
+# We inject indexing with `WeightedIndex` at a non-exported point in the dispatch heirarchy.
+# This is to avoid ambiguities with methods that specialize on the array type rather than
+# the index type.
+Base.to_indices(A, I::Tuple{Vararg{Union{Int,WeightedIndex}}}) = I
+@propagate_inbounds Base._getindex(::IndexLinear, A::AbstractVector, i::Int) = getindex(A, i)  # ambiguity resolution
+@inline function Base._getindex(::IndexStyle, A::AbstractArray{T,N}, I::Vararg{Union{Int,WeightedIndex},N}) where {T,N}
+    interp_getindex(A, I)
+end
+
+# This follows a "move processed indexes to the back" strategy, so J contains the yet-to-be-processed
+# indexes and I all the processed indexes.
+interp_getindex(A::AbstractArray{T,N}, J::Tuple{Int,Vararg{Any,L}}, I::Vararg{Int,M}) where {T,N,L,M} =
+    interp_getindex(A, Base.tail(J), I..., J[1])
+function interp_getindex(A::AbstractArray{T,N}, J::Tuple{WeightedIndex,Vararg{Any,L}}, I::Vararg{Int,M}) where {T,N,L,M}
+    wi = J[1]
+    _interp_getindex(A, indexes(wi), weights(wi), Base.tail(J), I...)
+end
+interp_getindex(A::AbstractArray{T,N}, ::Tuple{}, I::Vararg{Int,N}) where {T,N} =   # termination
+    @inbounds A[I...]  # all bounds-checks have already happened
+
+## Handle expansion of a single dimension
+# version for WeightedAdjIndex
+@inline _interp_getindex(A, i::Int, weights::NTuple{K,Number}, rest, I::Vararg{Int,M}) where {M,K} =
+    weights[1] * interp_getindex(A, rest, I..., i) + _interp_getindex(A, i+1, Base.tail(weights), rest, I...)
+@inline _interp_getindex(A, i::Int, weights::Tuple{Number}, rest, I::Vararg{Int,M}) where M =
+    weights[1] * interp_getindex(A, rest, I..., i)
+_interp_getindex(A, i::Int, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
+    error("exhausted weights, this should never happen")  # helps inference
+
+# version for WeightedArbIndex
+@inline _interp_getindex(A, indexes::NTuple{K,Int}, weights::NTuple{K,Number}, rest, I::Vararg{Int,M}) where {M,K} =
+    weights[1] * interp_getindex(A, rest, I..., indexes[1]) + _interp_getindex(A, Base.tail(indexes), Base.tail(weights), rest, I...)
+@inline _interp_getindex(A, indexes::Tuple{Int}, weights::Tuple{Number}, rest, I::Vararg{Int,M}) where M =
+    weights[1] * interp_getindex(A, rest, I..., indexes[1])
+_interp_getindex(A, indexes::Tuple{}, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
+    error("exhausted weights and indexes, this should never happen")
 
 """
     w = value_weights(degree, δx)
@@ -268,7 +312,9 @@ Base.to_index(::AbstractInterpolation, x::Number) = x
 #     itp(to_indices(itp, x)...)
 # end
 function gradient(itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
-    gradient(itp, to_indices(itp, x)...)
+    xi = to_indices(itp, x)
+    xi == x && error("gradient of $itp not supported for position $x")
+    gradient(itp, xi...)
 end
 function gradient!(dest, itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
     gradient!(dest, itp, to_indices(itp, x)...)
@@ -283,12 +329,15 @@ end
 # @inline function (itp::AbstractInterpolation)(x::Vararg{ExpandedIndexTypes})
 #     itp.(Iterators.product(x...))
 # end
-function gradient(itp::AbstractInterpolation, x::Vararg{ExpandedIndexTypes})
-    map(y->gradient(itp, y), Iterators.product(x...))
-end
-function hessian(itp::AbstractInterpolation, x::Vararg{ExpandedIndexTypes})
-    map(y->hessian(itp, y), Iterators.product(x...))
-end
+# function gradient(itp::AbstractInterpolation, x::Vararg{ExpandedIndexTypes})
+#     map(y->tgradient(itp, y), Iterators.product(x...))
+# end
+# function hessian(itp::AbstractInterpolation, x::Vararg{ExpandedIndexTypes})
+#     map(y->thessian(itp, y), Iterators.product(x...))
+# end
+#
+# tgradient(itp, y) = gradient(itp, y...)
+# thessian(itp, y) = hessian(itp, y...)
 
 # getindex is supported only for Integer indices (deliberately)
 import Base: getindex

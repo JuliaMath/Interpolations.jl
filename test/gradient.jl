@@ -40,9 +40,9 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
     # Since Linear is OnGrid in the domain, check the gradients between grid points
     itp1 = interpolate(Float64[f1(x) for x in 1:nx],
                 BSpline(Linear()))
-    # itp2 = interpolate((1:nx-1,), Float64[f1(x) for x in 1:nx-1],
-    #             Gridded(Linear()))
-    for itp in (itp1, )#itp2)
+    itp2 = interpolate((1:nx-1,), Float64[f1(x) for x in 1:nx-1],
+                Gridded(Linear()))
+    for itp in (itp1, itp2)
         for x in 2.5:nx-1.5
             @test ≈(g1gt(x),(Interpolations.gradient(itp,x))[1],atol=abs(0.1 * g1gt(x)))
             @test ≈(g1gt(x),(Interpolations.gradient!(g1,itp,x))[1],atol=abs(0.1 * g1gt(x)))
@@ -51,6 +51,7 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
 
         for i = 1:10
             x = rand()*(nx-2)+1.5
+            checkbounds(Bool, itp, x) || continue
             gtmp = Interpolations.gradient(itp, x)[1]
             xd = dual(x, 1)
             @test epsilon(itp(xd)) ≈ gtmp
@@ -58,15 +59,15 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
     end
 
     # test gridded on a non-uniform grid
-    # knots = (1.0:0.3:nx-1,)
-    # itp_grid = interpolate(knots, Float64[f1(x) for x in knots[1]],
-    #                        Gridded(Linear()))
+    knots = (1.0:0.3:nx-1,)
+    itp_grid = interpolate(knots, Float64[f1(x) for x in knots[1]],
+                           Gridded(Linear()))
 
-    # for x in 1.5:0.5:nx-1.5
-    #     @test ≈(g1(x),(Interpolations.gradient(itp_grid,x))[1],atol=abs(0.5 * g1(x)))
-    #     @test ≈(g1(x),(Interpolations.gradient!(g,itp_grid,x))[1],atol=abs(0.5 * g1(x)))
-    #     @test ≈(g1(x),g[1],atol=abs(0.5 * g1(x)))
-    # end
+    for x in 1.5:0.5:nx-1.5
+        @test ≈(g1gt(x),(Interpolations.gradient(itp_grid,x))[1],atol=abs(0.5 * g1gt(x)))
+        @test ≈(g1gt(x),(Interpolations.gradient!(g1,itp_grid,x))[1],atol=abs(0.5 * g1gt(x)))
+        @test ≈(g1gt(x),g1[1],atol=abs(0.5 * g1gt(x)))
+    end
 
     # Since Quadratic is OnCell in the domain, check gradients at grid points
     itp1 = interpolate(Float64[f1(x) for x in 1:nx-1],

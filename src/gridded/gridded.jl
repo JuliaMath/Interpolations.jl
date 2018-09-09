@@ -4,6 +4,12 @@ struct Gridded{D<:Degree} <: InterpolationType
     degree::D
 end
 
+function Base.show(io::IO, g::Gridded)
+    print(io, "Gridded(")
+    show(io, degree(g))
+    print(io, ')')
+end
+
 const GridIndex{T} = Union{AbstractVector{T}, Tuple}
 
 struct GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{AbstractVector}}} <: AbstractInterpolation{T,N,IT}

@@ -8,6 +8,15 @@ end
     itp(to_indices(itp, x)...)
 end
 
+@inline function gradient(itp::GriddedInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
+    wis = weightedindexes((value_weights, gradient_weights), itpinfo(itp)..., x)
+    SVector(map(inds->coefficients(itp)[inds...], wis))
+end
+@propagate_inbounds function gradient!(dest, itp::GriddedInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    dest .= gradient(itp, x...)
+end
+
 itpinfo(itp::GriddedInterpolation) = (tcollect(itpflag, itp), itp.knots)
 
 weightedindex_parts(fs::F, itpflag::Gridded, ax, x) where F =
@@ -45,15 +54,23 @@ end
 function weightedindex(fs::F, deg::Degree, knotvec, x, iclamp) where F
     @inbounds l, u = knotvec[iclamp], knotvec[iclamp+1]
     δx = (x - l)/(u - l)
-    (position=iclamp, coefs=fmap(fs, deg, δx))
+    (position=iclamp, coefs=rescale_gridded(fs, fmap(fs, deg, δx), u-l))
 end
+
+rescale_gridded(fs::F, coefs, Δx) where F =
+    (rescale_gridded(fs[1], coefs[1], Δx), rescale_gridded(Base.tail(fs), Base.tail(coefs), Δx)...)
+rescale_gridded(::Tuple{}, ::Tuple{}, Δx) = ()
+rescale_gridded(::typeof(value_weights), coefs, Δx) = coefs
+rescale_gridded(::typeof(gradient_weights), coefs, Δx) = coefs./Δx
+rescale_gridded(::typeof(hessian_weights), coefs, Δx) = coefs./Δx.^2
 
 @inline function (itp::GriddedInterpolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     itps = tcollect(itpflag, itp)
     wis = dimension_wis(value_weights, itps, itp.knots, x)
     coefs = coefficients(itp)
-    [coefs[i...] for i in Iterators.product(wis...)]
+    ret = [coefs[i...] for i in Iterators.product(wis...)]
+    reshape(ret, shape(wis...))
 end
 
 function dimension_wis(f::F, itps, knots, xs) where F

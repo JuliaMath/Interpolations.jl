@@ -30,7 +30,7 @@ using Interpolations, Test
     ## Scaled Bsplines
     A_x = 1.:2.:40.
     A = [log(x) for x in A_x]
-    itp = interpolate(A, BSpline(Cubic(Line())), OnGrid())
+    itp = interpolate(A, BSpline(Cubic(Line(OnGrid()))))
     sitp = scale(itp, A_x)
     @test sitp(3.) ≈ log(3.) # exactly log(3.)
     @test sitp(3.5) ≈ log(3.5) atol=.1 # approximately log(3.5)
@@ -45,10 +45,10 @@ using Interpolations, Test
     @test sitp(5., 10.) ≈ log(5 + 10) # exactly log(5 + 10)
     @test sitp(5.6, 7.1) ≈ log(5.6 + 7.1) atol=.1 # approximately log(5.6 + 7.1)
 
-    # ## Gridded interpolation
-    # A = rand(8,20)
-    # knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
-    # itp = interpolate(knots, A, Gridded(Linear()))
-    # @test itp[4,1.2] ≈ A[2,6] atol=.1  # approximately A[2,6]
+    ## Gridded interpolation
+    A = rand(8,20)
+    knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
+    itp = interpolate(knots, A, Gridded(Linear()))
+    @test itp(4,1.2) ≈ A[2,6] atol=.1  # approximately A[2,6]
 
 end

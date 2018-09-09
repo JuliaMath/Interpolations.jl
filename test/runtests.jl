@@ -11,6 +11,7 @@ using Interpolations
 @test isempty(setdiff(detect_ambiguities(Interpolations, Base, Core), ambs))
 
 @testset "Interpolations" begin
+    include("core.jl")
 
     # b-spline interpolation tests
     include("b-splines/runtests.jl")
@@ -26,14 +27,11 @@ using Interpolations
     # test hessian evaluation
     include("hessian.jl")
 
-    # # gridded interpolation tests
-    # include("gridded/runtests.jl")
+    # gridded interpolation tests
+    include("gridded/runtests.jl")
 
     # test interpolation with specific types
     include("typing.jl")
-
-    # Tests copied from Grid.jl's old test suite
-    # include("grid.jl")
 
     include("issues/runtests.jl")
 

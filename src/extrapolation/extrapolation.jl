@@ -39,7 +39,29 @@ count_interp_dims(::Type{<:Extrapolation{T,N,ITPT}}, n) where {T,N,ITPT} = count
     itp = parent(etp)
     eflag = etpflag(etp)
     xs = inbounds_position(eflag, bounds(itp), x, etp, x)
-    extrapolate_value(eflag, x, xs, Tuple(gradient(itp, xs...)), itp(xs...))
+    extrapolate_value(eflag, skip_flagged_nointerp(itp, x), skip_flagged_nointerp(itp, xs), Tuple(gradient(itp, xs...)), itp(xs...))
+end
+@inline function (etp::Extrapolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
+    itp = parent(etp)
+    Tret = typeof(lispyprod(zero(T), x...))
+    ret = zeros(Tret, shape(x...))
+    for (i, y) in zip(eachindex(ret), Iterators.product(x...))
+        ret[i] = etp(y...)
+    end
+    return ret
+end
+
+@inline function gradient(etp::AbstractExtrapolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    itp = parent(etp)
+    if checkbounds(Bool, itp, x...)
+        gradient(itp, x...)
+    else
+        eflag = tcollect(etpflag, etp)
+        xs = inbounds_position(eflag, bounds(itp), x, etp, x)
+        g = gradient(itp, xs...)
+        skipni = t->skip_flagged_nointerp(itp, t)
+        SVector(extrapolate_gradient.(skipni(eflag), skipni(x), skipni(xs), Tuple(g)))
+    end
 end
 
 checkbounds(::Bool, ::AbstractExtrapolation, I...) = true

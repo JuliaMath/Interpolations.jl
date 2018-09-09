@@ -33,6 +33,16 @@ end
     @assert length(inds) == N
     etp(inds...)
 end
+@inline function (etp::FilledExtrapolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
+    itp = parent(etp)
+    Tret = typeof(lispyprod(zero(T), x...))
+    ret = fill(convert(Tret, etp.fillvalue), shape(x...))
+    axsib = inbounds(itp, x...)
+    any(isempty, axsib) && return ret
+    xib = getindex.(x, axsib)
+    getindex!(view(ret, keepvectors(axsib...)...), itp, xib...)
+    return ret
+end
 
 expand_index_resid_etp(deg, fillvalue, (l, u), x, etp::FilledExtrapolation, xN) =
     (l <= x <= u || Base.throw_boundserror(etp, xN))

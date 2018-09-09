@@ -1,42 +1,3 @@
-### Indexing with WeightedIndex
-
-# We inject indexing with `WeightedIndex` at a non-exported point in the dispatch heirarchy.
-# This is to avoid ambiguities with methods that specialize on the array type rather than
-# the index type.
-Base.to_indices(A, I::Tuple{Vararg{Union{Int,WeightedIndex}}}) = I
-@propagate_inbounds Base._getindex(::IndexLinear, A::AbstractVector, i::Int) = getindex(A, i)  # ambiguity resolution
-@inline function Base._getindex(::IndexStyle, A::AbstractArray{T,N}, I::Vararg{Union{Int,WeightedIndex},N}) where {T,N}
-    interp_getindex(A, I)
-end
-
-# This follows a "move processed indexes to the back" strategy, so J contains the yet-to-be-processed
-# indexes and I all the processed indexes.
-interp_getindex(A::AbstractArray{T,N}, J::Tuple{Int,Vararg{Any,L}}, I::Vararg{Int,M}) where {T,N,L,M} =
-    interp_getindex(A, Base.tail(J), I..., J[1])
-function interp_getindex(A::AbstractArray{T,N}, J::Tuple{WeightedIndex,Vararg{Any,L}}, I::Vararg{Int,M}) where {T,N,L,M}
-    wi = J[1]
-    _interp_getindex(A, indexes(wi), weights(wi), Base.tail(J), I...)
-end
-interp_getindex(A::AbstractArray{T,N}, ::Tuple{}, I::Vararg{Int,N}) where {T,N} =   # termination
-    @inbounds A[I...]  # all bounds-checks have already happened
-
-# version for WeightedAdjIndex
-_interp_getindex(A, i::Int, weights::NTuple{K,Number}, rest, I::Vararg{Int,M}) where {M,K} =
-    weights[1] * interp_getindex(A, rest, I..., i) + _interp_getindex(A, i+1, Base.tail(weights), rest, I...)
-_interp_getindex(A, i::Int, weights::Tuple{Number}, rest, I::Vararg{Int,M}) where M =
-    weights[1] * interp_getindex(A, rest, I..., i)
-_interp_getindex(A, i::Int, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
-    error("exhausted weights, this should never happen")  # helps inference
-
-# version for WeightedArbIndex
-_interp_getindex(A, indexes::NTuple{K,Int}, weights::NTuple{K,Number}, rest, I::Vararg{Int,M}) where {M,K} =
-    weights[1] * interp_getindex(A, rest, I..., indexes[1]) + _interp_getindex(A, Base.tail(indexes), Base.tail(weights), rest, I...)
-_interp_getindex(A, indexes::Tuple{Int}, weights::Tuple{Number}, rest, I::Vararg{Int,M}) where M =
-    weights[1] * interp_getindex(A, rest, I..., indexes[1])
-_interp_getindex(A, indexes::Tuple{}, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
-    error("exhausted weights and indexes, this should never happen")
-
-
 ### Primary evaluation entry points (itp(x...), gradient(itp, x...), and hessian(itp, x...))
 
 itpinfo(itp) = (tcollect(itpflag, itp), axes(itp))
@@ -51,6 +12,14 @@ end
     @boundscheck (check1(trailing) || Base.throw_boundserror(itp, x))
     @assert length(inds) == N
     itp(inds...)
+end
+@inline function (itp::BSplineInterpolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
+    @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
+    itps = tcollect(itpflag, itp)
+    wis = dimension_wis(value_weights, itps, axes(itp), x)
+    coefs = coefficients(itp)
+    ret = [coefs[i...] for i in Iterators.product(wis...)]
+    reshape(ret, shape(wis...))
 end
 
 @inline function gradient(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
@@ -71,12 +40,14 @@ end
     dest .= hessian(itp, x...)
 end
 
-checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::Vararg{Number,N}) where N =
+checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::Vararg{ExpandedIndexTypes,N}) where N =
     checklubounds(lbounds(itp), ubounds(itp), x)
 
 checklubounds(ls, us, xs) = _checklubounds(true, ls, us, xs)
-_checklubounds(tf::Bool, ls, us, xs) = _checklubounds(tf & (ls[1] <= xs[1] <= us[1]),
-                                                        Base.tail(ls), Base.tail(us), Base.tail(xs))
+_checklubounds(tf::Bool, ls, us, xs::Tuple{Number, Vararg{Any}}) =
+    _checklubounds(tf & (ls[1] <= xs[1] <= us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
+_checklubounds(tf::Bool, ls, us, xs::Tuple{AbstractVector, Vararg{Any}}) =
+    _checklubounds(tf & all(ls[1] .<= xs[1] .<= us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
 _checklubounds(tf::Bool, ::Tuple{}, ::Tuple{}, ::Tuple{}) = tf
 
 # Leftovers from AbstractInterpolation

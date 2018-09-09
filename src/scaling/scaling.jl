@@ -35,6 +35,8 @@ check_range(::Any, ax, r) = length(ax) == length(r) || throw(ArgumentError("The 
 size(sitp::ScaledInterpolation) = size(sitp.itp)
 axes(sitp::ScaledInterpolation) = axes(sitp.itp)
 
+itpflag(sitp::ScaledInterpolation) = itpflag(sitp.itp)
+
 @propagate_inbounds function Base.getindex(sitp::ScaledInterpolation{T,N}, i::Vararg{Int,N}) where {T,N}
     sitp.itp[i...]
 end
@@ -61,10 +63,17 @@ function (sitp::ScaledInterpolation{T,N})(xs::Vararg{Number,N}) where {T,N}
     sitp.itp(xl...)
 end
 @inline function (sitp::ScaledInterpolation)(x::Vararg{UnexpandedIndexTypes})
-    sitp(to_indices(sitp, x)...)
+    xis = to_indices(sitp, x)
+    xis == x && error("evaluation not supported for ScaledInterpolation at positions $x")
+    sitp(xis...)
 end
 
 (sitp::ScaledInterpolation{T,1}, x::Number, y::Int) where {T} = y == 1 ? sitp(x) : Base.throw_boundserror(sitp, (x, y))
+
+@inline function (itp::ScaledInterpolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
+    # @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
+    [itp(i...) for i in Iterators.product(x...)]
+end
 
 @inline function coordslookup(flags, ranges, xs)
     item = coordlookup(getfirst(flags), ranges[1], xs[1])
@@ -102,36 +111,6 @@ function rescale_gradient_components(flags, ranges, g)
     end
 end
 rescale_gradient_components(flags, ::Tuple{}, ::Tuple{}) = ()
-
-
-# # @eval uglyness required for disambiguation with method in b-splies/indexing.jl
-# # also, GT is only specified to avoid disambiguation warnings on julia 0.4
-# gradient(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Real...) where {T,N,ITPT,IT<:DimSpec{InterpolationType}<:DimSpec{GridType}} =
-#         gradient!(Array{T}(undef, count_interp_dims(IT,N)), sitp, xs...)
-# gradient(sitp::ScaledInterpolation{T,N,ITPT,IT}, xs...) where {T,N,ITPT,IT<:DimSpec{InterpolationType}<:DimSpec{GridType}} =
-#         gradient!(Array{T}(undef, count_interp_dims(IT,N)), sitp, xs...)
-# @generated function gradient!(g, sitp::ScaledInterpolation{T,N,ITPT,IT}, xs::Number...) where {T,N,ITPT,IT}
-#     ndims(g) == 1 || throw(DimensionMismatch("g must be a vector (but had $(ndims(g)) dimensions)"))
-#     length(xs) == N || throw(DimensionMismatch("Must index into $N-dimensional scaled interpolation object with exactly $N indices (you used $(length(xs)))"))
-
-#     interp_types = length(IT.parameters) == N ? IT.parameters : tuple([IT.parameters[1] for _ in 1:N]...)
-#     interp_dimens = map(it -> interp_types[it] != NoInterp, 1:N)
-#     interp_indices = map(i -> interp_dimens[i] ? :(coordlookup(sitp.ranges[$i], xs[$i])) : :(xs[$i]), 1:N)
-
-#     quote
-#         length(g) == $(count_interp_dims(IT, N)) || throw(ArgumentError(string("The length of the provided gradient vector (", length(g), ") did not match the number of interpolating dimensions (", $(count_interp_dims(IT, N)), ")")))
-#         gradient!(g, sitp.itp, $(interp_indices...))
-#         cntr = 0
-#         for i = 1:N
-#                 if $(interp_dimens)[i]
-#                     cntr += 1
-#                     g[cntr] = rescale_gradient(sitp.ranges[i], g[cntr])
-#                 end
-#         end
-#         g
-#     end
-# end
-
 
 rescale_gradient(r::StepRange, g) = g / r.step
 rescale_gradient(r::UnitRange, g) = g
