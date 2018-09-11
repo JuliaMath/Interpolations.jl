@@ -15,19 +15,19 @@ end
         @nexprs $N d->inds_d = inds[d]
         s = zero(eltype(itp))
         @inbounds @nloops $N i d->inds_d begin
-            s += @nref($N, itp, i)
+            s += @ncall($N, itp, i)
         end
         s
     end
 end
 
 function sumvalues_indices(itp)
-    inds = indices(itp)
+    inds = axes(itp)
     n = Int(round(10^(3/ndims(itp))))
-    ntuple(d->collect(linspace(first(inds[d])+0.001, last(inds[d])-0.001, n)), ndims(itp))
+    ntuple(d->collect(range(first(inds[d])+0.001, stop=last(inds[d])-0.001, length=n)), ndims(itp))
 end
 
-strip_prefix(str) = replace(str, "Interpolations.", "")
+strip_prefix(str) = replace(str, "Interpolations."=>"")
 benchstr(::Type{T}) where {T<:Interpolations.GridType} = strip_prefix(string(T))
 
 benchstr(::Type{Constant}) = "Constant()"
@@ -49,16 +49,14 @@ for A in (collect(Float64, 1:3),
     # Constant & Linear
     for D in (Constant, Linear)
         gstr = groupstr(D)
-        for GT in (OnGrid, OnCell)
-            Ac = copy(A)
-            idstr = string(ndims(A), "d_", benchstr(D), '_', benchstr(GT))
-            suite["bsplines"][gstr][string(idstr, "_construct")] =
-                @benchmarkable interpolate($Ac, BSpline($D()), $GT())
-            itp = interpolate(copy(A), BSpline(D()), GT())
-            inds = sumvalues_indices(itp)
-            suite["bsplines"][gstr][string(idstr, "_use")] =
-                @benchmarkable sumvalues($itp, $inds)
-        end
+        Ac = copy(A)
+        idstr = string(ndims(A), "d_", benchstr(D), '_', benchstr(OnGrid))
+        suite["bsplines"][gstr][string(idstr, "_construct")] =
+            @benchmarkable interpolate($Ac, BSpline($D()))
+        itp = interpolate(copy(A), BSpline(D()))
+        inds = sumvalues_indices(itp)
+        suite["bsplines"][gstr][string(idstr, "_use")] =
+            @benchmarkable sumvalues($itp, $inds)
     end
     # Quadratic
     gstr = groupstr(Quadratic)
@@ -66,8 +64,8 @@ for A in (collect(Float64, 1:3),
         Ac = copy(A)
         idstr = string(ndims(A), "d_", benchstr(Quadratic{BC}), '_', benchstr(GT))
         suite["bsplines"][gstr][string(idstr, "_construct")] =
-            @benchmarkable interpolate($Ac, BSpline(Quadratic($BC())), $GT())
-        itp = interpolate(copy(A), BSpline(Quadratic(BC())), GT())
+            @benchmarkable interpolate($Ac, BSpline(Quadratic($BC($GT()))))
+        itp = interpolate(copy(A), BSpline(Quadratic(BC(GT()))))
         inds = sumvalues_indices(itp)
         suite["bsplines"][gstr][string(idstr, "_use")] =
             @benchmarkable sumvalues($itp, $inds)
@@ -76,8 +74,8 @@ for A in (collect(Float64, 1:3),
         Ac = copy(A)
         idstr = string(ndims(A), "d_", benchstr(Quadratic{BC}), '_', benchstr(OnCell))
         suite["bsplines"][gstr][string(idstr, "_construct")] =
-            @benchmarkable interpolate!($Ac, BSpline(Quadratic($BC())), OnCell())
-        itp = interpolate!(copy(A), BSpline(Quadratic(BC())), OnCell())
+            @benchmarkable interpolate!($Ac, BSpline(Quadratic($BC(OnCell()))))
+        itp = interpolate!(copy(A), BSpline(Quadratic(BC(OnCell()))))
         inds = sumvalues_indices(itp)
         suite["bsplines"][gstr][string(idstr, "_use")] =
             @benchmarkable sumvalues($itp, $inds)
@@ -88,8 +86,8 @@ for A in (collect(Float64, 1:3),
         Ac = copy(A)
         idstr = string(ndims(A), "d_", benchstr(Cubic{BC}), '_', benchstr(GT))
         suite["bsplines"][gstr][string(idstr, "_construct")] =
-            @benchmarkable interpolate($Ac, BSpline(Cubic($BC())), $GT())
-        itp = interpolate(copy(A), BSpline(Cubic(BC())), GT())
+            @benchmarkable interpolate($Ac, BSpline(Cubic($BC($GT()))))
+        itp = interpolate(copy(A), BSpline(Cubic(BC(GT()))))
         inds = sumvalues_indices(itp)
         suite["bsplines"][gstr][string(idstr, "_use")] =
             @benchmarkable sumvalues($itp, $inds)
@@ -101,7 +99,11 @@ paramspath = joinpath(dirname(@__FILE__), "params.json")
 if isfile(paramspath)
     loadparams!(suite, BenchmarkTools.load(paramspath)[1], :evals);
 else
-    info("Tuning suite (this may take a while)")
+    @info "Tuning suite (this may take a while)"
     tune!(suite)
     BenchmarkTools.save(paramspath, params(suite));
 end
+
+# To run the benchmarks:
+# results = run(suite, verbose = true, seconds = 1)
+# BenchmarkTools.save(filename, results)
