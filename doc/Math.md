@@ -25,9 +25,7 @@ For higher interpolation degrees (specifically, from quadratic interpolation and
 
 For quadratic interpolation, for example, a common boundary condition is to assume that the function is flat at the edges (i.e. the derivative there is 0). This lets us introduce an extra equation at each edge, through a finite approximation of the derivative, which closes the system. Another common way of terminating the interpolation is to extend the second-to-outermost all the way to the edge of the data set.
 
-## 3. Mid-point and on-grid interpolation
-
-In any discrete data representation, there is a *cell* associated with each data point. Depending on the application, it may make sense to consider the data points to represent either the *center* of the cells, or the *edges*. `Interpolations.jl` will support both of these, using the term *midpoint interpolation* for data sets where the data points are in the middle of the cells, and *on-grid interpolation* when the data points and cell boundaries coincide.
+One subtlety concerns the location at which the boundary conditions are applied: at the edge grid point (`OnGrid()`) or at the halfway mark to the first beyond-the-edge index (`OnCell()`). `Interpolations.jl` supports both of these for interpolation schemes affected by boundary conditions (quadratic and cubic).
 
 ## Interlude: the `Interpolation` type hierarchy
 

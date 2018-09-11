@@ -5,17 +5,16 @@
 [![Interpolations](http://pkg.julialang.org/badges/Interpolations_0.5.svg)](http://pkg.julialang.org/?pkg=Interpolations)
 
 This package implements a variety of interpolation schemes for the
-Julia langauge.  It has the goals of ease-of-use, broad algorithmic
+Julia language.  It has the goals of ease-of-use, broad algorithmic
 support, and exceptional performance.
 
-This package is still relatively new. Currently its support is best
+Currently this package's support is best
 for [B-splines](https://en.wikipedia.org/wiki/B-spline) and also
 supports irregular grids.  However, the API has been designed with
 intent to support more options. Pull-requests are more than welcome!
 It should be noted that the API may continue to evolve over time.
 
 Other interpolation packages for Julia include:
-- [Grid.jl](https://github.com/timholy/Grid.jl) (the predecessor of this package)
 - [Dierckx.jl](https://github.com/kbarbary/Dierckx.jl)
 - [GridInterpolations.jl](https://github.com/sisl/GridInterpolations.jl)
 - [ApproXD.jl](https://github.com/floswald/ApproXD.jl)
@@ -42,7 +41,7 @@ from the Julia REPL.
 Note: the current version of `Interpolations` supports interpolation evaluation using index calls `[]`, but this feature will be deprecated in future. We highly recommend function calls with `()` as follows.
 
 Given an `AbstractArray` `A`, construct an "interpolation object" `itp` as
-```jl
+```julia
 itp = interpolate(A, options...)
 ```
 where `options...` (discussed below) controls the type of
@@ -50,30 +49,30 @@ interpolation you want to perform.  This syntax assumes that the
 samples in `A` are equally-spaced.
 
 To evaluate the interpolation at position `(x, y, ...)`, simply do
-```jl
+```julia
 v = itp(x, y, ...)
 ```
 
 Some interpolation objects support computation of the gradient, which
 can be obtained as
-```jl
+```julia
 g = gradient(itp, x, y, ...)
 ```
 or, if you're evaluating the gradient repeatedly, a somewhat more
 efficient option is
-```jl
+```julia
 gradient!(g, itp, x, y, ...)
 ```
 where `g` is a pre-allocated vector.
 
 Some interpolation objects support computation of the hessian, which
 can be obtained as
-```jl
+```julia
 h = hessian(itp, x, y, ...)
 ```
 or, if you're evaluating the hessian repeatedly, a somewhat more
 efficient option is
-```jl
+```julia
 hessian!(h, itp, x, y, ...)
 ```
 where `h` is a pre-allocated matrix.
@@ -85,25 +84,28 @@ and `Rational`, but also multi-valued types like `RGB` color vectors.
 Positions `(x, y, ...)` are n-tuples of numbers. Typically these will
 be real-valued (not necessarily integer-valued), but can also be of types
 such as [DualNumbers](https://github.com/JuliaDiff/DualNumbers.jl) if
-you want to verify the computed value of gradients. You can also use
+you want to verify the computed value of gradients.
+(Alternatively, verify gradients using [ForwardDiff](https://github.com/JuliaDiff/ForwardDiff.jl).)
+You can also use
 Julia's iterator objects, e.g.,
 
-```jl
+```julia
 function ongrid!(dest, itp)
-    for I in CartesianRange(size(itp))
+    for I in CartesianIndices(itp)
         dest[I] = itp(I)
     end
 end
 ```
 would store the on-grid value at each grid point of `itp` in the output `dest`.
 Finally, courtesy of Julia's indexing rules, you can also use
-```jl
-fine = itp(linspace(1,10,1001), linspace(1,15,201))
+```julia
+fine = itp(range(1,stop=10,length=1001), range(1,stop=15,length=201))
 ```
 
 ### Quickstart guide
+
 For linear and cubic spline interpolations, `LinearInterpolation` and `CubicSplineInterpolation` can be used to create interpolation objects handily:
-```jl
+```julia
 f(x) = log(x)
 xs = 1:0.2:5
 A = [f(x) for x in xs]
@@ -119,7 +121,7 @@ interp_cubic(3) # exactly log(3)
 interp_cubic(3.1) # approximately log(3.1)
 ```
 which support multidimensional data as well:
-```jl
+```julia
 f(x,y) = log(x+y)
 xs = 1:0.2:5
 ys = 2:0.1:5
@@ -137,19 +139,19 @@ interp_cubic(3.1, 2.1) # approximately log(3.1 + 2.1)
 ```
 For extrapolation, i.e., when interpolation objects are evaluated in coordinates outside of range provided in constructors, the default option for a boundary condition is `Throw` so that they will return an error.
 Interested users can specify boundary conditions by providing an extra parameter for `extrapolation_bc`:
-```jl
+```julia
 f(x) = log(x)
 xs = 1:0.2:5
 A = [f(x) for x in xs]
 
 # extrapolation with linear boundary conditions
-extrap = LinearInterpolation(xs, A, extrapolation_bc = Interpolations.Linear())
+extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
 
 @test extrap(1 - 0.2) # ≈ f(1) - (f(1.2) - f(1))
 @test extrap(5 + 0.2) # ≈ f(5) + (f(5) - f(4.8))
 ```
 Irregular grids are supported as well; note that presently only `LinearInterpolation` supports irregular grids.
-```jl
+```julia
 xs = [x^2 for x = 1:0.2:5]
 A = [f(x) for x in xs]
 
@@ -163,34 +165,34 @@ interp_linear(1.05) # approximately log(1.05)
 
 ### BSplines
 
-The interpolation type is described in terms of *degree*, *grid behavior* and, if necessary, *boundary conditions*. There are currently three degrees available: `Constant`, `Linear`, `Quadratic`,  and `Cubic` corresponding to B-splines of degree 0, 1, 2, and 3 respectively.
-
-You also have to specify what *grid representation* you want. There are currently two choices: `OnGrid`, in which the supplied data points are assumed to lie *on* the boundaries of the interpolation interval, and `OnCell` in which the data points are assumed to lie on half-intervals between cell boundaries.
+The interpolation type is described in terms of *degree* and, if necessary, *boundary conditions*. There are currently three degrees available: `Constant`, `Linear`, `Quadratic`,  and `Cubic` corresponding to B-splines of degree 0, 1, 2, and 3 respectively.
 
 B-splines of quadratic or higher degree require solving an equation system to obtain the interpolation coefficients, and for that you must specify a *boundary condition* that is applied to close the system. The following boundary conditions are implemented: `Flat`, `Line` (alternatively, `Natural`), `Free`, `Periodic` and `Reflect`; their mathematical implications are described in detail in the pdf document under `/doc/latex`.
+When specifying these boundary conditions you also have to specify whether they apply at the edge grid point (`OnGrid()`)
+or beyond the edge point halfway to the next (fictitious) grid point (`OnCell()`).
 
 Some examples:
-```jl
+```julia
 # Nearest-neighbor interpolation
-itp = interpolate(a, BSpline(Constant()), OnCell())
+itp = interpolate(a, BSpline(Constant()))
 v = itp(5.4)   # returns a[5]
 
 # (Multi)linear interpolation
-itp = interpolate(A, BSpline(Linear()), OnGrid())
+itp = interpolate(A, BSpline(Linear()))
 v = itp(3.2, 4.1)  # returns 0.9*(0.8*A[3,4]+0.2*A[4,4]) + 0.1*(0.8*A[3,5]+0.2*A[4,5])
 
 # Quadratic interpolation with reflecting boundary conditions
 # Quadratic is the lowest order that has continuous gradient
-itp = interpolate(A, BSpline(Quadratic(Reflect())), OnCell())
+itp = interpolate(A, BSpline(Quadratic(Reflect(OnCell()))))
 
 # Linear interpolation in the first dimension, and no interpolation (just lookup) in the second
-itp = interpolate(A, (BSpline(Linear()), NoInterp()), OnGrid())
+itp = interpolate(A, (BSpline(Linear()), NoInterp()))
 v = itp(3.65, 5)  # returns  0.35*A[3,5] + 0.65*A[4,5]
 ```
 There are more options available, for example:
-```jl
+```julia
 # In-place interpolation
-itp = interpolate!(A, BSpline(Quadratic(InPlace())), OnCell())
+itp = interpolate!(A, BSpline(Quadratic(InPlace(OnCell()))))
 ```
 which destroys the input `A` but also does not need to allocate as much memory.
 
@@ -199,22 +201,22 @@ which destroys the input `A` but also does not need to allocate as much memory.
 BSplines assume your data is uniformly spaced on the grid `1:N`, or its multidimensional equivalent. If you have data of the form `[f(x) for x in A]`, you need to tell Interpolations about the grid `A`. If `A` is not uniformly spaced, you must use gridded interpolation described below. However, if `A` is a collection of ranges or linspaces, you can use scaled BSplines. This is more efficient because the gridded algorithm does not exploit the uniform spacing. Scaled BSplines can also be used with any spline degree available for BSplines, while gridded interpolation does not currently support quadratic or cubic splines.
 
 Some examples,
-```jl
+```julia
 A_x = 1.:2.:40.
 A = [log(x) for x in A_x]
-itp = interpolate(A, BSpline(Cubic(Line())), OnGrid())
+itp = interpolate(A, BSpline(Cubic(Line(OnGrid()))))
 sitp = scale(itp, A_x)
 sitp(3.) # exactly log(3.)
 sitp(3.5) # approximately log(3.5)
 ```
 
 For multidimensional uniformly spaced grids
-```jl
+```julia
 A_x1 = 1:.1:10
 A_x2 = 1:.5:20
 f(x1, x2) = log(x1+x2)
 A = [f(x1,x2) for x1 in A_x1, x2 in A_x2]
-itp = interpolate(A, BSpline(Cubic(Line())), OnGrid())
+itp = interpolate(A, BSpline(Cubic(Line(OnGrid()))))
 sitp = scale(itp, A_x1, A_x2)
 sitp(5., 10.) # exactly log(5 + 10)
 sitp(5.6, 7.1) # approximately log(5.6 + 7.1)
@@ -227,7 +229,7 @@ are all `OnGrid`). As such one must specify a set of coordinate arrays
 defining the knots of the array.
 
 In 1D
-```jl
+```julia
 A = rand(20)
 A_x = collect(1.0:2.0:40.0)
 knots = (A_x,)
@@ -236,34 +238,34 @@ itp(2.0)
 ```
 
 The spacing between adjacent samples need not be constant, you can use the syntax
-```jl
+```julia
 itp = interpolate(knots, A, options...)
 ```
 where `knots = (xknots, yknots, ...)` to specify the positions along
 each axis at which the array `A` is sampled for arbitrary ("rectangular") samplings.
 
 For example:
-```jl
+```julia
 A = rand(8,20)
 knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
 itp = interpolate(knots, A, Gridded(Linear()))
 itp(4,1.2)  # approximately A[2,6]
 ```
 One may also mix modes, by specifying a mode vector in the form of an explicit tuple:
-```jl
+```julia
 itp = interpolate(knots, A, (Gridded(Linear()),Gridded(Constant())))
 ```
 
 Presently there are only three modes for gridded:
-```jl
+```julia
 Gridded(Linear())
 ```
 whereby a linear interpolation is applied between knots,
-```jl
+```julia
 Gridded(Constant())
 ```
 whereby nearest neighbor interpolation is used on the applied axis,
-```jl
+```julia
 NoInterp
 ```
 whereby the coordinate of the selected input vector MUST be located on a grid point. Requests for off grid
@@ -281,7 +283,7 @@ x = sin.(2π*t)
 y = cos.(2π*t)
 A = hcat(x,y)
 
-itp = scale(interpolate(A, (BSpline(Cubic(Natural())), NoInterp()), OnGrid()), t, 1:2)
+itp = scale(interpolate(A, (BSpline(Cubic(Natural(OnGrid()))), NoInterp())), t, 1:2)
 
 tfine = 0:.01:1
 xs, ys = [itp(t,1) for t in tfine], [itp(t,2) for t in tfine]
@@ -365,37 +367,6 @@ For 1d, the "Dierckx scalar" and "GI" tests were interrupted because
 they ran more than 20 seconds (far longer than any other test).  Both
 performed much better in 2d, interestingly.  You can see that
 Interpolations wins in every case, sometimes by a very large margin.
-
-## Transitioning from Grid.jl
-
-Instead of using
-```julia
-yi = InterpGrid(y, BCreflect, InterpQuadratic)
-```
-you should use
-```julia
-yi = interpolate(y, BSpline(Quadratic(Reflect())), OnCell())
-```
-
-In general, here are the closest mappings:
-
-|  Grid             | Interpolations                             |
-|:-----------------:|:------------------------------------------:|
-| `InterpNearest`   | `Constant`                                 |
-| `InterpLinear`    | `Linear`                                   |
-| `InterpQuadratic` | `Quadratic`                                |
-| `InterpCubic`     | `Cubic`                                    |
-|                   |                                            |
-| `BCnil`           | `extrapolate(itp, Interpolations.Throw())` |
-| `BCnan`           | `extrapolate(itp, NaN)`                    |
-| `BCna`            | `extrapolate(itp, NaN)`                    |
-| `BCreflect`       | `interpolate` with `Reflect()`             |
-| `BCperiodic`      | `interpolate` with `Periodic()`            |
-| `BCnearest`       | `interpolate` with `Flat()`                |
-| `BCfill`          | `extrapolate` with value                   |
-|                   |                                            |
-| odd orders        | `OnGrid()`                                 |
-| even orders       | `OnCell()`                                 |
 
 
 ## Contributing
