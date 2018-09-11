@@ -246,7 +246,7 @@ end
 # interp_getindex1(A, indexes::Tuple{}, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
 #     error("exhausted the weights and indexes, this should never happen")
 
-interp_getindex(A::AbstractArray{T,N}, J::Tuple{Int,Vararg{Any,K}}, I::Vararg{Int,N}) where {T,N,K} =
+@inline interp_getindex(A::AbstractArray{T,N}, J::Tuple{Int,Vararg{Any,K}}, I::Vararg{Int,N}) where {T,N,K} =
     interp_getindex(A, Base.tail(J), Base.tail(I)..., J[1])
 @generated function interp_getindex(A::AbstractArray{T,N}, J::Tuple{WeightedAdjIndex{L,W},Vararg{Any,K}}, I::Vararg{Int,N}) where {T,N,K,L,W}
     ex = :(w[1]*interp_getindex(A, Jtail, Itail..., j))
@@ -274,7 +274,7 @@ end
         $ex
     end
 end
-interp_getindex(A::AbstractArray{T,N}, ::Tuple{}, I::Vararg{Int,N}) where {T,N} =   # termination
+@inline interp_getindex(A::AbstractArray{T,N}, ::Tuple{}, I::Vararg{Int,N}) where {T,N} =   # termination
     @inbounds A[I...]  # all bounds-checks have already happened
 
 """

@@ -59,7 +59,7 @@ end
 end
 
 
-function weightedindexes(fs::F, itpflags::NTuple{N,Flag}, knots::NTuple{N,AbstractVector}, xs::NTuple{N,Number}) where {F,N}
+@inline function weightedindexes(fs::F, itpflags::NTuple{N,Flag}, knots::NTuple{N,AbstractVector}, xs::NTuple{N,Number}) where {F,N}
     parts = map((flag, knotvec, x)->weightedindex_parts(fs, flag, knotvec, x), itpflags, knots, xs)
     weightedindexes(parts...)
 end
@@ -68,7 +68,7 @@ weightedindexes(i::Vararg{Int,N}) where N = i  # the all-NoInterp case
 
 const PositionCoefs{P,C} = NamedTuple{(:position,:coefs),Tuple{P,C}}
 const ValueParts{P,W} = PositionCoefs{P,Tuple{W}}
-weightedindexes(parts::Vararg{Union{Int,ValueParts},N}) where N = maybe_weightedindex.(positions.(parts), valuecoefs.(parts))
+@inline weightedindexes(parts::Vararg{Union{Int,ValueParts},N}) where N = maybe_weightedindex.(positions.(parts), valuecoefs.(parts))
 maybe_weightedindex(i::Integer, _::Integer) = Int(i)
 maybe_weightedindex(pos, coefs::Tuple) = WeightedIndex(pos, coefs)
 
