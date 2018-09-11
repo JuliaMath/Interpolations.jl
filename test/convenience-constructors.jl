@@ -20,7 +20,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         f(x) = log(x)
         A = [f(x) for x in xs]
         interp = LinearInterpolation(xs, A) # using convenience constructor
-        interp_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs), Interpolations.Throw()) # using full constructor
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs), Throw()) # using full constructor
 
         @test typeof(interp) == typeof(interp_full)
         @test interp(XMIN) ≈ f(XMIN)
@@ -37,7 +37,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         f(x) = log(x)
         A = [f(x) for x in xs]
         interp = CubicSplineInterpolation(xs, A)
-        interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line())), OnGrid()), xs), Interpolations.Throw())
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line(OnGrid())))), xs), Throw())
 
         @test typeof(interp) == typeof(interp_full)
         @test interp(XMIN) ≈ f(XMIN)
@@ -56,7 +56,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         f(x) = log(x)
         A = [f(x) for x in xs]
         interp = LinearInterpolation(xs, A)
-        interp_full = extrapolate(interpolate((xs, ), A, Gridded(Linear())), Interpolations.Throw())
+        interp_full = extrapolate(interpolate((xs, ), A, Gridded(Linear())), Throw())
 
         @test typeof(interp) == typeof(interp_full)
         @test interp(xmin) ≈ f(xmin)
@@ -76,8 +76,8 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         x_lower = XMIN - ΔX
         x_higher = XMAX + ΔX
 
-        extrap = LinearInterpolation(xs, A, extrapolation_bc = Interpolations.Linear())
-        extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs), Interpolations.Linear())
+        extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
+        extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs), Line())
 
         @test typeof(extrap) == typeof(extrap_full)
         @test extrap(x_lower) ≈ A[1] - ΔA_l
@@ -92,7 +92,7 @@ end
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
         interp = LinearInterpolation((xs, ys), A)
-        interp_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs, ys), Interpolations.Throw())
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs, ys), Throw())
 
         @test typeof(interp) == typeof(interp_full)
         @test interp(XMIN,YMIN) ≈ f(XMIN,YMIN)
@@ -115,7 +115,7 @@ end
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
         interp = CubicSplineInterpolation((xs, ys), A)
-        interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line())), OnGrid()), xs, ys), Interpolations.Throw())
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line(OnGrid())))), xs, ys), Throw())
 
         @test typeof(interp) == typeof(interp_full)
         @test interp(XMIN,YMIN) ≈ f(XMIN,YMIN)
@@ -142,7 +142,7 @@ end
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
         interp = LinearInterpolation((xs, ys), A)
-        interp_full = extrapolate(interpolate((xs, ys), A, Gridded(Linear())), Interpolations.Throw())
+        interp_full = extrapolate(interpolate((xs, ys), A, Gridded(Linear())), Throw())
 
         @test typeof(interp) == typeof(interp_full)
         @test interp(xmin,ymin) ≈ f(xmin,ymin)
@@ -171,8 +171,8 @@ end
         y_lower = YMIN - ΔY
         y_higher = YMAX + ΔY
 
-        extrap = LinearInterpolation((xs, ys), A, extrapolation_bc = (Interpolations.Linear(), Interpolations.Flat()))
-        extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear()), OnGrid()), xs, ys), (Interpolations.Linear(), Interpolations.Flat()))
+        extrap = LinearInterpolation((xs, ys), A, extrapolation_bc = (Line(), Flat()))
+        extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs, ys), (Line(), Flat()))
 
         @test typeof(extrap) == typeof(extrap_full)
         @test extrap(x_lower, y_lower) ≈ A[1, 1] - ΔA_l
