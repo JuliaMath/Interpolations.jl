@@ -214,36 +214,68 @@ Base.length(x::WeightedIndex) = 1
 Base.to_indices(A, I::Tuple{Vararg{Union{Int,WeightedIndex}}}) = I
 @propagate_inbounds Base._getindex(::IndexLinear, A::AbstractVector, i::Int) = getindex(A, i)  # ambiguity resolution
 @inline function Base._getindex(::IndexStyle, A::AbstractArray{T,N}, I::Vararg{Union{Int,WeightedIndex},N}) where {T,N}
-    interp_getindex(A, I)
+    interp_getindex(A, I, ntuple(d->0, Val(N))...)
 end
 
-# This follows a "move processed indexes to the back" strategy, so J contains the yet-to-be-processed
-# indexes and I all the processed indexes.
-interp_getindex(A::AbstractArray{T,N}, J::Tuple{Int,Vararg{Any,L}}, I::Vararg{Int,M}) where {T,N,L,M} =
-    interp_getindex(A, Base.tail(J), I..., J[1])
-function interp_getindex(A::AbstractArray{T,N}, J::Tuple{WeightedIndex,Vararg{Any,L}}, I::Vararg{Int,M}) where {T,N,L,M}
-    wi = J[1]
-    _interp_getindex(A, indexes(wi), weights(wi), Base.tail(J), I...)
+# The non-generated version is currently disabled due to https://github.com/JuliaLang/julia/issues/29117
+# # This follows a "move processed indexes to the back" strategy, so J contains the yet-to-be-processed
+# # indexes and I all the processed indexes.
+# interp_getindex(A::AbstractArray{T,N}, J::Tuple{Int,Vararg{Any,L}}, I::Vararg{Int,M}) where {T,N,L,M} =
+#     interp_getindex(A, Base.tail(J), I..., J[1])
+# function interp_getindex(A::AbstractArray{T,N}, J::Tuple{WeightedIndex,Vararg{Any,L}}, I::Vararg{Int,M}) where {T,N,L,M}
+#     wi = J[1]
+#     interp_getindex1(A, indexes(wi), weights(wi), Base.tail(J), I...)
+# end
+# interp_getindex(A::AbstractArray{T,N}, ::Tuple{}, I::Vararg{Int,N}) where {T,N} =   # termination
+#     @inbounds A[I...]  # all bounds-checks have already happened
+#
+# ## Handle expansion of a single dimension
+# # version for WeightedAdjIndex
+# @inline interp_getindex1(A, i::Int, weights::NTuple{K,Any}, rest, I::Vararg{Int,M}) where {M,K} =
+#     weights[1] * interp_getindex(A, rest, I..., i) + interp_getindex1(A, i+1, Base.tail(weights), rest, I...)
+# @inline interp_getindex1(A, i::Int, weights::Tuple{Any}, rest, I::Vararg{Int,M}) where M =
+#     weights[1] * interp_getindex(A, rest, I..., i)
+# interp_getindex1(A, i::Int, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
+#     error("exhausted the weights, this should never happen")
+#
+# # version for WeightedArbIndex
+# @inline interp_getindex1(A, indexes::NTuple{K,Int}, weights::NTuple{K,Any}, rest, I::Vararg{Int,M}) where {M,K} =
+#     weights[1] * interp_getindex(A, rest, I..., indexes[1]) + interp_getindex1(A, Base.tail(indexes), Base.tail(weights), rest, I...)
+# @inline interp_getindex1(A, indexes::Tuple{Int}, weights::Tuple{Any}, rest, I::Vararg{Int,M}) where M =
+#     weights[1] * interp_getindex(A, rest, I..., indexes[1])
+# interp_getindex1(A, indexes::Tuple{}, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
+#     error("exhausted the weights and indexes, this should never happen")
+
+interp_getindex(A::AbstractArray{T,N}, J::Tuple{Int,Vararg{Any,K}}, I::Vararg{Int,N}) where {T,N,K} =
+    interp_getindex(A, Base.tail(J), Base.tail(I)..., J[1])
+@generated function interp_getindex(A::AbstractArray{T,N}, J::Tuple{WeightedAdjIndex{L,W},Vararg{Any,K}}, I::Vararg{Int,N}) where {T,N,K,L,W}
+    ex = :(w[1]*interp_getindex(A, Jtail, Itail..., j))
+    for l = 2:L
+        ex = :(w[$l]*interp_getindex(A, Jtail, Itail..., j+$(l-1)) + $ex)
+    end
+    quote
+        $(Expr(:meta, :inline))
+        Jtail = Base.tail(J)
+        Itail = Base.tail(I)
+        j, w = J[1].istart, J[1].weights
+        $ex
+    end
+end
+@generated function interp_getindex(A::AbstractArray{T,N}, J::Tuple{WeightedArbIndex{L,W},Vararg{Any,K}}, I::Vararg{Int,N}) where {T,N,K,L,W}
+    ex = :(w[1]*interp_getindex(A, Jtail, Itail..., ij[1]))
+    for l = 2:L
+        ex = :(w[$l]*interp_getindex(A, Jtail, Itail..., ij[$l]) + $ex)
+    end
+    quote
+        $(Expr(:meta, :inline))
+        Jtail = Base.tail(J)
+        Itail = Base.tail(I)
+        ij, w = J[1].indexes, J[1].weights
+        $ex
+    end
 end
 interp_getindex(A::AbstractArray{T,N}, ::Tuple{}, I::Vararg{Int,N}) where {T,N} =   # termination
     @inbounds A[I...]  # all bounds-checks have already happened
-
-## Handle expansion of a single dimension
-# version for WeightedAdjIndex
-@inline _interp_getindex(A, i::Int, weights::NTuple{K,Number}, rest, I::Vararg{Int,M}) where {M,K} =
-    weights[1] * interp_getindex(A, rest, I..., i) + _interp_getindex(A, i+1, Base.tail(weights), rest, I...)
-@inline _interp_getindex(A, i::Int, weights::Tuple{Number}, rest, I::Vararg{Int,M}) where M =
-    weights[1] * interp_getindex(A, rest, I..., i)
-_interp_getindex(A, i::Int, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
-    error("exhausted weights, this should never happen")  # helps inference
-
-# version for WeightedArbIndex
-@inline _interp_getindex(A, indexes::NTuple{K,Int}, weights::NTuple{K,Number}, rest, I::Vararg{Int,M}) where {M,K} =
-    weights[1] * interp_getindex(A, rest, I..., indexes[1]) + _interp_getindex(A, Base.tail(indexes), Base.tail(weights), rest, I...)
-@inline _interp_getindex(A, indexes::Tuple{Int}, weights::Tuple{Number}, rest, I::Vararg{Int,M}) where M =
-    weights[1] * interp_getindex(A, rest, I..., indexes[1])
-_interp_getindex(A, indexes::Tuple{}, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
-    error("exhausted weights and indexes, this should never happen")
 
 """
     w = value_weights(degree, δx)
