@@ -27,15 +27,15 @@ function sumvalues_indices(itp)
     ntuple(d->collect(range(first(inds[d])+0.001, stop=last(inds[d])-0.001, length=n)), ndims(itp))
 end
 
-strip_prefix(str) = replace(str, "Interpolations."=>"")
+strip_prefix(str::AbstractString) = replace(str, "Interpolations."=>"")
 benchstr(::Type{T}) where {T<:Interpolations.GridType} = strip_prefix(string(T))
 
 benchstr(::Type{Constant}) = "Constant()"
 benchstr(::Type{Linear}) = "Linear()"
-benchstr(::Type{Quadratic{BC}}) where {BC<:Interpolations.Flag} =
-    string("Quadratic(", strip_prefix(string(BC)), "())")
-benchstr(::Type{Cubic{BC}}) where {BC<:Interpolations.Flag} =
-    string("Quadratic(", strip_prefix(string(BC)), "())")
+benchstr(::Type{Quadratic{BC}}, ::Type{GT}) where {BC<:Interpolations.BoundaryCondition,GT<:Interpolations.GridType} =
+    string("Quadratic(", strip_prefix(string(BC)), "(", strip_prefix(string(GT)), "()))")
+benchstr(::Type{Cubic{BC}}, ::Type{GT}) where {BC<:Interpolations.BoundaryCondition,GT<:Interpolations.GridType} =
+    string("Cubic(", strip_prefix(string(BC)), "(", strip_prefix(string(GT)), "()))")
 
 groupstr(::Type{Constant}) = "constant"
 groupstr(::Type{Linear}) = "linear"
@@ -62,7 +62,7 @@ for A in (collect(Float64, 1:3),
     gstr = groupstr(Quadratic)
     for BC in (Flat,Line,Free,Periodic,Reflect,Natural), GT in (OnGrid, OnCell)
         Ac = copy(A)
-        idstr = string(ndims(A), "d_", benchstr(Quadratic{BC}), '_', benchstr(GT))
+        idstr = string(ndims(A), "d_", benchstr(Quadratic{BC}, GT))
         suite["bsplines"][gstr][string(idstr, "_construct")] =
             @benchmarkable interpolate($Ac, BSpline(Quadratic($BC($GT()))))
         itp = interpolate(copy(A), BSpline(Quadratic(BC(GT()))))
@@ -72,7 +72,7 @@ for A in (collect(Float64, 1:3),
     end
     for BC in (InPlace,InPlaceQ)
         Ac = copy(A)
-        idstr = string(ndims(A), "d_", benchstr(Quadratic{BC}), '_', benchstr(OnCell))
+        idstr = string(ndims(A), "d_", benchstr(Quadratic{BC}, OnCell))
         suite["bsplines"][gstr][string(idstr, "_construct")] =
             @benchmarkable interpolate!($Ac, BSpline(Quadratic($BC(OnCell()))))
         itp = interpolate!(copy(A), BSpline(Quadratic(BC(OnCell()))))
@@ -84,7 +84,7 @@ for A in (collect(Float64, 1:3),
     gstr = groupstr(Cubic)
     for BC in (Flat,Line,Free,Periodic), GT in (OnGrid, OnCell)
         Ac = copy(A)
-        idstr = string(ndims(A), "d_", benchstr(Cubic{BC}), '_', benchstr(GT))
+        idstr = string(ndims(A), "d_", benchstr(Cubic{BC}, GT))
         suite["bsplines"][gstr][string(idstr, "_construct")] =
             @benchmarkable interpolate($Ac, BSpline(Cubic($BC($GT()))))
         itp = interpolate(copy(A), BSpline(Cubic(BC(GT()))))
