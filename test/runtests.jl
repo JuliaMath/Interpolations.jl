@@ -10,11 +10,14 @@ ambs = detect_ambiguities(StaticArrays, WoodburyMatrices, Base, Core)
 using Interpolations
 @test isempty(setdiff(detect_ambiguities(Interpolations, Base, Core), ambs))
 
+const isci = get(ENV, "CI", "") in ("true", "True")
+
 @testset "Interpolations" begin
     include("core.jl")
 
     # b-spline interpolation tests
     include("b-splines/runtests.jl")
+    isci && println("finished b-spline")
     include("nointerp.jl")
     # extrapolation tests
     include("extrapolation/runtests.jl")
@@ -24,8 +27,10 @@ using Interpolations
 
     # test gradient evaluation
     include("gradient.jl")
+    isci && println("finished gradient")
     # test hessian evaluation
     include("hessian.jl")
+    isci && println("finished hessian")
 
     # gridded interpolation tests
     include("gridded/runtests.jl")
