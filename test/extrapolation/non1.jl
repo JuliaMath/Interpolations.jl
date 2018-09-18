@@ -1,15 +1,15 @@
 module ExtrapNon1
 
-using Compat.Test, Interpolations, OffsetArrays
+using Test, Interpolations, OffsetArrays
 
 f(x) = sin((x-3)*2pi/9 - 1)
 xinds = -3:6
 A = OffsetArray(Float64[f(x) for x in xinds], xinds)
-itpg = interpolate(A, BSpline(Linear()), OnGrid())
+itpg = interpolate(A, BSpline(Linear()))
 
 schemes = (
     Flat,
-    Linear,
+    Line,
     Reflect,
     Periodic
 )
@@ -22,7 +22,7 @@ end
 g(y) = (y/100)^3
 yinds = 2:5
 A = OffsetArray(Float64[f(x)*g(y) for x in xinds, y in yinds], xinds, yinds)
-itp2 = interpolate(A, BSpline(Linear()), OnGrid())
+itp2 = interpolate(A, BSpline(Linear()))
 
 for (etp2,E) in map(E -> (extrapolate(itp2, E()), E), schemes)
     @test parent(etp2) === itp2

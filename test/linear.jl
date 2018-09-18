@@ -1,6 +1,6 @@
 module Linear1DTests
 println("Testing Linear interpolation in 1D...")
-using Interpolations, Compat.Test
+using Interpolations, Test
 
 f(x) = sin((x-3)*2pi/9 - 1)
 xmax = 10

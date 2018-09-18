@@ -8,76 +8,119 @@ export
     Cubic
 
 abstract type Degree{N} <: Flag end
+abstract type DegreeBC{N} <: Degree{N} end  # degree type supporting a BoundaryCondition
 
-struct BSpline{D<:Degree} <: InterpolationType end
-BSpline(::D) where {D<:Degree} = BSpline{D}()
+struct BSpline{D<:Degree} <: InterpolationType
+    degree::D
+end
 
 bsplinetype(::Type{BSpline{D}}) where {D<:Degree} = D
+bsplinetype(::BS) where {BS<:BSpline} = bsplinetype(BS)
 
-struct BSplineInterpolation{T,N,TCoefs<:AbstractArray,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},pad} <: AbstractInterpolation{T,N,IT,GT}
+degree(mode::BSpline) = mode.degree
+degree(::NoInterp) = NoInterp()
+
+iscomplete(mode::BSpline) = iscomplete(degree(mode))
+iscomplete(deg::DegreeBC) = _iscomplete(deg.bc.gt)
+iscomplete(deg::Degree) = true
+_iscomplete(::Nothing) = false
+_iscomplete(::GridType) = true
+
+function Base.show(io::IO, bs::BSpline)
+    print(io, "BSpline(")
+    show(io, degree(bs))
+    print(io, ')')
+end
+
+function Base.show(io::IO, deg::DegreeBC)
+    print(io, nameof(typeof(deg)), '(')
+    show(io, deg.bc)
+    print(io, ')')
+end
+
+struct BSplineInterpolation{T,N,TCoefs<:AbstractArray,IT<:DimSpec{BSpline},Axs<:Tuple{Vararg{AbstractUnitRange,N}}} <: AbstractInterpolation{T,N,IT}
     coefs::TCoefs
+    parentaxes::Axs
+    it::IT
 end
-function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, ::IT, ::GT, ::Val{pad}) where {N,Tel,TWeights<:Real,IT<:DimSpec{BSpline},GT<:DimSpec{GridType},pad}
-    isconcretetype(IT) || error("The b-spline type must be a leaf type (was $IT)")
-    isconcretetype(typeof(A)) || warn("For performance reasons, consider using an array of a concrete type (typeof(A) == $(typeof(A)))")
+function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, it::IT, axs) where {N,Tel,TWeights<:Real,IT<:DimSpec{BSpline}}
+    # String interpolation causes allocation, noinline avoids that unless they get called
+    @noinline err_concrete(IT) = error("The b-spline type must be a concrete type (was $IT)")
+    @noinline warn_concrete(A) = @warn("For performance reasons, consider using an array of a concrete type (typeof(A) == $(typeof(A)))")
+    @noinline err_incomplete(it) = error("OnGrid/OnCell is not supplied for some of the interpolation modes in $it")
 
-    c = zero(TWeights)
-    for _ in 2:N
-        c *= c
-    end
+    isconcretetype(IT) || err_concrete(IT)
+    isconcretetype(typeof(A)) || warn_concrete(A)
+    iscomplete(it) || err_incomplete(it)
+
+    # Compute the output element type when positions have type TWeights
     if isempty(A)
-        T = Base.promote_op(*, typeof(c), eltype(A))
+        T = Base.promote_op(*, TWeights, eltype(A))
     else
-        T = typeof(c * first(A))
+        T = typeof(zero(TWeights) * first(A))
     end
-    BSplineInterpolation{T,N,typeof(A),IT,GT,pad}(A)
+    BSplineInterpolation{T,N,typeof(A),IT,typeof(axs)}(A, fix_axis.(axs), it)
 end
 
-# Utilities for working either with scalars or tuples/tuple-types
-iextract(::Type{T}, d) where {T<:BSpline} = T
-iextract(t, d) = t.parameters[d]
-padding(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,pad}}) where {T,N,TCoefs,IT,GT,pad} = pad
-padding(itp::AbstractInterpolation) = padding(typeof(itp))
-padextract(pad::Integer, d) = pad
-padextract(pad::Tuple{Vararg{Integer}}, d) = pad[d]
+iscomplete(its::Tuple) = all(iscomplete, its)
 
-lbound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnGrid}, d::Integer) where {T,N,TCoefs,IT} =
-    first(axes(itp, d))
-ubound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnGrid}, d::Integer) where {T,N,TCoefs,IT} =
-    last(axes(itp, d))
-lbound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d::Integer) where {T,N,TCoefs,IT} =
-    first(axes(itp, d)) - 0.5
-ubound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d::Integer) where {T,N,TCoefs,IT} =
-    last(axes(itp, d))+0.5
+coefficients(itp::BSplineInterpolation) = itp.coefs
+interpdegree(itp::BSplineInterpolation) = interpdegree(itpflag(itp))
+interpdegree(::BSpline{T}) where T = T()
+interpdegree(it::Tuple{Vararg{Union{BSpline,NoInterp},N}}) where N = interpdegree.(it)
+itpflag(itp::BSplineInterpolation) = itp.it
 
-lbound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnGrid}, d, inds) where {T,N,TCoefs,IT} =
-    first(inds)
-ubound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnGrid}, d, inds) where {T,N,TCoefs,IT} =
-    last(inds)
-lbound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d, inds) where {T,N,TCoefs,IT} =
-    first(inds) - 0.5
-ubound(itp::BSplineInterpolation{T,N,TCoefs,IT,OnCell}, d, inds) where {T,N,TCoefs,IT} =
-    last(inds)+0.5
+size(itp::BSplineInterpolation) = map(length, itp.parentaxes)
+axes(itp::BSplineInterpolation) = itp.parentaxes
 
-count_interp_dims(::Type{BSplineInterpolation{T,N,TCoefs,IT,GT,pad}}, n) where {T,N,TCoefs,IT<:DimSpec{InterpolationType},GT<:DimSpec{GridType},pad} = count_interp_dims(IT, n)
+lbounds(itp::BSplineInterpolation) = _lbounds(itp.parentaxes, itpflag(itp))
+ubounds(itp::BSplineInterpolation) = _ubounds(itp.parentaxes, itpflag(itp))
+_lbounds(axs, itp) = (lbound(axs[1], getfirst(itp)), _lbounds(Base.tail(axs), getrest(itp))...)
+_ubounds(axs, itp) = (ubound(axs[1], getfirst(itp)), _ubounds(Base.tail(axs), getrest(itp))...)
+_lbounds(::Tuple{}, itp) = ()
+_ubounds(::Tuple{}, itp) = ()
 
-function size(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d) where {T,N,TCoefs,IT,GT,pad}
-    d <= N ? size(itp.coefs, d) - 2*padextract(pad, d) : 1
+lbound(ax::AbstractRange, bs::BSpline)   = lbound(ax, degree(bs))
+lbound(ax::AbstractRange, deg::Degree)   = first(ax)
+lbound(ax::AbstractRange, deg::DegreeBC) = lbound(ax, deg, deg.bc.gt)
+ubound(ax::AbstractRange, bs::BSpline)   = ubound(ax, degree(bs))
+ubound(ax::AbstractRange, deg::Degree)   = last(ax)
+ubound(ax::AbstractRange, deg::DegreeBC) = ubound(ax, deg, deg.bc.gt)
+
+lbound(ax::AbstractUnitRange, ::DegreeBC, ::OnCell) = first(ax) - 0.5
+ubound(ax::AbstractUnitRange, ::DegreeBC, ::OnCell) = last(ax) + 0.5
+lbound(ax::AbstractUnitRange, ::DegreeBC, ::OnGrid) = first(ax)
+ubound(ax::AbstractUnitRange, ::DegreeBC, ::OnGrid) = last(ax)
+
+fix_axis(r::Base.OneTo) = r
+fix_axis(r::Base.Slice) = r
+fix_axis(r::UnitRange) = Base.Slice(r)
+fix_axis(r::AbstractUnitRange) = fix_axis(UnitRange(r))
+
+count_interp_dims(::Type{BSI}, n) where BSI<:BSplineInterpolation = count_interp_dims(itptype(BSI), n)
+
+function interpolate(::Type{TWeights}, ::Type{TC}, A, it::IT) where {TWeights,TC,IT<:DimSpec{BSpline}}
+    Apad = prefilter(TWeights, TC, A, it)
+    BSplineInterpolation(TWeights, Apad, it, axes(A))
 end
 
-@inline axes(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}) where {T,N,TCoefs,IT,GT,pad} =
-    indices_removepad.(axes(itp.coefs), pad)
+"""
+    itp = interpolate(A, interpmode, gridstyle)
 
-function axes(itp::BSplineInterpolation{T,N,TCoefs,IT,GT,pad}, d) where {T,N,TCoefs,IT,GT,pad}
-    d <= N ? indices_removepad(axes(itp.coefs, d), padextract(pad, d)) : axes(itp.coefs, d)
-end
+Interpolate an array `A` in the mode determined by `interpmode` and `gridstyle`.
+`interpmode` may be one of
 
-function interpolate(::Type{TWeights}, ::Type{TC}, A, it::IT, gt::GT) where {TWeights,TC,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
-    Apad, Pad = prefilter(TWeights, TC, A, IT, GT)
-    BSplineInterpolation(TWeights, Apad, it, gt, Pad)
-end
-function interpolate(A::AbstractArray, it::IT, gt::GT) where {IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
-    interpolate(tweight(A), tcoef(A), A, it, gt)
+- `BSpline(NoInterp())`
+- `BSpline(Linear())`
+- `BSpline(Quadratic(BC()))` (see [`BoundaryCondition`](@ref))
+- `BSpline(Cubic(BC()))`
+
+It may also be a tuple of such values, if you want to use different interpolation schemes along each axis.
+
+`gridstyle` should be one of `OnGrid()` or `OnCell()`.
+"""
+function interpolate(A::AbstractArray, it::IT) where {IT<:DimSpec{BSpline}}
+    interpolate(tweight(A), tcoef(A), A, it)
 end
 
 # We can't just return a tuple-of-types due to julia #12500
@@ -91,29 +134,17 @@ tcoef(A::AbstractArray{Float32}) = Float32
 tcoef(A::AbstractArray{Rational{Int}}) = Rational{Int}
 tcoef(A::AbstractArray{T}) where {T<:Integer} = typeof(float(zero(T)))
 
-interpolate!(::Type{TWeights}, A, it::IT, gt::GT) where {TWeights,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}} = BSplineInterpolation(TWeights, prefilter!(TWeights, A, IT, GT), it, gt, Val{0}())
-function interpolate!(A::AbstractArray, it::IT, gt::GT) where {IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
-    interpolate!(tweight(A), A, it, gt)
+function interpolate!(::Type{TWeights}, A::AbstractArray, it::IT) where {TWeights,IT<:DimSpec{BSpline}}
+    # Set the bounds of the interpolant inward, if necessary
+    axsA = axes(A)
+    axspad = padded_axes(axsA, it)
+    BSplineInterpolation(TWeights, prefilter!(TWeights, A, it), it, fix_axis.(padinset.(axsA, axspad)))
+end
+function interpolate!(A::AbstractArray, it::IT) where {IT<:DimSpec{BSpline}}
+    interpolate!(tweight(A), A, it)
 end
 
-offsetsym(off, d) = off == -1 ? Symbol("ixm_", d) :
-                    off ==  0 ? Symbol("ix_", d) :
-                    off ==  1 ? Symbol("ixp_", d) :
-                    off ==  2 ? Symbol("ixpp_", d) : error("offset $off not recognized")
-
-# Ideally we might want to shift the indices symmetrically, but this
-# would introduce an inconsistency, so we just append on the right
-@inline indices_removepad(inds::Base.OneTo, pad) = Base.OneTo(length(inds) - 2*pad)
-@inline indices_removepad(inds, pad) = oftype(inds, first(inds):last(inds) - 2*pad)
-@inline indices_addpad(inds::Base.OneTo, pad) = Base.OneTo(length(inds) + 2*pad)
-@inline indices_addpad(inds, pad) = oftype(inds, first(inds):last(inds) + 2*pad)
-@inline indices_interior(inds, pad) = first(inds)+pad:last(inds)-pad
-
-@static if VERSION < v"0.7.0-DEV.3449"
-    lut!(dl, d, du) = lufact!(Tridiagonal(dl, d, du), Val{false})
-else
-    lut!(dl, d, du) = lu!(Tridiagonal(dl, d, du), Val(false))
-end
+lut!(dl, d, du) = lu!(Tridiagonal(dl, d, du), Val(false))
 
 include("constant.jl")
 include("linear.jl")
@@ -124,4 +155,5 @@ include("prefiltering.jl")
 include("../filter1d.jl")
 
 Base.parent(A::BSplineInterpolation{T,N,TCoefs,UT}) where {T,N,TCoefs,UT<:Union{BSpline{Linear},BSpline{Constant}}} = A.coefs
-Base.parent(A::BSplineInterpolation{T,N,TCoefs,UT}) where {T,N,TCoefs,UT} = throw(ArgumentError("The given BSplineInterpolation does not serve as a \"view\" for a parent array. This would only be true for Constant and Linear b-splines."))
+Base.parent(A::BSplineInterpolation{T,N,TCoefs,UT}) where {T,N,TCoefs,UT} =
+    throw(ArgumentError("The given BSplineInterpolation does not serve as a \"view\" for a parent array. This would only be true for Constant and Linear b-splines."))

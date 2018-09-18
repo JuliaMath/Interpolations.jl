@@ -1,8 +1,7 @@
-julia 0.6
+julia 0.7
 
-ShowItLikeYouBuildIt
 WoodburyMatrices 0.1.5
 Ratios
 AxisAlgorithms 0.3.0
 OffsetArrays
-Compat 0.59
+StaticArrays

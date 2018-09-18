@@ -1,74 +1,74 @@
 export Gridded
 
-struct Gridded{D<:Degree} <: InterpolationType end
-Gridded(::D) where {D<:Degree} = Gridded{D}()
+struct Gridded{D<:Degree} <: InterpolationType
+    degree::D
+end
 
-griddedtype(::Type{Gridded{D}}) where {D<:Degree} = D
+function Base.show(io::IO, g::Gridded)
+    print(io, "Gridded(")
+    show(io, degree(g))
+    print(io, ')')
+end
 
 const GridIndex{T} = Union{AbstractVector{T}, Tuple}
 
-# Because Ranges check bounds on getindex, it's actually faster to convert the
-# knots to Vectors. It's also good to take a copy, so it doesn't get modified later.
-struct GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{Vector}},pad} <: AbstractInterpolation{T,N,IT,OnGrid}
+struct GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{AbstractVector}}} <: AbstractInterpolation{T,N,IT}
     knots::K
     coefs::Array{TCoefs,N}
+    it::IT
 end
-function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{TCoefs,N}, ::IT, ::Val{pad}) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}
+function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{TCoefs,N}, it::IT) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}
     isconcretetype(IT) || error("The b-spline type must be a leaf type (was $IT)")
     isconcretetype(TCoefs) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
 
-    knts = mapcollect(knots...)
-    for (d,k) in enumerate(knts)
-        length(k) == size(A, d) || throw(DimensionMismatch("knot vectors must have the same number of elements as the corresponding dimension of the array"))
-        length(k) == 1 && error("dimensions of length 1 not yet supported")  # FIXME
-        issorted(k) || error("knot-vectors must be sorted in increasing order")
-        iextract(IT, d) != NoInterp || k == collect(1:size(A, d)) || error("knot-vector should be the range 1:$(size(A,d)) for the method Gridded{NoInterp}")
-    end
+    check_gridded(it, knots, axes(A))
     c = zero(TWeights)
-    for _ in 2:N
-        c *= c
-    end
     if isempty(A)
         T = Base.promote_op(*, typeof(c), eltype(A))
     else
         T = typeof(c * first(A))
     end
-    GriddedInterpolation{T,N,TCoefs,IT,typeof(knts),pad}(knts, A)
+    GriddedInterpolation{T,N,TCoefs,IT,typeof(knots)}(knots, A, it)
 end
+
+@inline function check_gridded(itpflag, knots, axs)
+    flag, ax1, k1 = getfirst(itpflag), axs[1], knots[1]
+    if flag isa NoInterp
+        k1 == ax1 || error("for NoInterp knot vector should be $ax1, got $k1")
+    else
+        axes(k1, 1) == ax1 || throw(DimensionMismatch("knot vectors must have the same axes as the corresponding dimension of the array"))
+    end
+    degree(flag) isa Union{NoInterp,Constant,Linear} || error("only Linear, Constant, and NoInterp supported, got $flag")
+    length(k1) == 1 && error("dimensions of length 1 not yet supported")  # FIXME
+    issorted(k1) || error("knot-vectors must be sorted in increasing order")
+    check_gridded(getrest(itpflag), Base.tail(knots), Base.tail(axs))
+end
+check_gridded(::Any, ::Tuple{}, ::Tuple{}) = nothing
+degree(flag::Gridded) = flag.degree
 
 Base.parent(A::GriddedInterpolation) = A.coefs
+coefficients(A::GriddedInterpolation) = A.coefs
 
-# A type-stable version of map(collect, knots)
-mapcollect() = ()
-@inline mapcollect(k::AbstractVector) = (collect(k),)
-@inline mapcollect(k1::AbstractVector, k2::AbstractVector...) = (collect(k1), mapcollect(k2...)...)
+size(A::GriddedInterpolation) = size(A.coefs)
+axes(A::GriddedInterpolation) = axes(A.coefs)
 
-# Utilities for working either with scalars or tuples/tuple-types
-iextract(::Type{T}, d) where {T<:Gridded} = T
-iextract(::Type{T}, d) where {T<:GridType} = T
-
-@generated function size(itp::GriddedInterpolation{T,N,TCoefs,IT,K,pad}, d) where {T,N,TCoefs,IT,K,pad}
-    quote
-        d <= $N ? size(itp.coefs, d) - 2*padextract($pad, d) : 1
-    end
-end
+itpflag(A::GriddedInterpolation) = A.it
 
 function interpolate(::Type{TWeights}, ::Type{TCoefs}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {TWeights,TCoefs,Tel,N,IT<:DimSpec{Gridded}}
-    GriddedInterpolation(TWeights, knots, A, it, Val{0}())
+    GriddedInterpolation(TWeights, knots, A, it)
 end
 function interpolate(knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {Tel,N,IT<:DimSpec{Gridded}}
     interpolate(tweight(A), tcoef(A), knots, A, it)
 end
 
-interpolate!(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {TWeights,Tel,N,IT<:DimSpec{Gridded}} = GriddedInterpolation(TWeights, knots, A, it, Val{0}())
+interpolate!(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {TWeights,Tel,N,IT<:DimSpec{Gridded}} =
+    GriddedInterpolation(TWeights, knots, A, it)
 function interpolate!(knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {Tel,N,IT<:DimSpec{Gridded}}
     interpolate!(tweight(A), tcoef(A), knots, A, it)
 end
 
-lbound(itp::GriddedInterpolation, d) = itp.knots[d][1]
-ubound(itp::GriddedInterpolation, d) = itp.knots[d][end]
-lbound(itp::GriddedInterpolation, d, inds) = itp.knots[d][1]
-ubound(itp::GriddedInterpolation, d, inds) = itp.knots[d][end]
+lbounds(itp::GriddedInterpolation) = first.(itp.knots)
+ubounds(itp::GriddedInterpolation) = last.(itp.knots)
 
 include("constant.jl")
 include("linear.jl")
