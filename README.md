@@ -4,6 +4,8 @@
 [![PkgEval Status](http://pkg.julialang.org/badges/Interpolations_0.4.svg)](http://pkg.julialang.org/?pkg=Interpolations)
 [![Interpolations](http://pkg.julialang.org/badges/Interpolations_0.5.svg)](http://pkg.julialang.org/?pkg=Interpolations)
 
+**NEWS** v0.9 was a breaking release. See the [news](NEWS.md) for details on how to update.
+
 This package implements a variety of interpolation schemes for the
 Julia language.  It has the goals of ease-of-use, broad algorithmic
 support, and exceptional performance.
