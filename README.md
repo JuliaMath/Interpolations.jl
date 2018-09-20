@@ -152,6 +152,13 @@ extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
 @test extrap(1 - 0.2) # ≈ f(1) - (f(1.2) - f(1))
 @test extrap(5 + 0.2) # ≈ f(5) + (f(5) - f(4.8))
 ```
+You can also use a "fill" value, which gets returned whenever you ask for out-of-range values:
+
+```julia
+extrap = LinearInterpolation(xs, A, extrapolation_bc = NaN)
+@test isnan(extrap(5.2))
+```
+
 Irregular grids are supported as well; note that presently only `LinearInterpolation` supports irregular grids.
 ```julia
 xs = [x^2 for x = 1:0.2:5]
@@ -303,7 +310,18 @@ plot!(xs, ys, label="spline")
 
 ## Extrapolation
 
-The call to `extrapolate` defines what happens if you try to index into the interpolation object with coordinates outside of `[1, size(data,d)]` in any dimension `d`. The implemented boundary conditions are `Throw`, `Flat`, `Linear`, `Periodic` and `Reflect`, with more options planned. `Periodic` and `Reflect` require that there is a method of `Base.mod` that can handle the indices used.
+The call to `extrapolate` defines what happens if you try to index into the interpolation object with coordinates outside of its
+bounds in any dimension. The implemented boundary conditions are `Throw`, `Flat`, `Linear`, `Periodic` and `Reflect`,
+or you can pass a constant to be used as a "fill" value returned for any out-of-bounds evaluation.
+`Periodic` and `Reflect` require that there is a method of `Base.mod` that can handle the indices used.
+
+Examples:
+
+```
+itp = interpolate(1:7, BSpline(Linear()))
+etpf = extrapolate(itp, Flat())   # gives 1 on the left edge and 7 on the right edge
+etp0 = extrapolate(itp, 0)        # gives 0 everywhere outside [1,7]
+```
 
 ## Performance shootout
 
