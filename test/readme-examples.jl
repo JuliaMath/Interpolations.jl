@@ -51,4 +51,26 @@ using Interpolations, Test
     itp = interpolate(knots, A, Gridded(Linear()))
     @test itp(4,1.2) ≈ A[2,6] atol=.1  # approximately A[2,6]
 
+    ## extrapolate
+    itp = interpolate(1:7, BSpline(Linear()))
+    etpf = extrapolate(itp, Flat())
+    @test etpf(0) == 1
+    @test etpf(1) == 1
+    @test etpf(7) == 7
+    @test etpf(7.8) == 7
+    etp0 = extrapolate(itp, 0)
+    @test etp0(0) === 0.0
+    @test etp0(1) === 1.0
+    @test etp0(7) === 7.0
+    @test etp0(7.8) === 0.0
+
+    f(x) = log(x)
+    xs = 1:0.2:5
+    A = [f(x) for x in xs]
+    extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
+    @test extrap(1 - 0.2) ≈ f(1) - (f(1.2) - f(1))
+    @test extrap(5 + 0.2) ≈ f(5) + (f(5) - f(4.8))
+    extrap = LinearInterpolation(xs, A, extrapolation_bc = NaN)
+    @test isnan(extrap(5.2))
+
 end

@@ -91,6 +91,10 @@ using Test
     @test itpe(10.1, 1) ≈ 10.1
     @test_throws BoundsError itpe(9.9, 0)
 
+    # Issue #232
+    targeterr = ArgumentError("cannot create a filled extrapolation with a type Line, use a value of this type instead (e.g., Line())")
+    @test_throws targeterr extrapolate(itp, Line)
+
     include("type-stability.jl")
     include("non1.jl")
 end

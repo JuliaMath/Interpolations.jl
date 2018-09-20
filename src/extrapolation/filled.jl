@@ -8,6 +8,11 @@ function FilledExtrapolation(itp::AbstractInterpolation{T,N,IT}, fillvalue) wher
     FilledExtrapolation{Te,N,typeof(itp),IT,typeof(fillvalue)}(itp, fillvalue)
 end
 
+@noinline FilledExtrapolation(itp::AbstractInterpolation{T,N,IT}, ::Type{F}) where {T,N,IT,F} =
+    throw(ArgumentError("cannot create a filled extrapolation with a type $F, use a value of this type instead (e.g., $F(0))"))
+@noinline FilledExtrapolation(itp::AbstractInterpolation{T,N,IT}, ::Type{F}) where {T,N,IT,F<:BoundaryCondition} =
+    throw(ArgumentError("cannot create a filled extrapolation with a type $F, use a value of this type instead (e.g., $F())"))
+
 Base.parent(A::FilledExtrapolation) = A.itp
 etpflag(A::FilledExtrapolation) = A.fillvalue
 itpflag(A::FilledExtrapolation) = itpflag(A.itp)
@@ -21,8 +26,7 @@ extrapolate(itp::AbstractInterpolation{T,N,IT}, fillvalue) where {T,N,IT} = Fill
     itp = parent(etp)
     Tret = typeof(prod(x) * zero(T))
     if checkbounds(Bool, itp, x...)
-        wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
-        convert(Tret, itp.coefs[wis...])
+        @inbounds itp(x...)
     else
         convert(Tret, etp.fillvalue)
     end
