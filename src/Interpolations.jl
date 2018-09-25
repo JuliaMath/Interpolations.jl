@@ -28,6 +28,7 @@ export
     # see the following files for further exports:
     # b-splines/b-splines.jl
     # extrapolation/extrapolation.jl
+    # monotonic/monotonic.jl
     # scaling/scaling.jl
 
 using LinearAlgebra, SparseArrays
@@ -382,6 +383,7 @@ end
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
 include("gridded/gridded.jl")
+include("monotonic/monotonic.jl")
 include("extrapolation/extrapolation.jl")
 include("scaling/scaling.jl")
 include("utils.jl")
