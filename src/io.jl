@@ -44,6 +44,20 @@ function Base.showarg(io::IO, A::ScaledInterpolation{T}, toplevel) where {T}
     end
 end
 
+function Base.showarg(io::IO, A::MonotonicInterpolation{T, TCoeffs, Tel, Type, K}, toplevel) where {T, TCoeffs, Tel, Type, K}
+    print(io, "interpolate(")
+    _showknots(io, A.knots)
+    print(io, ", ")
+    Base.showarg(io, A.A, false)
+    print(io, ", ")
+    show(io, A.it)
+    if toplevel
+        print(io, ") with element type ",T)
+    else
+        print(io, ')')
+    end
+end
+
 function Base.showarg(io::IO, A::Extrapolation{T,N,TI,IT,ET}, toplevel) where {T,N,TI,IT,ET}
     print(io, "extrapolate(")
     Base.showarg(io, A.itp, false)

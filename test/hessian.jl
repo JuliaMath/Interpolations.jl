@@ -1,4 +1,4 @@
-using Test, Interpolations, LinearAlgebra
+using Test, Interpolations, LinearAlgebra, ForwardDiff
 
 @testset "Hessians" begin
     nx = 5
@@ -42,4 +42,32 @@ using Test, Interpolations, LinearAlgebra
     v = A2[:, 2]
     itpcol = interpolate(v, BSpline(Quadratic(Flat(OnCell()))))
     @test Interpolations.hessian(itp, 3.2, 2) == Interpolations.hessian(itpcol, 3.2)
+
+
+    @testset "Monotonic" begin
+        x = [0.0, 0.2, 0.5, 0.6, 0.9, 1.0]
+        ys = [[-3.0, 0.0, 5.0, 10.0, 18.0, 22.0],
+              [10.0, 0.0, -5.0, 10.0, -8.0, -2.0]]
+        grid = 0.0:0.1:1.0
+
+        itypes = [LinearMonotonicInterpolation(),
+            FiniteDifferenceMonotonicInterpolation(),
+            CardinalMonotonicInterpolation(0.0),
+            CardinalMonotonicInterpolation(0.5),
+            CardinalMonotonicInterpolation(1.0),
+            FritschCarlsonMonotonicInterpolation(),
+            FritschButlandMonotonicInterpolation(),
+            SteffenMonotonicInterpolation()]
+
+        for y in ys
+            for it in itypes
+                itp = interpolate(x, y, it)
+                for t in grid
+                    hessval = ForwardDiff.hessian(u -> itp(u[1]), [t])[1, 1]
+                    @test Interpolations.hessian1(itp, t) ≈ hessval atol = 1.e-12
+                    @test Interpolations.hessian(itp, t)[1] ≈ hessval atol = 1.e-12
+                end
+            end
+        end
+    end
 end

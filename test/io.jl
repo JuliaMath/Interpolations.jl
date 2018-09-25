@@ -57,6 +57,13 @@ using Test
         @test summary(sitp2) == "21×41 scale(interpolate(OffsetArray(::Array{Float64,2}, 0:22, 0:42), BSpline(Quadratic(Flat(OnGrid())))), (-5.0:0.5:5.0,$SPACE-4.0:0.2:4.0)) with element type Float64"
     end
 
+    @testset "Monotonic" begin
+        A = rand(20)
+        A_x = collect(1.0:2.0:40.0)
+        itp = interpolate(A_x, A, FritschButlandMonotonicInterpolation())
+        @test summary(itp) == "20-element interpolate(::Array{Float64,1}, ::Array{Float64,1}, FritschButlandMonotonicInterpolation()) with element type Float64"
+    end
+
     @testset "Extrapolation" begin
         A = rand(8,20)
 
@@ -67,4 +74,4 @@ using Test
         etpf = extrapolate(itpg, NaN)
         @test summary(etpf) == "8×20 extrapolate(interpolate(::Array{Float64,2}, BSpline(Linear())), NaN) with element type Float64"
     end
-end # Module
+end # testset
