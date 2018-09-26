@@ -22,7 +22,6 @@
 =#
 
 export
-    MonotonicInterpolationType,
     LinearMonotonicInterpolation,
     FiniteDifferenceMonotonicInterpolation,
     CardinalMonotonicInterpolation,
@@ -30,27 +29,84 @@ export
     FritschButlandMonotonicInterpolation,
     SteffenMonotonicInterpolation
 
+"""
+    MonotonicInterpolationType
+
+Abstract class for all types of monotonic interpolation.
+"""
 abstract type MonotonicInterpolationType <: InterpolationType end
 
+"""
+    LinearMonotonicInterpolation
+
+Simple linear interpolation.
+"""
 struct LinearMonotonicInterpolation <: MonotonicInterpolationType
 end
 
+"""
+    FiniteDifferenceMonotonicInterpolation
+
+Classic cubic interpolation, no tension parameter.
+Finite difference can overshoot for non-monotonic data.
+"""
 struct FiniteDifferenceMonotonicInterpolation <: MonotonicInterpolationType
 end
 
+"""
+    CardinalMonotonicInterpolation(tension)
+
+Cubic cardinal splines, uses `tension` parameter which must be between [0,1]
+Cubin cardinal splines can overshoot for non-monotonic data
+(increasing tension reduces overshoot).
+"""
 struct CardinalMonotonicInterpolation{T<:Number} <: MonotonicInterpolationType
     tension :: T # must be in [0, 1]
 end
 
+"""
+    FritschCarlsonMonotonicInterpolation
+
+Monotonic interpolation based on Fritsch & Carlson (1980),
+"Monotone Piecewise Cubic Interpolation", doi:10.1137/0717021.
+
+Tangents are first initialized, then adjusted if they are not monotonic
+can overshoot for non-monotonic data
+"""
 struct FritschCarlsonMonotonicInterpolation <: MonotonicInterpolationType
 end
 
+"""
+    FritschButlandMonotonicInterpolation
+
+Monotonic interpolation based on  Fritsch & Butland (1984),
+"A Method for Constructing Local Monotone Piecewise Cubic Interpolants",
+doi:10.1137/0905021.
+
+Faster than FritschCarlsonMonotonicInterpolation (only requires one pass)
+but somewhat higher apparent "tension".
+"""
 struct FritschButlandMonotonicInterpolation <: MonotonicInterpolationType
 end
 
+"""
+    SteffenMonotonicInterpolation
+
+Monotonic interpolation based on Steffen (1990),
+"A Simple Method for Monotonic Interpolation in One Dimension",
+http://adsabs.harvard.edu/abs/1990A%26A...239..443S
+
+Only one pass, results usually between FritschCarlson and FritschButland.
+"""
 struct SteffenMonotonicInterpolation <: MonotonicInterpolationType
 end
 
+"""
+    MonotonicInterpolation
+
+Monotonic interpolation up to third order represented by type, knots and
+coefficients. Type is any concrete subtype of `MonotonicInterpolationType`.
+"""
 struct MonotonicInterpolation{T, TCoeffs, Tel, Type<:MonotonicInterpolationType,
     K<:AbstractVector{<:Number}, AType <: AbstractArray{Tel,1}} <: AbstractInterpolation{T,1,DimSpec{Type}}
 
