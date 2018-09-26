@@ -113,17 +113,28 @@ function interpolate(knots::AbstractVector{<:Number}, A::AbstractArray{Tel,1},
     interpolate(tweight(A), tcoef(A), knots, A, it)
 end
 
-function (itp::MonotonicInterpolation)(x::Number)
-    x >= itp.knots[1] || return
-    x <= itp.knots[end] || return
+@inline function findKnot(itp::MonotonicInterpolation, x::Number)
+    x >= itp.knots[1] || error("Given number $x is outside of interpolated range [$(itp.knots[1]), $(itp.knots[end])]")
+    x <= itp.knots[end] || error("Given number $x is outside of interpolated range [$(itp.knots[1]), $(itp.knots[end])]")
 
     k = 1
     n = length(itp.knots)
     while k < n-1 && x > itp.knots[k+1]
         k += 1
     end
+    return k
+end
+
+function (itp::MonotonicInterpolation)(x::Number)
+    k = findKnot(itp, x)
     xdiff = x - itp.knots[k]
     return itp.A[k] + itp.m[k]*xdiff + itp.c[k]*xdiff*xdiff + itp.d[k]*xdiff*xdiff*xdiff
+end
+
+function derivative(itp::MonotonicInterpolation, x::Number)
+    k = findKnot(itp, x)
+    xdiff = x - itp.knots[k]
+    return itp.m[k] + 2*itp.c[k]*xdiff + 3*itp.d[k]*xdiff*xdiff
 end
 
 @inline function check_monotonic(knots, A)
