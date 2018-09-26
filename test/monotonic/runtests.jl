@@ -40,4 +40,15 @@ using Interpolations
             end
         end
     end
+
+    # fail tests
+    xWrong = [0.0, 1.0, -5.0, 3.0]
+    y2 = [1.0, 2.0, 3.0, 4.0]
+    y3 = [-3.0 0.0 5.0 10.0 18.0 22.0]
+
+    for (it, overshoot) in itypes
+        @test_throws ErrorException interpolate(xWrong, y2, it)
+        @test_throws DimensionMismatch interpolate(x, y2, it)
+        @test_throws MethodError interpolate(x, y3, it)
+    end
 end

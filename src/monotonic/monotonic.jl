@@ -52,11 +52,11 @@ struct SteffenMonotonicInterpolation <: MonotonicInterpolationType
 end
 
 struct MonotonicInterpolation{T, TCoeffs, Tel, Type<:MonotonicInterpolationType,
-    K<:AbstractVector{<:Number}} <: AbstractInterpolation{T,1,DimSpec{Type}}
+    K<:AbstractVector{<:Number}, AType <: AbstractArray{Tel,1}} <: AbstractInterpolation{T,1,DimSpec{Type}}
 
     it::Type
     knots::K
-    A::Vector{Tel}
+    A::AType
     m::Vector{TCoeffs}
     c::Vector{TCoeffs}
     d::Vector{TCoeffs}
@@ -66,11 +66,13 @@ end
 size(A::MonotonicInterpolation) = size(A.knots)
 axes(A::MonotonicInterpolation) = axes(A.knots)
 
-function MonotonicInterpolation(::Type{TWeights}, it::IType, knots::K, A::Vector{Tel},
+function MonotonicInterpolation(::Type{TWeights}, it::IType, knots::K, A::AbstractArray{Tel,1},
     m::Vector{TCoeffs}, c::Vector{TCoeffs}, d::Vector{TCoeffs}) where {TWeights, TCoeffs, Tel, IType<:MonotonicInterpolationType, K<:AbstractVector{<:Number}}
 
     isconcretetype(IType) || error("The b-spline type must be a leaf type (was $IType)")
     isconcretetype(TCoeffs) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
+
+    check_monotonic(knots, A)
 
     cZero = zero(TWeights)
     if isempty(A)
@@ -79,11 +81,13 @@ function MonotonicInterpolation(::Type{TWeights}, it::IType, knots::K, A::Vector
         T = typeof(cZero * first(A))
     end
 
-    MonotonicInterpolation{T, TCoeffs, Tel, IType, K}(it, knots, A, m, c, d)
+    MonotonicInterpolation{T, TCoeffs, Tel, IType, K, typeof(A)}(it, knots, A, m, c, d)
 end
 
 function interpolate(::Type{TWeights}, ::Type{TCoeffs}, knots::K,
     A::AbstractArray{Tel,1}, it::IT) where {TWeights,TCoeffs,Tel,K<:AbstractVector{<:Number},IT<:MonotonicInterpolationType}
+
+    check_monotonic(knots, A)
 
     # first we need to determine tangents (m)
     n = length(knots)
@@ -120,6 +124,11 @@ function (itp::MonotonicInterpolation)(x::Number)
     end
     xdiff = x - itp.knots[k]
     return itp.A[k] + itp.m[k]*xdiff + itp.c[k]*xdiff*xdiff + itp.d[k]*xdiff*xdiff*xdiff
+end
+
+@inline function check_monotonic(knots, A)
+    axes(knots) == axes(A) || throw(DimensionMismatch("knot vector must have the same axes as the corresponding array"))
+    issorted(knots) || error("knot-vector must be sorted in increasing order")
 end
 
 function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
