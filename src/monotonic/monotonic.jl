@@ -105,27 +105,27 @@ end
     MonotonicInterpolation
 
 Monotonic interpolation up to third order represented by type, knots and
-coefficients. Type is any concrete subtype of `MonotonicInterpolationType`.
+coefficients.
 """
 struct MonotonicInterpolation{T, TCoeffs, Tel, Type<:MonotonicInterpolationType,
-    K<:AbstractVector{<:Number}, AType <: AbstractArray{Tel,1}} <: AbstractInterpolation{T,1,DimSpec{Type}}
+    TKnots<:AbstractVector{<:Number}, AType <: AbstractArray{Tel,1}} <: AbstractInterpolation{T,1,DimSpec{Type}}
 
     it::Type
-    knots::K
-    A::AType
-    m::Vector{TCoeffs}
-    c::Vector{TCoeffs}
-    d::Vector{TCoeffs}
+    knots::TKnots
+    A::AType # constant parts of piecewise polynomials
+    m::Vector{TCoeffs} # coefficients of linear parts of piecewise polynomials
+    c::Vector{TCoeffs} # coefficients of quadratic parts of piecewise polynomials
+    d::Vector{TCoeffs} # coefficients of cubic parts of piecewise polynomials
 end
 
 
 size(A::MonotonicInterpolation) = size(A.knots)
 axes(A::MonotonicInterpolation) = axes(A.knots)
 
-function MonotonicInterpolation(::Type{TWeights}, it::IType, knots::K, A::AbstractArray{Tel,1},
-    m::Vector{TCoeffs}, c::Vector{TCoeffs}, d::Vector{TCoeffs}) where {TWeights, TCoeffs, Tel, IType<:MonotonicInterpolationType, K<:AbstractVector{<:Number}}
+function MonotonicInterpolation(::Type{TWeights}, it::IType, knots::TKnots, A::AbstractArray{Tel,1},
+    m::Vector{TCoeffs}, c::Vector{TCoeffs}, d::Vector{TCoeffs}) where {TWeights, TCoeffs, Tel, IType<:MonotonicInterpolationType, TKnots<:AbstractVector{<:Number}}
 
-    isconcretetype(IType) || error("The b-spline type must be a leaf type (was $IType)")
+    isconcretetype(IType) || error("The spline type must be a leaf type (was $IType)")
     isconcretetype(TCoeffs) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
 
     check_monotonic(knots, A)
@@ -137,11 +137,11 @@ function MonotonicInterpolation(::Type{TWeights}, it::IType, knots::K, A::Abstra
         T = typeof(cZero * first(A))
     end
 
-    MonotonicInterpolation{T, TCoeffs, Tel, IType, K, typeof(A)}(it, knots, A, m, c, d)
+    MonotonicInterpolation{T, TCoeffs, Tel, IType, TKnots, typeof(A)}(it, knots, A, m, c, d)
 end
 
-function interpolate(::Type{TWeights}, ::Type{TCoeffs}, knots::K,
-    A::AbstractArray{Tel,1}, it::IT) where {TWeights,TCoeffs,Tel,K<:AbstractVector{<:Number},IT<:MonotonicInterpolationType}
+function interpolate(::Type{TWeights}, ::Type{TCoeffs}, knots::TKnots,
+    A::AbstractArray{Tel,1}, it::IT) where {TWeights,TCoeffs,Tel,TKnots<:AbstractVector{<:Number},IT<:MonotonicInterpolationType}
 
     check_monotonic(knots, A)
 
@@ -164,7 +164,7 @@ function interpolate(::Type{TWeights}, ::Type{TCoeffs}, knots::K,
 end
 
 function interpolate(knots::AbstractVector{<:Number}, A::AbstractArray{Tel,1},
-    it::IT) where {Tel,N,IT<:MonotonicInterpolationType}
+    it::IT) where {Tel,IT<:MonotonicInterpolationType}
 
     interpolate(tweight(A), tcoef(A), knots, A, it)
 end
@@ -300,6 +300,10 @@ end
 function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     y :: AbstractVector{Tel}, method :: FritschButlandMonotonicInterpolation) where {TCoeffs, Tel}
 
+    # based on Fritsch & Butland (1984),
+    # "A Method for Constructing Local Monotone Piecewise Cubic Interpolants",
+    # doi:10.1137/0905021.
+
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
     m = Vector{TCoeffs}(undef, n)
@@ -321,6 +325,10 @@ end
 
 function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     y::AbstractVector{Tel}, method::SteffenMonotonicInterpolation) where {TCoeffs, Tel}
+
+    # Steffen (1990),
+    # "A Simple Method for Monotonic Interpolation in One Dimension",
+    # http://adsabs.harvard.edu/abs/1990A%26A...239..443S
 
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
