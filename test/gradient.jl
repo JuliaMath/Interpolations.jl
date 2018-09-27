@@ -163,6 +163,16 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
         end
     end
 
+    # issue #239
+    f(x) = log(x)
+    xs = 1:0.2:5
+    A = [f(x) for x in xs]
+    interp_linear = LinearInterpolation(xs, A)
+    g = Interpolations.gradient(interp_linear, 1.5)
+    dest = Vector{Float64}(undef, 1)
+    Interpolations.gradient!(dest, interp_linear, 1.5)
+    @test dest == g
+
     @testset "Monotonic" begin
         x = [0.0, 0.2, 0.5, 0.6, 0.9, 1.0]
         ys = [[-3.0, 0.0, 5.0, 10.0, 18.0, 22.0],

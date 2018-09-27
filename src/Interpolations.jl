@@ -349,11 +349,17 @@ function gradient(itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
     xi == x && error("gradient of $itp not supported for position $x")
     gradient(itp, xi...)
 end
+@propagate_inbounds function gradient!(dest, itp::AbstractInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    dest .= gradient(itp, x...)
+end
 function gradient!(dest, itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
     gradient!(dest, itp, to_indices(itp, x)...)
 end
 function hessian(itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
     hessian(itp, to_indices(itp, x)...)
+end
+@propagate_inbounds function hessian!(dest, itp::AbstractInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    dest .= hessian(itp, x...)
 end
 function hessian!(dest, itp::AbstractInterpolation, x::Vararg{UnexpandedIndexTypes})
     hessian!(dest, itp, to_indices(itp, x)...)

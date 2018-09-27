@@ -13,9 +13,6 @@ end
     wis = weightedindexes((value_weights, gradient_weights), itpinfo(itp)..., x)
     SVector(map(inds->coefficients(itp)[inds...], wis))
 end
-@propagate_inbounds function gradient!(dest, itp::GriddedInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
-    dest .= gradient(itp, x...)
-end
 
 itpinfo(itp::GriddedInterpolation) = (tcollect(itpflag, itp), itp.knots)
 
