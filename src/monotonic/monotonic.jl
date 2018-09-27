@@ -60,8 +60,8 @@ Cubic cardinal splines, uses `tension` parameter which must be between [0,1]
 Cubin cardinal splines can overshoot for non-monotonic data
 (increasing tension reduces overshoot).
 """
-struct CardinalMonotonicInterpolation{T<:Number} <: MonotonicInterpolationType
-    tension :: T # must be in [0, 1]
+struct CardinalMonotonicInterpolation{TTension<:Number} <: MonotonicInterpolationType
+    tension :: TTension # must be in [0, 1]
 end
 
 """
@@ -107,12 +107,12 @@ end
 Monotonic interpolation up to third order represented by type, knots and
 coefficients.
 """
-struct MonotonicInterpolation{T, TCoeffs, Tel, Type<:MonotonicInterpolationType,
-    TKnots<:AbstractVector{<:Number}, AType <: AbstractArray{Tel,1}} <: AbstractInterpolation{T,1,DimSpec{Type}}
+struct MonotonicInterpolation{T, TCoeffs, TEl, TInterpolationType<:MonotonicInterpolationType,
+    TKnots<:AbstractVector{<:Number}, TACoeff <: AbstractArray{TEl,1}} <: AbstractInterpolation{T,1,DimSpec{TInterpolationType}}
 
-    it::Type
+    it::TInterpolationType
     knots::TKnots
-    A::AType # constant parts of piecewise polynomials
+    A::TACoeff # constant parts of piecewise polynomials
     m::Vector{TCoeffs} # coefficients of linear parts of piecewise polynomials
     c::Vector{TCoeffs} # coefficients of quadratic parts of piecewise polynomials
     d::Vector{TCoeffs} # coefficients of cubic parts of piecewise polynomials
@@ -122,10 +122,10 @@ end
 size(A::MonotonicInterpolation) = size(A.knots)
 axes(A::MonotonicInterpolation) = axes(A.knots)
 
-function MonotonicInterpolation(::Type{TWeights}, it::IType, knots::TKnots, A::AbstractArray{Tel,1},
-    m::Vector{TCoeffs}, c::Vector{TCoeffs}, d::Vector{TCoeffs}) where {TWeights, TCoeffs, Tel, IType<:MonotonicInterpolationType, TKnots<:AbstractVector{<:Number}}
+function MonotonicInterpolation(::Type{TWeights}, it::TInterpolationType, knots::TKnots, A::AbstractArray{TEl,1},
+    m::Vector{TCoeffs}, c::Vector{TCoeffs}, d::Vector{TCoeffs}) where {TWeights, TCoeffs, TEl, TInterpolationType<:MonotonicInterpolationType, TKnots<:AbstractVector{<:Number}}
 
-    isconcretetype(IType) || error("The spline type must be a leaf type (was $IType)")
+    isconcretetype(TInterpolationType) || error("The spline type must be a leaf type (was $TInterpolationType)")
     isconcretetype(TCoeffs) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
 
     check_monotonic(knots, A)
@@ -137,11 +137,11 @@ function MonotonicInterpolation(::Type{TWeights}, it::IType, knots::TKnots, A::A
         T = typeof(cZero * first(A))
     end
 
-    MonotonicInterpolation{T, TCoeffs, Tel, IType, TKnots, typeof(A)}(it, knots, A, m, c, d)
+    MonotonicInterpolation{T, TCoeffs, TEl, TInterpolationType, TKnots, typeof(A)}(it, knots, A, m, c, d)
 end
 
 function interpolate(::Type{TWeights}, ::Type{TCoeffs}, knots::TKnots,
-    A::AbstractArray{Tel,1}, it::IT) where {TWeights,TCoeffs,Tel,TKnots<:AbstractVector{<:Number},IT<:MonotonicInterpolationType}
+    A::AbstractArray{TEl,1}, it::TInterpolationType) where {TWeights,TCoeffs,TEl,TKnots<:AbstractVector{<:Number},TInterpolationType<:MonotonicInterpolationType}
 
     check_monotonic(knots, A)
 
@@ -151,7 +151,7 @@ function interpolate(::Type{TWeights}, ::Type{TCoeffs}, knots::TKnots,
     c = Vector{TCoeffs}(undef, n-1)
     d = Vector{TCoeffs}(undef, n-1)
     for k ∈ 1:n-1
-        if IT == LinearMonotonicInterpolation
+        if TInterpolationType == LinearMonotonicInterpolation
             c[k] = d[k] = zero(TCoeffs)
         else
             xdiff = knots[k+1] - knots[k]
@@ -163,8 +163,8 @@ function interpolate(::Type{TWeights}, ::Type{TCoeffs}, knots::TKnots,
     MonotonicInterpolation(TWeights, it, knots, A, m, c, d)
 end
 
-function interpolate(knots::AbstractVector{<:Number}, A::AbstractArray{Tel,1},
-    it::IT) where {Tel,IT<:MonotonicInterpolationType}
+function interpolate(knots::AbstractVector{<:Number}, A::AbstractArray{TEl,1},
+    it::TInterpolationType) where {TEl,TInterpolationType<:MonotonicInterpolationType}
 
     interpolate(tweight(A), tcoef(A), knots, A, it)
 end
@@ -195,7 +195,7 @@ end
 end
 
 function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
-    y::AbstractVector{Tel}, method::LinearMonotonicInterpolation) where {TCoeffs, Tel}
+    y::AbstractVector{TEl}, method::LinearMonotonicInterpolation) where {TCoeffs, TEl}
 
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
@@ -210,7 +210,7 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
 end
 
 function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
-    y::AbstractVector{Tel}, method::FiniteDifferenceMonotonicInterpolation) where {TCoeffs, Tel}
+    y::AbstractVector{TEl}, method::FiniteDifferenceMonotonicInterpolation) where {TCoeffs, TEl}
 
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
@@ -229,7 +229,7 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
 end
 
 function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
-    y::AbstractVector{Tel}, method::CardinalMonotonicInterpolation{T}) where {T, TCoeffs, Tel}
+    y::AbstractVector{TEl}, method::CardinalMonotonicInterpolation{TTension}) where {TTension, TCoeffs, TEl}
 
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
@@ -240,7 +240,7 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
         if k == 1   # left endpoint
             m[k] = Δk
         else
-            m[k] = (oneunit(T) - method.tension) * (y[k+1] - y[k-1]) / (x[k+1] - x[k-1])
+            m[k] = (oneunit(TTension) - method.tension) * (y[k+1] - y[k-1]) / (x[k+1] - x[k-1])
         end
     end
     m[n] = Δ[n-1]
@@ -248,7 +248,7 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
 end
 
 function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
-    y::AbstractVector{Tel}, method::FritschCarlsonMonotonicInterpolation) where {TCoeffs, Tel}
+    y::AbstractVector{TEl}, method::FritschCarlsonMonotonicInterpolation) where {TCoeffs, TEl}
 
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
@@ -298,7 +298,7 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
 end
 
 function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
-    y :: AbstractVector{Tel}, method :: FritschButlandMonotonicInterpolation) where {TCoeffs, Tel}
+    y :: AbstractVector{TEl}, method :: FritschButlandMonotonicInterpolation) where {TCoeffs, TEl}
 
     # based on Fritsch & Butland (1984),
     # "A Method for Constructing Local Monotone Piecewise Cubic Interpolants",
@@ -324,7 +324,7 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
 end
 
 function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
-    y::AbstractVector{Tel}, method::SteffenMonotonicInterpolation) where {TCoeffs, Tel}
+    y::AbstractVector{TEl}, method::SteffenMonotonicInterpolation) where {TCoeffs, TEl}
 
     # Steffen (1990),
     # "A Simple Method for Monotonic Interpolation in One Dimension",
