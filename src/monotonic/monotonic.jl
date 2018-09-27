@@ -180,13 +180,32 @@ function (itp::MonotonicInterpolation)(x::Number)
     return itp.A[k] + itp.m[k]*xdiff + itp.c[k]*xdiff*xdiff + itp.d[k]*xdiff*xdiff*xdiff
 end
 
-function derivative(itp::MonotonicInterpolation, x::Number)
+function gradient(itp::MonotonicInterpolation, x::AbstractArray{<:Number, 1})
+    length(x) == 1 || error("Given vector x ($x) should have exactly one element")
+    return SVector(gradient1(itp, x[1]))
+end
+
+function gradient1(itp::MonotonicInterpolation, x::Number)
     k = searchsortedfirst(itp.knots, x)
     if k > 1
         k -= 1
     end
     xdiff = x - itp.knots[k]
     return itp.m[k] + 2*itp.c[k]*xdiff + 3*itp.d[k]*xdiff*xdiff
+end
+
+function hessian(itp::MonotonicInterpolation, x::AbstractArray{<:Number, 1})
+    length(x) == 1 || error("Given vector x ($x) should have exactly one element")
+    return SVector(hessian1(itp, x[1]))
+end
+
+function hessian1(itp::MonotonicInterpolation, x::Number)
+    k = searchsortedfirst(itp.knots, x)
+    if k > 1
+        k -= 1
+    end
+    xdiff = x - itp.knots[k]
+    return 2*itp.c[k] + 6*itp.d[k]*xdiff
 end
 
 @inline function check_monotonic(knots, A)

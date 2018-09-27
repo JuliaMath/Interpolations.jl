@@ -182,7 +182,9 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
             for it in itypes
                 itp = interpolate(x, y, it)
                 for t in grid
-                    @test Interpolations.derivative(itp, t) ≈ epsilon(itp(dual(t, 1.0))) atol = 1.e-12
+                    gradval = epsilon(itp(dual(t, 1.0)))
+                    @test Interpolations.gradient1(itp, t) ≈ gradval atol = 1.e-12
+                    @test Interpolations.gradient(itp, [t])[1] ≈ gradval atol = 1.e-12
                 end
             end
         end
