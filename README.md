@@ -127,7 +127,7 @@ which support multidimensional data as well:
 f(x,y) = log(x+y)
 xs = 1:0.2:5
 ys = 2:0.1:5
-A = [f(x+y) for x in xs, y in ys]
+A = [f(x,y) for x in xs, y in ys]
 
 # linear interpolation
 interp_linear = LinearInterpolation((xs, ys), A)
