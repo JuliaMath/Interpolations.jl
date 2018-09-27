@@ -18,3 +18,19 @@ LinearInterpolation(ranges::NTuple{N,AbstractVector}, vs::AbstractArray{T,N};
 CubicSplineInterpolation(ranges::NTuple{N,AbstractRange}, vs::AbstractArray{T,N};
                          bc = Line(OnGrid()), extrapolation_bc = Throw()) where {N,T} =
     extrapolate(scale(interpolate(vs, BSpline(Cubic(bc))), ranges...), extrapolation_bc)
+
+"""
+    etp = LinearInterpolation(knots, A; extrapolation_bc=Throw())
+
+A shorthand for `extrapolate(interpolate(knots, A, scheme), extrapolation_bc)`,
+where `scheme` is either `BSpline(Linear())` or `Gridded(Linear())` depending on whether
+`knots` are ranges or vectors.
+"""
+LinearInterpolation
+
+"""
+    etp = CubicSplineInterpolation(knots, A; bc=Line(OnGrid()), extrapolation_bc=Throw())
+
+A shorthand for `extrapolate(interpolate(knots, A, BSpline(Cubic(bc))), extrapolation_bc)`.
+"""
+CubicSplineInterpolation
