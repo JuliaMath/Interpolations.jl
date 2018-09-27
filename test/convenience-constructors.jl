@@ -178,6 +178,17 @@ end
         @test extrap(x_lower, y_lower) ≈ A[1, 1] - ΔA_l
         @test extrap(x_higher, y_higher) ≈ A[end, end] + ΔA_h
     end
+
+    @testset "issue #230" begin # at least, I think this is what issue #230 is really about
+        f(x,y) = log(x+y)
+        xs = 1:5
+        ys = 2:0.1:5
+        A = [f(x,y) for x in xs, y in ys]
+        itp = LinearInterpolation((xs, ys), A)
+        for (i, j) in zip(Iterators.product(xs, ys), eachindex(A))
+            @test itp(i...) ≈ A[j]
+        end
+    end
 end
 
 end

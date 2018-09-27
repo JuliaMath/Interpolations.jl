@@ -58,24 +58,22 @@ v = itp(x, y, ...)
 Some interpolation objects support computation of the gradient, which
 can be obtained as
 ```julia
-g = gradient(itp, x, y, ...)
+g = Interpolations.gradient(itp, x, y, ...)
 ```
-or, if you're evaluating the gradient repeatedly, a somewhat more
-efficient option is
+or as
 ```julia
-gradient!(g, itp, x, y, ...)
+Interpolations.gradient!(g, itp, x, y, ...)
 ```
 where `g` is a pre-allocated vector.
 
 Some interpolation objects support computation of the hessian, which
 can be obtained as
 ```julia
-h = hessian(itp, x, y, ...)
+h = Interpolations.hessian(itp, x, y, ...)
 ```
-or, if you're evaluating the hessian repeatedly, a somewhat more
-efficient option is
+or
 ```julia
-hessian!(h, itp, x, y, ...)
+Interpolations.hessian!(h, itp, x, y, ...)
 ```
 where `h` is a pre-allocated matrix.
 
@@ -104,71 +102,7 @@ Finally, courtesy of Julia's indexing rules, you can also use
 fine = itp(range(1,stop=10,length=1001), range(1,stop=15,length=201))
 ```
 
-### Quickstart guide
-
-For linear and cubic spline interpolations, `LinearInterpolation` and `CubicSplineInterpolation` can be used to create interpolation objects handily:
-```julia
-f(x) = log(x)
-xs = 1:0.2:5
-A = [f(x) for x in xs]
-
-# linear interpolation
-interp_linear = LinearInterpolation(xs, A)
-interp_linear(3) # exactly log(3)
-interp_linear(3.1) # approximately log(3.1)
-
-# cubic spline interpolation
-interp_cubic = CubicSplineInterpolation(xs, A)
-interp_cubic(3) # exactly log(3)
-interp_cubic(3.1) # approximately log(3.1)
-```
-which support multidimensional data as well:
-```julia
-f(x,y) = log(x+y)
-xs = 1:0.2:5
-ys = 2:0.1:5
-A = [f(x+y) for x in xs, y in ys]
-
-# linear interpolation
-interp_linear = LinearInterpolation((xs, ys), A)
-interp_linear(3, 2) # exactly log(3 + 2)
-interp_linear(3.1, 2.1) # approximately log(3.1 + 2.1)
-
-# cubic spline interpolation
-interp_cubic = CubicSplineInterpolation((xs, ys), A)
-interp_cubic(3, 2) # exactly log(3 + 2)
-interp_cubic(3.1, 2.1) # approximately log(3.1 + 2.1)
-```
-For extrapolation, i.e., when interpolation objects are evaluated in coordinates outside of range provided in constructors, the default option for a boundary condition is `Throw` so that they will return an error.
-Interested users can specify boundary conditions by providing an extra parameter for `extrapolation_bc`:
-```julia
-f(x) = log(x)
-xs = 1:0.2:5
-A = [f(x) for x in xs]
-
-# extrapolation with linear boundary conditions
-extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
-
-@test extrap(1 - 0.2) # ≈ f(1) - (f(1.2) - f(1))
-@test extrap(5 + 0.2) # ≈ f(5) + (f(5) - f(4.8))
-```
-You can also use a "fill" value, which gets returned whenever you ask for out-of-range values:
-
-```julia
-extrap = LinearInterpolation(xs, A, extrapolation_bc = NaN)
-@test isnan(extrap(5.2))
-```
-
-Irregular grids are supported as well; note that presently only `LinearInterpolation` supports irregular grids.
-```julia
-xs = [x^2 for x = 1:0.2:5]
-A = [f(x) for x in xs]
-
-# linear interpolation
-interp_linear = LinearInterpolation(xs, A)
-interp_linear(1) # exactly log(1)
-interp_linear(1.05) # approximately log(1.05)
-```
+There is also an abbreviated notion [described below](#convenience-notation).
 
 ## Control of interpolation algorithm
 
@@ -321,6 +255,73 @@ Examples:
 itp = interpolate(1:7, BSpline(Linear()))
 etpf = extrapolate(itp, Flat())   # gives 1 on the left edge and 7 on the right edge
 etp0 = extrapolate(itp, 0)        # gives 0 everywhere outside [1,7]
+```
+
+## Convenience notation
+
+For linear and cubic spline interpolations, `LinearInterpolation` and `CubicSplineInterpolation`
+can be used to create interpolating and extrapolating objects handily:
+```julia
+f(x) = log(x)
+xs = 1:0.2:5
+A = [f(x) for x in xs]
+
+# linear interpolation
+interp_linear = LinearInterpolation(xs, A)
+interp_linear(3) # exactly log(3)
+interp_linear(3.1) # approximately log(3.1)
+
+# cubic spline interpolation
+interp_cubic = CubicSplineInterpolation(xs, A)
+interp_cubic(3) # exactly log(3)
+interp_cubic(3.1) # approximately log(3.1)
+```
+which support multidimensional data as well:
+```julia
+f(x,y) = log(x+y)
+xs = 1:0.2:5
+ys = 2:0.1:5
+A = [f(x,y) for x in xs, y in ys]
+
+# linear interpolation
+interp_linear = LinearInterpolation((xs, ys), A)
+interp_linear(3, 2) # exactly log(3 + 2)
+interp_linear(3.1, 2.1) # approximately log(3.1 + 2.1)
+
+# cubic spline interpolation
+interp_cubic = CubicSplineInterpolation((xs, ys), A)
+interp_cubic(3, 2) # exactly log(3 + 2)
+interp_cubic(3.1, 2.1) # approximately log(3.1 + 2.1)
+```
+For extrapolation, i.e., when interpolation objects are evaluated in coordinates outside the range provided in constructors, the default option for a boundary condition is `Throw` so that they will return an error.
+Interested users can specify boundary conditions by providing an extra parameter for `extrapolation_bc`:
+```julia
+f(x) = log(x)
+xs = 1:0.2:5
+A = [f(x) for x in xs]
+
+# extrapolation with linear boundary conditions
+extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
+
+@test extrap(1 - 0.2) # ≈ f(1) - (f(1.2) - f(1))
+@test extrap(5 + 0.2) # ≈ f(5) + (f(5) - f(4.8))
+```
+You can also use a "fill" value, which gets returned whenever you ask for out-of-range values:
+
+```julia
+extrap = LinearInterpolation(xs, A, extrapolation_bc = NaN)
+@test isnan(extrap(5.2))
+```
+
+Irregular grids are supported as well; note that presently only `LinearInterpolation` supports irregular grids.
+```julia
+xs = [x^2 for x = 1:0.2:5]
+A = [f(x) for x in xs]
+
+# linear interpolation
+interp_linear = LinearInterpolation(xs, A)
+interp_linear(1) # exactly log(1)
+interp_linear(1.05) # approximately log(1.05)
 ```
 
 ## Performance shootout
