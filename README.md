@@ -58,24 +58,22 @@ v = itp(x, y, ...)
 Some interpolation objects support computation of the gradient, which
 can be obtained as
 ```julia
-g = gradient(itp, x, y, ...)
+g = Interpolations.gradient(itp, x, y, ...)
 ```
-or, if you're evaluating the gradient repeatedly, a somewhat more
-efficient option is
+or as
 ```julia
-gradient!(g, itp, x, y, ...)
+Interpolations.gradient!(g, itp, x, y, ...)
 ```
 where `g` is a pre-allocated vector.
 
 Some interpolation objects support computation of the hessian, which
 can be obtained as
 ```julia
-h = hessian(itp, x, y, ...)
+h = Interpolations.hessian(itp, x, y, ...)
 ```
-or, if you're evaluating the hessian repeatedly, a somewhat more
-efficient option is
+or
 ```julia
-hessian!(h, itp, x, y, ...)
+Interpolations.hessian!(h, itp, x, y, ...)
 ```
 where `h` is a pre-allocated matrix.
 
