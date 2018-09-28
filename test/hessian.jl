@@ -65,6 +65,7 @@ using Test, Interpolations, LinearAlgebra, ForwardDiff
                 for t in grid
                     hessval = ForwardDiff.hessian(u -> itp(u[1]), [t])[1, 1]
                     @test Interpolations.hessian1(itp, t) ≈ hessval atol = 1.e-12
+                    @test Interpolations.hessian(itp, t)[1] ≈ hessval atol = 1.e-12
                 end
             end
         end
