@@ -170,8 +170,7 @@ function interpolate(knots::AbstractVector{<:Number}, A::AbstractArray{TEl,1},
 end
 
 function (itp::MonotonicInterpolation)(x::Number)
-    x >= itp.knots[1] || error("Given number $x is outside of interpolated range [$(itp.knots[1]), $(itp.knots[end])]")
-    x <= itp.knots[end] || error("Given number $x is outside of interpolated range [$(itp.knots[1]), $(itp.knots[end])]")
+    @boundscheck (checkbounds(Bool, itp, x) || Base.throw_boundserror(itp, (x,)))
     k = searchsortedfirst(itp.knots, x)
     if k > 1
         k -= 1
@@ -180,12 +179,12 @@ function (itp::MonotonicInterpolation)(x::Number)
     return itp.A[k] + itp.m[k]*xdiff + itp.c[k]*xdiff*xdiff + itp.d[k]*xdiff*xdiff*xdiff
 end
 
-function gradient(itp::MonotonicInterpolation, x::AbstractArray{<:Number, 1})
-    length(x) == 1 || error("Given vector x ($x) should have exactly one element")
-    return SVector(gradient1(itp, x[1]))
+function gradient(itp::MonotonicInterpolation, x::Number)
+    return SVector(gradient1(itp, x))
 end
 
 function gradient1(itp::MonotonicInterpolation, x::Number)
+    @boundscheck (checkbounds(Bool, itp, x) || Base.throw_boundserror(itp, (x,)))
     k = searchsortedfirst(itp.knots, x)
     if k > 1
         k -= 1
@@ -194,12 +193,12 @@ function gradient1(itp::MonotonicInterpolation, x::Number)
     return itp.m[k] + 2*itp.c[k]*xdiff + 3*itp.d[k]*xdiff*xdiff
 end
 
-function hessian(itp::MonotonicInterpolation, x::AbstractArray{<:Number, 1})
-    length(x) == 1 || error("Given vector x ($x) should have exactly one element")
-    return SVector(hessian1(itp, x[1]))
+function hessian(itp::MonotonicInterpolation, x::Number)
+    return SVector(hessian1(itp, x))
 end
 
 function hessian1(itp::MonotonicInterpolation, x::Number)
+    @boundscheck (checkbounds(Bool, itp, x) || Base.throw_boundserror(itp, (x,)))
     k = searchsortedfirst(itp.knots, x)
     if k > 1
         k -= 1
@@ -370,5 +369,5 @@ end
 # How many non-NoInterp dimensions are there?
 count_interp_dims(::Type{<:MonotonicInterpolationType}) = 1
 
-lbounds(itp::MonotonicInterpolation) = first(itp.knots)
-ubounds(itp::MonotonicInterpolation) = last(itp.knots)
+lbounds(itp::MonotonicInterpolation) = (first(itp.knots),)
+ubounds(itp::MonotonicInterpolation) = (last(itp.knots),)
