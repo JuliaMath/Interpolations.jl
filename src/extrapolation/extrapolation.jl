@@ -15,6 +15,8 @@ const ExtrapDimSpec = Union{BoundaryCondition,Tuple{Vararg{Union{BoundaryConditi
 etptype(::Extrapolation{T,N,ITPT,IT,ET}) where {T,N,ITPT,IT,ET} = ET
 etpflag(etp::Extrapolation{T,N,ITPT,IT,ET}) where {T,N,ITPT,IT,ET} = etp.et
 
+BoundsCheckStyle(etp::AbstractExtrapolation) = CheckWillPass()
+
 """
 `extrapolate(itp, scheme)` adds extrapolation behavior to an interpolation object, according to the provided scheme.
 
@@ -35,11 +37,12 @@ extrapolate(itp::AbstractInterpolation{T,N,IT}, et::ET) where {T,N,IT,ET<:Extrap
 
 count_interp_dims(::Type{<:Extrapolation{T,N,ITPT}}, n) where {T,N,ITPT} = count_interp_dims(ITPT, n)
 
-@inline function (etp::Extrapolation{T,N})(x::Vararg{Number,N}) where {T,N}
+@propagate_inbounds function (etp::Extrapolation{T,N})(x::Vararg{Number,N}) where {T,N}
     itp = parent(etp)
     eflag = etpflag(etp)
     xs = inbounds_position(eflag, bounds(itp), x, etp, x)
-    extrapolate_value(eflag, skip_flagged_nointerp(itp, x), skip_flagged_nointerp(itp, xs), Tuple(gradient(itp, xs...)), itp(xs...))
+    g = @inbounds gradient(itp, xs...)
+    extrapolate_value(eflag, skip_flagged_nointerp(itp, x), skip_flagged_nointerp(itp, xs), Tuple(g), @inbounds(itp(xs...)))
 end
 @inline function (etp::Extrapolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
     itp = parent(etp)
@@ -58,7 +61,7 @@ end
     else
         eflag = tcollect(etpflag, etp)
         xs = inbounds_position(eflag, bounds(itp), x, etp, x)
-        g = gradient(itp, xs...)
+        g = @inbounds gradient(itp, xs...)
         skipni = t->skip_flagged_nointerp(itp, t)
         SVector(extrapolate_gradient.(skipni(eflag), skipni(x), skipni(xs), Tuple(g)))
     end
@@ -127,7 +130,7 @@ end
 periodic(y, l, u) = mod(y-l, u-l) + l
 
 
-function extrapolate_value(eflag, x, xs, g, val)
+@inline function extrapolate_value(eflag, x, xs, g, val)
     val = extrapolate_axis(getfirst(eflag), x[1], xs[1], g[1], val)
     extrapolate_value(getrest(eflag), Base.tail(x), Base.tail(xs), Base.tail(g), val)
 end

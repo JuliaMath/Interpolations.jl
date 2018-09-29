@@ -129,6 +129,18 @@ count_interp_dims(it::Type{IT}, n) where IT<:Tuple{Vararg{InterpolationType,N}} 
     _count_interp_dims(c + count_interp_dims(IT1), args...)
 _count_interp_dims(c) = c
 
+"""
+    BoundsCheckStyle(itp)
+
+A trait to determine dispatch of bounds-checking for `itp`.
+Can return `NeedsCheck()`, in which case bounds-checking is performed, or `CheckWillPass()`
+in which case the check will return `true`.
+"""
+abstract type BoundsCheckStyle end
+struct NeedsCheck <: BoundsCheckStyle end
+struct CheckWillPass <: BoundsCheckStyle end
+
+BoundsCheckStyle(itp) = NeedsCheck()
 
 """
     wi = WeightedIndex(indexes, weights)
@@ -385,6 +397,23 @@ import Base: getindex
     @boundscheck (j == 1 || Base.throw_boundserror(itp, (i, j)))
     itp(i)
 end
+
+@inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::Vararg{ExpandedIndexTypes,N}) where N =
+    _checkbounds(BoundsCheckStyle(itp), itp, x)
+
+_checkbounds(::CheckWillPass, itp, x) = true
+_checkbounds(::NeedsCheck, itp, x) = checklubounds(lbounds(itp), ubounds(itp), x)
+
+checklubounds(ls, us, xs) = _checklubounds(true, ls, us, xs)
+_checklubounds(tf::Bool, ls, us, xs::Tuple{Number, Vararg{Any}}) =
+    _checklubounds(tf & (ls[1] <= xs[1] <= us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
+_checklubounds(tf::Bool, ls, us, xs::Tuple{AbstractVector, Vararg{Any}}) =
+    _checklubounds(tf & all(ls[1] .<= xs[1] .<= us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
+_checklubounds(tf::Bool, ::Tuple{}, ::Tuple{}, ::Tuple{}) = tf
+
+maybe_clamp(itp, xs) = maybe_clamp(BoundsCheckStyle(itp), itp, xs)
+maybe_clamp(::NeedsCheck, itp, xs) = clamp.(xs, lbounds(itp), ubounds(itp))
+maybe_clamp(::CheckWillPass, itp, xs) = xs
 
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")

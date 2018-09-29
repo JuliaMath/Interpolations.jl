@@ -22,7 +22,7 @@ end
     reshape(ret, shape(wis...))
 end
 
-@inline function gradient(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+@propagate_inbounds function gradient(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
     wis = weightedindexes((value_weights, gradient_weights), itpinfo(itp)..., x)
     SVector(map(inds->itp.coefs[inds...], wis))
@@ -31,7 +31,7 @@ end
     dest .= gradient(itp, x...)
 end
 
-@inline function hessian(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+@propagate_inbounds function hessian(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
     wis = weightedindexes((value_weights, gradient_weights, hessian_weights), itpinfo(itp)..., x)
     symmatrix(map(inds->itp.coefs[inds...], wis))
@@ -39,16 +39,6 @@ end
 @propagate_inbounds function hessian!(dest, itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     dest .= hessian(itp, x...)
 end
-
-checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::Vararg{ExpandedIndexTypes,N}) where N =
-    checklubounds(lbounds(itp), ubounds(itp), x)
-
-checklubounds(ls, us, xs) = _checklubounds(true, ls, us, xs)
-_checklubounds(tf::Bool, ls, us, xs::Tuple{Number, Vararg{Any}}) =
-    _checklubounds(tf & (ls[1] <= xs[1] <= us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
-_checklubounds(tf::Bool, ls, us, xs::Tuple{AbstractVector, Vararg{Any}}) =
-    _checklubounds(tf & all(ls[1] .<= xs[1] .<= us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
-_checklubounds(tf::Bool, ::Tuple{}, ::Tuple{}, ::Tuple{}) = tf
 
 # Leftovers from AbstractInterpolation
 @inline function (itp::BSplineInterpolation)(x::Vararg{UnexpandedIndexTypes})
