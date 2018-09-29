@@ -72,6 +72,4 @@ ubounds(itp::GriddedInterpolation) = last.(itp.knots)
 lbound(ax::AbstractVector, gr::Gridded)   = lbound(ax, degree(gr))
 ubound(ax::AbstractVector, gr::Gridded)   = ubound(ax, degree(gr))
 
-include("constant.jl")
-include("linear.jl")
 include("indexing.jl")
