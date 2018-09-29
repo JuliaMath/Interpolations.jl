@@ -95,6 +95,12 @@ using Test
     targeterr = ArgumentError("cannot create a filled extrapolation with a type Line, use a value of this type instead (e.g., Line())")
     @test_throws targeterr extrapolate(itp, Line)
 
+    # Issue #244
+    xs = range(1e-2, stop = 8.3, length = 3)
+    ys = sort(rand(3))
+    itp = LinearInterpolation(xs, ys, extrapolation_bc = Flat())
+    @test itp(8.3) ≈ ys[end]
+
     include("type-stability.jl")
     include("non1.jl")
 end

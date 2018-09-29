@@ -9,6 +9,7 @@ end
 
 Base.parent(A::ScaledInterpolation) = A.itp
 count_interp_dims(::Type{<:ScaledInterpolation{T,N,ITPT}}, n) where {T,N,ITPT} = count_interp_dims(ITPT, n)
+BoundsCheckStyle(sitp::ScaledInterpolation) = BoundsCheckStyle(sitp.itp)
 
 """
 `scale(itp, xs, ys, ...)` scales an existing interpolation object to allow for indexing using other coordinate axes than unit ranges, by wrapping the interpolation object and transforming the indices from the provided axes onto unit ranges upon indexing.
@@ -58,9 +59,10 @@ lbound(ax::AbstractRange, ::DegreeBC, ::OnGrid) = first(ax)
 ubound(ax::AbstractRange, ::DegreeBC, ::OnGrid) = last(ax)
 
 # For (), we scale the evaluation point
-function (sitp::ScaledInterpolation{T,N})(xs::Vararg{Number,N}) where {T,N}
-    xl = coordslookup(itpflag(sitp.itp), sitp.ranges, xs)
-    sitp.itp(xl...)
+@propagate_inbounds function (sitp::ScaledInterpolation{T,N})(xs::Vararg{Number,N}) where {T,N}
+    @boundscheck (checkbounds(Bool, sitp, xs...) || Base.throw_boundserror(sitp, xs))
+    xl = maybe_clamp(sitp.itp, coordslookup(itpflag(sitp.itp), sitp.ranges, xs))
+    @inbounds sitp.itp(xl...)
 end
 @inline function (sitp::ScaledInterpolation)(x::Vararg{UnexpandedIndexTypes})
     xis = to_indices(sitp, x)
@@ -71,7 +73,6 @@ end
 (sitp::ScaledInterpolation{T,1}, x::Number, y::Int) where {T} = y == 1 ? sitp(x) : Base.throw_boundserror(sitp, (x, y))
 
 @inline function (itp::ScaledInterpolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
-    # @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     [itp(i...) for i in Iterators.product(x...)]
 end
 
@@ -96,8 +97,9 @@ basetype(::Type{ScaledInterpolation{T,N,ITPT,IT,RT}}) where {T,N,ITPT,IT,RT} = I
 basetype(sitp::ScaledInterpolation) = basetype(typeof(sitp))
 
 
-function gradient(sitp::ScaledInterpolation{T,N}, xs::Vararg{Number,N}) where {T,N}
-    xl = coordslookup(itpflag(sitp.itp), sitp.ranges, xs)
+@propagate_inbounds function gradient(sitp::ScaledInterpolation{T,N}, xs::Vararg{Number,N}) where {T,N}
+    @boundscheck (checkbounds(Bool, sitp, xs...) || Base.throw_boundserror(sitp, xs))
+    xl = maybe_clamp(sitp.itp, coordslookup(itpflag(sitp.itp), sitp.ranges, xs))
     g = gradient(sitp.itp, xl...)
     SVector(rescale_gradient_components(itpflag(sitp.itp), sitp.ranges, Tuple(g)))
 end
