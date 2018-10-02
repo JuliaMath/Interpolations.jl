@@ -76,4 +76,7 @@ using Interpolations, Test
         @test itp(4,1.2) ≈ A[2,6]
     end
 
+    # issue #248
+    itp = interpolate((1001:1005,), 1:5, Gridded(Linear()))
+    @test itp(1002) ≈ 2
 end

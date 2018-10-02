@@ -16,9 +16,6 @@ end
 
 itpinfo(itp::GriddedInterpolation) = (tcollect(itpflag, itp), itp.knots)
 
-weightedindex_parts(fs::F, itpflag::Gridded, ax, x) where F =
-    weightedindex_parts(fs, degree(itpflag), ax, x)
-
 roundbounds(x::Integer, knotvec::AbstractVector) = gridded_roundbounds(x, knotvec)
 roundbounds(x::Number, knotvec::AbstractVector) = gridded_roundbounds(x, knotvec)
 function gridded_roundbounds(x, knotvec::AbstractVector)
@@ -37,11 +34,11 @@ end
 
 @inline find_knot_index(knotv, x) = searchsortedfirst(knotv, x, first(axes1(knotv)), length(knotv), Base.Order.ForwardOrdering()) - 1
 
-function weightedindex_parts(fs::F, deg::Degree, knotvec::AbstractVector, x) where F
+function weightedindex_parts(fs::F, mode::Gridded, knotvec::AbstractVector, x) where F
     i = find_knot_index(knotvec, x)
     ax1 = axes1(knotvec)
     iclamp = clamp(i, first(ax1), last(ax1)-1)
-    weightedindex(fs, deg, knotvec, x, iclamp)
+    weightedindex(fs, degree(mode), knotvec, x, iclamp)
 end
 
 function weightedindex(fs::F, deg::Constant, knotvec, x, iclamp) where F
