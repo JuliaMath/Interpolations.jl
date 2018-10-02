@@ -214,6 +214,18 @@ NoInterp
 whereby the coordinate of the selected input vector MUST be located on a grid point. Requests for off grid
 coordinates results in the throwing of an error.
 
+`missing` data will naturally propagate through the interpolation,
+where some values will become missing. To avoid that, one can
+filter out the missing data points and use a gridded interpolation.
+For example:
+```julia
+x = 1:6
+A = [i == 3 ? missing : i for i in x]
+xf = [xi for (xi,a) in zip(x, A) if !ismissing(a)]
+Af = [a for a in A if !ismissing(a)]
+itp = interpolate((xf, ), Af, Gridded(Linear()))
+```
+
 ## Parametric splines
 
 Given a set a knots with coordinates `x(t)` and `y(t)`, a parametric spline `S(t) = (x(t),y(t))` parametrized by `t in [0,1]` can be constructed with the following code adapted from a [post](http://julia-programming-language.2336112.n4.nabble.com/Parametric-splines-td37794.html#a37818) by Tomas Lycken:
