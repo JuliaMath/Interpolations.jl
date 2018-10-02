@@ -38,6 +38,15 @@ using Interpolations
                     end
                 end
             end
+            extFlatItp = extrapolate(itp, Flat())
+            @test extFlatItp(x[1]-1) ≈ itp(x[1])
+            @test extFlatItp(x[end]+1) ≈ itp(x[end])
+            extThrowItp = extrapolate(itp, Throw())
+            @test_throws BoundsError extThrowItp(x[1]-1)
+            @test_throws BoundsError extThrowItp(x[end]+1)
+            extLineItp = extrapolate(itp, Line())
+            @test extLineItp(x[1]-1) ≈ itp(x[1]) - Interpolations.gradient1(itp, x[1])
+            @test extLineItp(x[end]+1) ≈ itp(x[end]) + Interpolations.gradient1(itp, x[end])
         end
     end
 
