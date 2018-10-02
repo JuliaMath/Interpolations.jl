@@ -47,6 +47,12 @@ using Interpolations
             extLineItp = extrapolate(itp, Line())
             @test extLineItp(x[1]-1) ≈ itp(x[1]) - Interpolations.gradient1(itp, x[1])
             @test extLineItp(x[end]+1) ≈ itp(x[end]) + Interpolations.gradient1(itp, x[end])
+            extReflectItp = extrapolate(itp, Reflect())
+            @test extReflectItp(x[1]-0.1) ≈ itp(x[1]+0.1)
+            @test extReflectItp(x[end]+0.1) ≈ itp(x[end]-0.1)
+            extPeriodicItp = extrapolate(itp, Periodic())
+            @test extPeriodicItp(x[1]-0.1) ≈ itp(x[end]-0.1)
+            @test extPeriodicItp(x[end]+0.1) ≈ itp(x[1]+0.1)
         end
     end
 
