@@ -214,8 +214,10 @@ NoInterp
 whereby the coordinate of the selected input vector MUST be located on a grid point. Requests for off grid
 coordinates results in the throwing of an error.
 
-For data that includes `missing` data filter out the missing data points
-and use a gridded interpolation. For example:
+`missing` data will naturally propagate through the interpolation,
+where some values will become missing. To avoid that, one can
+filter out the missing data points and use a gridded interpolation.
+For example:
 ```julia
 x = 1:6
 A = [i == 3 ? missing : i for i in x]
