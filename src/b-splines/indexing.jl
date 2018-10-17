@@ -50,9 +50,14 @@ end
 
 
 @inline function weightedindexes(fs::F, itpflags::NTuple{N,Flag}, knots::NTuple{N,AbstractVector}, xs::NTuple{N,Number}) where {F,N}
-    parts = map((flag, knotvec, x)->weightedindex_parts(fs, flag, knotvec, x), itpflags, knots, xs)
+    # parts = map((flag, knotvec, x)->weightedindex_parts(fs, flag, knotvec, x), itpflags, knots, xs)
+    parts = map3argf(weightedindex_parts, fs, itpflags, knots, xs)
     weightedindexes(parts...)
 end
+# This is a force-inlined version of map((flag, knotvec, x)->g(fs, flag, knotvec, x), itpflags, knots, xs)
+@inline map3argf(g::G, fs::F, itpflags, knots, xs) where {G,F} =
+    (g(fs, itpflags[1], knots[1], xs[1]), map3argf(g, fs, Base.tail(itpflags), Base.tail(knots), Base.tail(xs))...)
+map3argf(g::G, fs::F, ::Tuple{}, ::Tuple{}, ::Tuple{}) where {G,F} = ()
 
 weightedindexes(i::Vararg{Int,N}) where N = i  # the all-NoInterp case
 

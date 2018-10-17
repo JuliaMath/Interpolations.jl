@@ -32,9 +32,9 @@ function gridded_floorbounds(x, knotvec::AbstractVector)
     max(i, first(axes1(knotvec)))
 end
 
-@inline find_knot_index(knotv, x) = searchsortedfirst(knotv, x, first(axes1(knotv)), length(knotv), Base.Order.ForwardOrdering()) - 1
+@inline find_knot_index(knotv, x) = searchsortedfirst(knotv, x, Base.Order.ForwardOrdering()) - 1
 
-function weightedindex_parts(fs::F, mode::Gridded, knotvec::AbstractVector, x) where F
+@inline function weightedindex_parts(fs::F, mode::Gridded, knotvec::AbstractVector, x) where F
     i = find_knot_index(knotvec, x)
     ax1 = axes1(knotvec)
     iclamp = clamp(i, first(ax1), last(ax1)-1)
