@@ -1,4 +1,4 @@
-using Test, Interpolations, DualNumbers
+using Test, Interpolations, DualNumbers, Unitful
 
 @testset "ExtrapTypeStability" begin
 
@@ -59,4 +59,14 @@ using Test, Interpolations, DualNumbers
               typeof(@inferred(etp(dual(6.5,1), dual(3.5,1))))
     end
 
+    # issue #258
+    t = [2017, 2018]
+    u = u"V"
+    y = [1.f0, 2.f0] .* u
+    how = Interpolations.Gridded(Interpolations.Linear())
+    itp = interpolate((t,), y, Gridded(Linear()))
+    etp = extrapolate(itp, 1.f0 * u)
+    @test @inferred(itp(2018)) === 2.0f0 * u
+    @test @inferred(etp(2018)) === 2.0f0 * u
+    @test @inferred(etp(2019)) === 1.0f0 * u
 end

@@ -10,6 +10,7 @@ end
 Base.parent(A::ScaledInterpolation) = A.itp
 count_interp_dims(::Type{<:ScaledInterpolation{T,N,ITPT}}, n) where {T,N,ITPT} = count_interp_dims(ITPT, n)
 BoundsCheckStyle(sitp::ScaledInterpolation) = BoundsCheckStyle(sitp.itp)
+coefficients(A::ScaledInterpolation) = coefficients(A.itp)
 
 """
 `scale(itp, xs, ys, ...)` scales an existing interpolation object to allow for indexing using other coordinate axes than unit ranges, by wrapping the interpolation object and transforming the indices from the provided axes onto unit ranges upon indexing.
