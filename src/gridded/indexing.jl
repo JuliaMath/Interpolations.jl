@@ -47,7 +47,7 @@ function weightedindex(fs::F, deg::Constant, knotvec, x, iclamp) where F
 end
 function weightedindex(fs::F, deg::Degree, knotvec, x, iclamp) where F
     @inbounds l, u = knotvec[iclamp], knotvec[iclamp+1]
-    δx = (x - l)/(u - l)
+    δx = ratio(x - l, u - l)
     (position=iclamp, coefs=rescale_gridded(fs, fmap(fs, deg, δx), u-l))
 end
 
