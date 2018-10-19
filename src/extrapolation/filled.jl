@@ -24,7 +24,8 @@ extrapolate(itp::AbstractInterpolation{T,N,IT}, fillvalue) where {T,N,IT} = Fill
 
 @inline function (etp::FilledExtrapolation{T,N})(x::Vararg{Number,N}) where {T,N}
     itp = parent(etp)
-    Tret = typeof(prod(x) * zero(T))
+    coefs = coefficients(itp)
+    Tret = typeof(prod(x) * zero(eltype(coefs)))
     if checkbounds(Bool, itp, x...)
         @inbounds itp(x...)
     else

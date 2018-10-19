@@ -123,6 +123,7 @@ size(A::MonotonicInterpolation) = size(A.knots)
 axes(A::MonotonicInterpolation) = axes(A.knots)
 
 itpflag(A::MonotonicInterpolation) = A.it
+coefficients(A::MonotonicInterpolation) = A.A
 
 function MonotonicInterpolation(::Type{TWeights}, it::TInterpolationType, knots::TKnots, A::AbstractArray{TEl,1},
     m::Vector{TCoeffs}, c::Vector{TCoeffs}, d::Vector{TCoeffs}) where {TWeights, TCoeffs, TEl, TInterpolationType<:MonotonicInterpolationType, TKnots<:AbstractVector{<:Number}}
