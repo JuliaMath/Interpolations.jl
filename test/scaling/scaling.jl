@@ -15,6 +15,8 @@ using Test, LinearAlgebra
         @test sitp(x) ≈ y
     end
 
+    @test_throws ArgumentError scale(itp, reverse(-3:.5:1.5))
+
     # Verify that it works in >1D, with different types of ranges
 
     gauss(phi, mu, sigma) = exp(-(phi-mu)^2 / (2sigma)^2)
