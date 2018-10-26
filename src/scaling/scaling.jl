@@ -26,12 +26,14 @@ end
 
 function check_ranges(flags, axs, ranges)
     check_range(getfirst(flags), axs[1], ranges[1])
+    check_range(ranges[1])
     check_ranges(getrest(flags), Base.tail(axs), Base.tail(ranges))
 end
 check_ranges(::Any, ::Tuple{}, ::Tuple{}) = nothing
 
 check_range(::NoInterp, ax, r) = ax == r || throw(ArgumentError("The range $r did not equal the corresponding axis of the interpolation object $ax"))
 check_range(::Any, ax, r) = length(ax) == length(r) || throw(ArgumentError("The range $r is incommensurate with the corresponding axis $ax"))
+check_range(r::AbstractRange) = step(r) > zero(eltype(r)) || throw(ArgumentError("The range $r is in decreasing order; only ranges with positive steps are supported by scale()."))
 
 # With regards to size and [], ScaledInterpolation behaves like the underlying interpolation object
 size(sitp::ScaledInterpolation) = size(sitp.itp)
