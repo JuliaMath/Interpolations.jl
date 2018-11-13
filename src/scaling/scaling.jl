@@ -139,10 +139,10 @@ Base.IteratorSize(::Type{ScaledIterator{SITPT,CI,WIS}}) where {SITPT,CI<:Cartesi
 Base.axes(iter::ScaledIterator) = axes(iter.ci)
 Base.size(iter::ScaledIterator) = size(iter.ci)
 
-struct ScaledIterState{N,V}
+struct ScaledIterState{N,V,D}
     cistate::CartesianIndex{N}
     ibreak::Int
-    cached_evaluations::NTuple{N,V}
+    cached_evaluations::NTuple{D,V}
 end
 
 function eachvalue(sitp::ScaledInterpolation{T,N}) where {T,N}
@@ -198,7 +198,7 @@ function Base.iterate(iter::ScaledIterator, state)
 end
 
 _reduce(op, list) = op(list[1], _reduce(op, Base.tail(list)))
-_reduce(op, list::Tuple{Number}) = list[1]
+_reduce(op, list::Tuple{Any}) = list[1]
 _reduce(op, list::Tuple{}) = error("cannot reduce an empty list")
 
 # We use weights only as a ruler to determine when we are done
