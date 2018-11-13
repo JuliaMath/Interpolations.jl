@@ -78,3 +78,9 @@ using Test, LinearAlgebra
     bar!(rbar, sitp)
     @test rfoo ≈ rbar
 end
+
+@testset "eachvalue iteration" begin
+    A = reshape(reinterpret(SVector{2,Float64}, collect(1.:12.)), 3, 2)
+    sitp = scale(interpolate(A, BSpline(Cubic(Line(OnGrid())))), 1:3, 1:2)
+    @test first(eachvalue(sitp)) ≈ @SVector [1.,2.]
+end
