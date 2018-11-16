@@ -46,8 +46,8 @@ using Test, LinearAlgebra
 
     # Test Hessians of scaled grids
     xs = -pi:.1:pi
-    ys = -pi:.1:pi
-    zs = sin.(xs') .* sin.(ys)
+    ys = -pi:.2:pi
+    zs = sin.(xs) .* sin.(ys')
     itp = interpolate(zs, BSpline(Cubic(Line(OnGrid()))))
     sitp = @inferred scale(itp, xs, ys)
     hitp = (x,y) -> Interpolations.hessian(sitp, x, y)
