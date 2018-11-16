@@ -20,6 +20,35 @@ using Interpolations, Test, LinearAlgebra, Random
 
     @test length(Interpolations.gradient(sitp, pi/3, 2)) == 1
 
+    xs = range(-pi, stop=pi, length=60)
+    A = hcat(map(f1, xs), map(f2, xs), map(f3, xs))
+    itp = interpolate(A, (BSpline(Cubic(Periodic(OnGrid()))), NoInterp()))
+    sitp = scale(itp, xs, ys)
+    h(x, y) = Interpolations.hessian(sitp, x, y)
+    h(xs[10], 1)
+    for x in xs[6:end-6], y in ys
+        if y in (1,2)
+            @test ≈(h(x,y)[1], -f(x,y), atol=0.05)
+        elseif y==3
+            @test ≈(h(x,y)[1], -4*f(x,y), atol=0.05)
+        end
+    end
+
+    @test length(Interpolations.hessian(sitp, pi/3, 2)) == 1
+
+    A = hcat(map(f1, xs), map(f2, xs), map(f3, xs))
+    itp = interpolate(A', (NoInterp(), BSpline(Cubic(Periodic(OnGrid())))))
+    sitp = scale(itp, ys, xs)
+    h(y, x) = Interpolations.hessian(sitp, y, x)
+    h(1, xs[10])
+    for x in xs[6:end-6], y in ys
+        if y in (1,2)
+            @test ≈(h(y,x)[1], -f(x,y), atol=0.05)
+        elseif y==3
+            @test ≈(h(y,x)[1], -4*f(x,y), atol=0.05)
+        end
+    end
+
     # check for case where initial/middle indices are NoInterp but later ones are <:BSpline
     isdefined(Random, :seed!) ? Random.seed!(1234) : srand(1234) # `srand` was renamed to `seed!`
     z0 = rand(10,10)
@@ -33,5 +62,6 @@ using Interpolations, Test, LinearAlgebra, Random
     sitpa = scale(itpa, rng, 1:10)
     sitpb = scale(itpb, 1:10, rng)
     @test Interpolations.gradient(sitpa, 3.0, 3) ==  Interpolations.gradient(sitpb, 3, 3.0)
+
 
 end

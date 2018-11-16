@@ -135,16 +135,18 @@ end
 
 function rescale_hessian_components(flags, ranges, h, n)
     hs = ()
-    for i=1:n
+    idx = 1
+    while idx <= n
         if getfirst(flags) isa NoInterp
             flags = getrest(flags)
             ranges = Base.tail(ranges)
         else
-            s1 = rescale_gradient_components(flags, ranges, Tuple(h[i*(n+1)-n:i*n]))
+            s1 = rescale_gradient_components(flags, ranges, Tuple(h[(idx-1)*n+idx:idx*n]))
             s2 = rescale_hessian(ranges[1], s1)
             hs = (hs..., s2...)
             flags = getrest(flags)
             ranges = Base.tail(ranges)
+            idx += 1
         end
     end
     return hs
