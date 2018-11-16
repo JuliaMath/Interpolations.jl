@@ -53,8 +53,8 @@ using Test, LinearAlgebra
     hitp = (x,y) -> Interpolations.hessian(sitp, x, y)
 
     for x in xs[2:end-1], y in ys[2:end-1]
-        # h = @inferred(Interpolations.hessian(sitp, x, y))[1]
-        h = Interpolations.hessian(sitp, x, y)
+        h = @inferred(Interpolations.hessian(sitp, x, y))
+        @test issymmetric(h)
         @test ≈([-sin(x) * sin(y) cos(x) * cos(y); cos(x) * cos(y) -sin(x) * sin(y)], h, atol=0.03)
     end
 

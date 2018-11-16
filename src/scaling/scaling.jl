@@ -130,31 +130,23 @@ Implements the chain rule dy/dx = dy/du * du/dx for use when calculating gradien
     @boundscheck (checkbounds(Bool, sitp, xs...) || Base.throw_boundserror(sitp, xs))
     xl = maybe_clamp(sitp.itp, coordslookup(itpflag(sitp.itp), sitp.ranges, xs))
     h = hessian(sitp.itp, xl...)
-    return symmatrix(rescale_hessian_components(itpflag(sitp.itp), sitp.ranges, Tuple(h), size(h, 1)))
+    return rescale_hessian_components(itpflag(sitp.itp), sitp.ranges, h)
 end
 
-function rescale_hessian_components(flags, ranges, h, n)
-    hs = ()
-    idx = 1
-    while idx <= n
-        if getfirst(flags) isa NoInterp
-            flags = getrest(flags)
-            ranges = Base.tail(ranges)
-        else
-            s1 = rescale_gradient_components(flags, ranges, Tuple(h[(idx-1)*n+idx:idx*n]))
-            s2 = rescale_hessian(ranges[1], s1)
-            hs = (hs..., s2...)
-            flags = getrest(flags)
-            ranges = Base.tail(ranges)
-            idx += 1
-        end
+function rescale_hessian_components(flags, ranges, h)
+    steps = SVector(get_steps(flags, ranges))
+    return h ./ (steps .* steps')
+end
+
+function get_steps(flags, ranges)
+    if getfirst(flags) isa NoInterp
+        return get_steps(getrest(flags), Base.tail(ranges))
+    else
+        item = step(ranges[1])
+        return (item, get_steps(getrest(flags), Base.tail(ranges))...)
     end
-    return hs
 end
-
-rescale_hessian(r::StepRangeLen, h) = h ./ step(r)
-rescale_hessian(r::StepRange, h) = h ./ r.step
-rescale_hessian(r::UnitRange, h) = h
+get_steps(flags, ::Tuple{}) = ()
 
 ### Iteration
 
