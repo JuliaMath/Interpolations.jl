@@ -44,6 +44,20 @@ using Test, LinearAlgebra
         @test ≈(cos(x),g,atol=0.05)
     end
 
+    # Test Hessians of scaled grids
+    xs = -pi:.1:pi
+    ys = -pi:.1:pi
+    zs = sin.(xs') .* sin.(ys)
+    itp = interpolate(zs, BSpline(Cubic(Line(OnGrid()))))
+    sitp = @inferred scale(itp, xs, ys)
+    hitp = (x,y) -> Interpolations.hessian(sitp, x, y)
+
+    for x in xs[2:end-1], y in ys[2:end-1]
+        # h = @inferred(Interpolations.hessian(sitp, x, y))[1]
+        h = Interpolations.hessian(sitp, x, y)
+        @test ≈([-sin(x) * sin(y) cos(x) * cos(y); cos(x) * cos(y) -sin(x) * sin(y)], h, atol=0.03)
+    end
+
     # Verify that return types are reasonable
     @inferred(sitp2(-3.4, 1.2))
     @inferred(sitp2(-3, 1))

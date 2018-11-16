@@ -126,6 +126,34 @@ rescale_gradient(r::UnitRange, g) = g
 Implements the chain rule dy/dx = dy/du * du/dx for use when calculating gradients with scaled interpolation objects.
 """ rescale_gradient
 
+@propagate_inbounds function hessian(sitp::ScaledInterpolation{T,N}, xs::Vararg{Number,N}) where {T,N}
+    @boundscheck (checkbounds(Bool, sitp, xs...) || Base.throw_boundserror(sitp, xs))
+    xl = maybe_clamp(sitp.itp, coordslookup(itpflag(sitp.itp), sitp.ranges, xs))
+    h = hessian(sitp.itp, xl...)
+    return symmatrix(rescale_hessian_components(itpflag(sitp.itp), sitp.ranges, Tuple(h), size(h, 1)))
+end
+
+function rescale_hessian_components(flags, ranges, h, n)
+    hs = ()
+    for i=1:n
+        if getfirst(flags) isa NoInterp
+            flags = getrest(flags)
+            ranges = Base.tail(ranges)
+        else
+            s1 = rescale_gradient_components(flags, ranges, Tuple(h[i*(n+1)-n:i*n]))
+            s2 = rescale_hessian(ranges[1], s1)
+            hs = (hs..., s2...)
+            flags = getrest(flags)
+            ranges = Base.tail(ranges)
+        end
+    end
+    return hs
+end
+
+rescale_hessian(r::StepRangeLen, h) = h ./ step(r)
+rescale_hessian(r::StepRange, h) = h ./ r.step
+rescale_hessian(r::UnitRange, h) = h
+
 ### Iteration
 
 struct ScaledIterator{SITPT,CI,WIS}
