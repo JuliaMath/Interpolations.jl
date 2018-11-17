@@ -1,5 +1,5 @@
 using Interpolations
-using Test, LinearAlgebra
+using Test, LinearAlgebra, StaticArrays
 
 @testset "Scaling" begin
     # Model linear interpolation of y = -3 + .5x by interpolating y=x
@@ -50,7 +50,6 @@ using Test, LinearAlgebra
     zs = sin.(xs) .* sin.(ys')
     itp = interpolate(zs, BSpline(Cubic(Line(OnGrid()))))
     sitp = @inferred scale(itp, xs, ys)
-    hitp = (x,y) -> Interpolations.hessian(sitp, x, y)
 
     for x in xs[2:end-1], y in ys[2:end-1]
         h = @inferred(Interpolations.hessian(sitp, x, y))

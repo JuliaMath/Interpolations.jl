@@ -24,13 +24,16 @@ using Interpolations, Test, LinearAlgebra, Random
     A = hcat(map(f1, xs), map(f2, xs), map(f3, xs))
     itp = interpolate(A, (BSpline(Cubic(Periodic(OnGrid()))), NoInterp()))
     sitp = scale(itp, xs, ys)
-    h(x, y) = Interpolations.hessian(sitp, x, y)
-    h(xs[10], 1)
-    for x in xs[6:end-6], y in ys
+
+    for x in (xs[6:end-5] .+ 0.05), y in ys
         if y in (1,2)
-            @test ≈(h(x,y)[1], -f(x,y), atol=0.05)
-        elseif y==3
-            @test ≈(h(x,y)[1], -4*f(x,y), atol=0.05)
+            @test_broken h = @inferred(Interpolations.hessian(sitp, x, y))
+            h = Interpolations.hessian(sitp, x, y)
+            @test ≈(h[1], -f(x,y), atol=0.05)
+        else # y==3
+            @test_broken h = @inferred(Interpolations.hessian(sitp, x, y))
+            h = Interpolations.hessian(sitp, x, y)
+            @test ≈(h[1], -4*f(x,y), atol=0.05)
         end
     end
 

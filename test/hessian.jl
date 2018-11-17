@@ -41,6 +41,7 @@ using Test, Interpolations, LinearAlgebra, ForwardDiff
     itp = interpolate(A2, (BSpline(Quadratic(Flat(OnCell()))), NoInterp()))
     v = A2[:, 2]
     itpcol = interpolate(v, BSpline(Quadratic(Flat(OnCell()))))
+    @inferred(Interpolations.hessian(itp, 3.2, 2))
     @test Interpolations.hessian(itp, 3.2, 2) == Interpolations.hessian(itpcol, 3.2)
 
 
