@@ -67,6 +67,25 @@ end
     end
 end
 
+@inline function hessian(etp::AbstractExtrapolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    itp = parent(etp)
+    if checkbounds(Bool, itp, x...)
+        hessian(itp, x...)
+    else
+        error("extrapolation of hessian not yet implemented")
+        # # copied from gradient above, with obvious modifications
+        # # but final part is missing
+        # eflag = tcollect(etpflag, etp)
+        # xs = inbounds_position(eflag, bounds(itp), x, etp, x)
+        # h = @inbounds hessian(itp, xs...)
+        # skipni = t->skip_flagged_nointerp(itp, t)
+        # # not sure if it should be just h here instead of Tuple(h)
+        # # extrapolate_hessian needs to be written
+        # # SVector is likely also wrong here
+        # SVector(extrapolate_hessian.(skipni(eflag), skipni(x), skipni(xs), Tuple(h)))
+    end
+end
+
 checkbounds(::Bool, ::AbstractExtrapolation, I...) = true
 
 # The last two arguments are just for error-reporting
