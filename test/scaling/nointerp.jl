@@ -4,7 +4,7 @@ using Interpolations, Test, LinearAlgebra, Random
     xs = -pi:2pi/10:pi
     f1(x) = sin(x)
     f2(x) = cos(x)
-    f3(x) = sin(x) .* cos(x)
+    f3(x) = sin(x) * cos(x)
     f(x,y) = y == 1 ? f1(x) : (y == 2 ? f2(x) : (y == 3 ? f3(x) : error("invalid value for y (must be 1, 2 or 3, you used $y)")))
     ys = 1:3
 
@@ -15,7 +15,7 @@ using Interpolations, Test, LinearAlgebra, Random
 
     for (ix,x0) in enumerate(xs[1:end-1]), y0 in ys
         x,y = x0, y0
-        @test ≈(sitp(x,y),f(x,y),atol=0.05)
+        @test sitp(x,y) ≈ f(x,y) atol=0.05
     end
 
     @test length(Interpolations.gradient(sitp, pi/3, 2)) == 1
@@ -29,11 +29,11 @@ using Interpolations, Test, LinearAlgebra, Random
         if y in (1,2)
             @test_broken h = @inferred(Interpolations.hessian(sitp, x, y))
             h = Interpolations.hessian(sitp, x, y)
-            @test ≈(h[1], -f(x,y), atol=0.05)
+            @test h[1] ≈ -f(x, y) atol=0.05
         else # y==3
             @test_broken h = @inferred(Interpolations.hessian(sitp, x, y))
             h = Interpolations.hessian(sitp, x, y)
-            @test ≈(h[1], -4*f(x,y), atol=0.05)
+            @test h[1] ≈ -4*f(x, y) atol=0.05
         end
     end
 
@@ -46,9 +46,9 @@ using Interpolations, Test, LinearAlgebra, Random
     h(1, xs[10])
     for x in xs[6:end-6], y in ys
         if y in (1,2)
-            @test ≈(h(y,x)[1], -f(x,y), atol=0.05)
+            @test h(y, x)[1] ≈ -f(x, y) atol=0.05
         elseif y==3
-            @test ≈(h(y,x)[1], -4*f(x,y), atol=0.05)
+            @test h(y, x)[1] ≈ -4*f(x, y) atol=0.05
         end
     end
 
