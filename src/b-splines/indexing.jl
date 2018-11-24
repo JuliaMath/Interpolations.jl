@@ -125,11 +125,12 @@ end
 slot_substitute(kind1::Tuple{Int,Vararg{Any}}, kind2, p, v, g, h) = slot_substitute(Base.tail(kind1), kind2, p, v, g, h)
 # Substitute the dth dimension's gradient coefs for the remaining coefs
 function slot_substitute(kind1::K, kind2::K, p, v, g, h) where K
-    (maybe_weightedindex.(p, substitute_ruled(v, kind1, h)), slot_substitute(Base.tail(kind1), kind2, p, v, g, h)...)
+    ss = substitute_ruled(v, kind1, h)
+    (map(maybe_weightedindex, p, ss), slot_substitute(Base.tail(kind1), kind2, p, v, g, h)...)
 end
 function slot_substitute(kind1, kind2, p, v, g, h)
     ss = substitute_ruled(substitute_ruled(v, kind1, g), kind2, g)
-    (maybe_weightedindex.(p, ss), slot_substitute(Base.tail(kind1), kind2, p, v, g, h)...)
+    (map(maybe_weightedindex, p, ss), slot_substitute(Base.tail(kind1), kind2, p, v, g, h)...)
 end
 # Termination
 slot_substitute(kind1::Tuple{}, kind2::Tuple{Int,Vararg{Any}}, p, v, g, h) = _slot_substitute(kind1::Tuple{}, kind2, p, v, g, h)
