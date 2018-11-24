@@ -15,13 +15,11 @@ using Test, Interpolations, LinearAlgebra, ForwardDiff
             if ndims(A) == 1
                 # Hessian of Constant and Linear should always be 0 in 1d
                 for x in InterpolationTestUtils.thirds(axes(A))
-                    @test all(iszero, Interpolations.hessian(itp, x...))
-                    @test all(iszero, Interpolations.hessian!(h, itp, x...))
+                    @test all(iszero, @inferred(Interpolations.hessian(itp, x...)))
+                    @test all(iszero, @inferred(Interpolations.hessian!(h, itp, x...)))
                 end
             else
-                for x in InterpolationTestUtils.thirds(axes(A))
-                    check_hessian(itp, h)
-                end
+                check_hessian(itp, h)
             end
         end
 
@@ -41,9 +39,11 @@ using Test, Interpolations, LinearAlgebra, ForwardDiff
     itp = interpolate(A2, (BSpline(Quadratic(Flat(OnCell()))), NoInterp()))
     v = A2[:, 2]
     itpcol = interpolate(v, BSpline(Quadratic(Flat(OnCell()))))
-    @inferred(Interpolations.hessian(itp, 3.2, 2))
-    @test Interpolations.hessian(itp, 3.2, 2) == Interpolations.hessian(itpcol, 3.2)
+    @test @inferred(Interpolations.hessian(itp, 3.2, 2)) == @inferred(Interpolations.hessian(itpcol, 3.2))
 
+    itp = interpolate(A2, (BSpline(Quadratic(Periodic(OnGrid()))), NoInterp()))
+    itpcol = interpolate(v, BSpline(Quadratic(Periodic(OnGrid()))))
+    @test @inferred(Interpolations.hessian(itp, 1.0, 2)) == @inferred(Interpolations.hessian(itpcol, 1.0))
 
     @testset "Monotonic" begin
         x = [0.0, 0.2, 0.5, 0.6, 0.9, 1.0]
