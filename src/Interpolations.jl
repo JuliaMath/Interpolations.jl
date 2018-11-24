@@ -212,12 +212,20 @@ WeightedIndex(indexes::NTuple{L,Integer}, weights::NTuple{L,Any}) where L =
 weights(wi::WeightedIndex) = wi.weights
 indexes(wi::WeightedAdjIndex) = wi.istart
 indexes(wi::WeightedArbIndex) = wi.indexes
+indextuple(wi::WeightedAdjIndex{L}) where L = ntuple(i->wi.istart+i-1, Val(L))
+indextuple(wi::WeightedArbIndex{L}) where L = indexes(wi)
 
 # Make them iterable just like numbers are
 Base.iterate(x::WeightedIndex) = (x, nothing)
 Base.iterate(x::WeightedIndex, ::Any) = nothing
 Base.isempty(x::WeightedIndex) = false
 Base.length(x::WeightedIndex) = 1
+
+# Supporting arithmetic on the weights allows one to perform pre-scaling of gradient coefficients
+Base.:(*)(wi::WeightedAdjIndex, x::Number) = WeightedAdjIndex(wi.istart, wi.weights .* x)
+Base.:(/)(wi::WeightedAdjIndex, x::Number) = WeightedAdjIndex(wi.istart, wi.weights ./ x)
+Base.:(*)(wi::WeightedArbIndex, x::Number) = WeightedArbIndex(wi.indexes, wi.weights .* x)
+Base.:(/)(wi::WeightedArbIndex, x::Number) = WeightedArbIndex(wi.indexes, wi.weights ./ x)
 
 ### Indexing with WeightedIndex
 
