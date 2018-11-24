@@ -1,5 +1,5 @@
 using Interpolations
-using Test, LinearAlgebra
+using Test, LinearAlgebra, StaticArrays
 
 @testset "Scaling" begin
     # Model linear interpolation of y = -3 + .5x by interpolating y=x
@@ -41,7 +41,21 @@ using Test, LinearAlgebra
 
     for x in -pi:.1:pi
         g = @inferred(Interpolations.gradient(sitp, x))[1]
-        @test ≈(cos(x),g,atol=0.05)
+        @test cos(x) ≈ g atol=0.05
+    end
+
+    # Test Hessians of scaled grids
+    xs = -pi:.1:pi
+    ys = -pi:.2:pi
+    zs = sin.(xs) .* sin.(ys')
+    itp = interpolate(zs, BSpline(Cubic(Line(OnGrid()))))
+    sitp = @inferred scale(itp, xs, ys)
+
+    for x in xs[2:end-1], y in ys[2:end-1]
+        h = @inferred(Interpolations.hessian(sitp, x, y))
+        @test issymmetric(h)
+        @test [-sin(x) * sin(y) cos(x) * cos(y)
+                cos(x) * cos(y) -sin(x) * sin(y)] ≈ h atol=0.03
     end
 
     # Verify that return types are reasonable
