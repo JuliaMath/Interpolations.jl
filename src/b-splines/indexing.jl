@@ -63,7 +63,8 @@ weightedindexes(i::Vararg{Int,N}) where N = i  # the all-NoInterp case
 
 const PositionCoefs{P,C} = NamedTuple{(:position,:coefs),Tuple{P,C}}
 const ValueParts{P,W} = PositionCoefs{P,Tuple{W}}
-@inline weightedindexes(parts::Vararg{Union{Int,ValueParts},N}) where N = maybe_weightedindex.(positions.(parts), valuecoefs.(parts))
+@inline weightedindexes(parts::Vararg{Union{Int,ValueParts},N}) where N =
+    map(maybe_weightedindex, map(positions, parts), map(valuecoefs, parts))
 maybe_weightedindex(i::Integer, _::Integer) = Int(i)
 maybe_weightedindex(pos, coefs::Tuple) = WeightedIndex(pos, coefs)
 
@@ -86,13 +87,13 @@ function weightedindexes(parts::Vararg{Union{Int,GradParts},N}) where N
     #       i2 is the integer index along dimension 2
     # These will result in a 2-vector gradient.
     # TODO: check whether this is inferrable
-    slot_substitute(parts, positions.(parts), valuecoefs.(parts), gradcoefs.(parts))
+    slot_substitute(parts, map(positions, parts), map(valuecoefs, parts), map(gradcoefs, parts))
 end
 
 # Skip over NoInterp dimensions
 slot_substitute(kind::Tuple{Int,Vararg{Any}}, p, v, g) = slot_substitute(Base.tail(kind), p, v, g)
 # Substitute the dth dimension's gradient coefs for the remaining coefs
-slot_substitute(kind, p, v, g) = (maybe_weightedindex.(p, substitute_ruled(v, kind, g)), slot_substitute(Base.tail(kind), p, v, g)...)
+slot_substitute(kind, p, v, g) = (map(maybe_weightedindex, p, substitute_ruled(v, kind, g)), slot_substitute(Base.tail(kind), p, v, g)...)
 # Termination
 slot_substitute(kind::Tuple{}, p, v, g) = ()
 
@@ -109,7 +110,7 @@ function weightedindexes(parts::Vararg{Union{Int,HessParts},N}) where N
     #    hc1 = coefs[hwi1, i2, wi3]
     #    hc2 = coefs[gwi1, i2, gwi3]
     #    hc3 = coefs[wi1,  i2, hwi3]
-    slot_substitute(parts, parts, positions.(parts), valuecoefs.(parts), gradcoefs.(parts), hesscoefs.(parts))
+    slot_substitute(parts, parts, map(positions, parts), map(valuecoefs, parts), map(gradcoefs, parts), map(hesscoefs, parts))
 end
 
 # Skip over NoInterp dimensions
