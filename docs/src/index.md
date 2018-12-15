@@ -29,9 +29,22 @@ pull request here.
 
 
 
-## Functions
+## Public API
+```@meta
+DocTestSetup= quote
+using Interpolations
+end
+```
+
 ```@autodocs
 Modules = [Interpolations]
-Order= [:function]
-Pages = [extrapolation.jl, filled.jl]
+Private = false
+Order = [:function, :type]
+```
+
+## Internal API
+```@autodocs
+Modules = [Interpolations]
+Public = false
+Order = [:function, :type]
 ```
