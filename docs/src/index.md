@@ -26,25 +26,13 @@ Some of these packages support methods that `Interpolations` does not,
 so if you can't find what you need here, check one of them or submit a
 pull request here.
 
+## Installation
 
+Just
 
-
-## Public API
-```@meta
-DocTestSetup= quote
-using Interpolations
-end
+```
+using Pkg
+Pkg.add("Interpolations")
 ```
 
-```@autodocs
-Modules = [Interpolations]
-Private = false
-Order = [:function, :type]
-```
-
-## Internal API
-```@autodocs
-Modules = [Interpolations]
-Public = false
-Order = [:function, :type]
-```
+from the Julia REPL.
