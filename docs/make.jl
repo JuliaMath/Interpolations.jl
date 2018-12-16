@@ -9,3 +9,5 @@ pages=["Home" => "index.md",
         "Convenience Construcors" => "convenience-construction.md",
         "Library" => "api.md"]
 )
+
+deploydocs(repo="github.com/felixcremer/Interpolations.jl")
