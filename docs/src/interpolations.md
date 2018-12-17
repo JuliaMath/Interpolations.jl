@@ -62,4 +62,4 @@ Finally, courtesy of Julia's indexing rules, you can also use
 fine = itp(range(1,stop=10,length=1001), range(1,stop=15,length=201))
 ```
 
-There is also an abbreviated notion [described below](convenience-notation.md).
+There is also an abbreviated [Convenience notation](@ref).

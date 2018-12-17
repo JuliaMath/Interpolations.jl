@@ -2,6 +2,7 @@ using Documenter, Interpolations
 makedocs(
 sitename="Interpolations.jl",
 modules=[Interpolations],
+format=Documenter.HTML(prettyurls = get(ENV, "CI", nothing)=="true"),
 pages=["Home" => "index.md",
         "General usage" => "interpolations.md",
         "Interpolation algorithms" => "control.md",
@@ -10,4 +11,4 @@ pages=["Home" => "index.md",
         "Library" => "api.md"]
 )
 
-deploydocs(repo="github.com/felixcremer/Interpolations.jl")
+deploydocs(repo="github.com/JuliaMath/Interpolations.jl")
