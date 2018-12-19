@@ -72,7 +72,4 @@
     # Can construct from coefficients
     itp = interpolate(rand(5, 9), BSpline(Cubic(Flat(OnGrid()))))
     @test itp == Interpolations.BSplineInterpolation(itp.coefs, itp.it, itp.parentaxes)
-    @test itp == Interpolations.BSplineInterpolation(itp.coefs.parent, itp.it, itp.parentaxes)
-    itp2 = Interpolations.BSplineInterpolation(rand(7, 11), itp.it, (-2:2,-4:4))
-    @test map(r->(r.indices.start+1):(r.indices.stop-1), axes(itp2.coefs)) == itp2.parentaxes
 end

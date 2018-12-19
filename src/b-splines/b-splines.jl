@@ -66,12 +66,6 @@ function BSplineInterpolation(A::OffsetArray{Tel,N}, it::IT, axs) where {N,Tel,I
     BSplineInterpolation(tweight(A), A, it, axs)
 end
 
-function BSplineInterpolation(A::AbstractArray{Tel,N}, it::IT, axs) where {N,Tel,IT<:DimSpec{BSpline}}
-    axspad = padded_axes(axs, it)
-    OA = OffsetArray(A, axspad)
-    BSplineInterpolation(OA, it, axs)
-end
-
 iscomplete(its::Tuple) = all(iscomplete, its)
 
 coefficients(itp::BSplineInterpolation) = itp.coefs
