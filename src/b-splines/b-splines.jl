@@ -62,7 +62,7 @@ function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, it::IT,
     BSplineInterpolation{T,N,typeof(A),IT,typeof(axs)}(A, fix_axis.(axs), it)
 end
 
-function BSplineInterpolation(A::OffsetArray{Tel,N}, it::IT, axs) where {N,Tel,IT<:DimSpec{BSpline}}
+function BSplineInterpolation(A::AbstractArray{Tel,N}, it::IT, axs) where {N,Tel,IT<:DimSpec{BSpline}}
     BSplineInterpolation(tweight(A), A, it, axs)
 end
 
