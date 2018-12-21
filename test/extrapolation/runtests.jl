@@ -101,6 +101,10 @@ using Test
     itp = LinearInterpolation(xs, ys, extrapolation_bc = Flat())
     @test itp(8.3) ≈ ys[end]
 
+    # Issue #288
+    etp = extrapolate(interpolate(collect(1:12), NoInterp()) , 0)
+    @test etp(0:23) == [0:12; zeros(Int, 11)]
+
     include("type-stability.jl")
     include("non1.jl")
 end
