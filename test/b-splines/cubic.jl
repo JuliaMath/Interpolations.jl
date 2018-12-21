@@ -68,4 +68,9 @@
     itp_flat_c = interpolate(A, BSpline(Cubic(Flat(OnCell()))))
     @test Interpolations.gradient(itp_flat_c,0.5)[1] ≈ 0 atol=eps()
     @test Interpolations.gradient(itp_flat_c,ix[end] + 0.5)[1] ≈ 0 atol=eps()
+
+    # Can construct from coefficients
+    itp = interpolate(rand(5, 9), BSpline(Cubic(Flat(OnGrid()))))
+    @test itp == Interpolations.BSplineInterpolation(itp.coefs, itp.it, itp.parentaxes)
+    @test_throws ArgumentError Interpolations.BSplineInterpolation(itp.coefs, itp.it, (2:3, 2:10))
 end
