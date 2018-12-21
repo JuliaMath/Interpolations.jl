@@ -75,7 +75,7 @@ shape() = ()
 @inline keepvectors(x, rest...) = keepvectors(rest...)
 keepvectors() = ()
 
-@inline lispyprod(p, v::Vector{T}, rest...) where T = lispyprod(p*zero(T), rest...)
+@inline lispyprod(p, v::AbstractVector{T}, rest...) where T = lispyprod(p*zero(T), rest...)
 @inline lispyprod(p, x::Number, rest...) = lispyprod(p*x, rest...)
 lispyprod(p) = p
 
