@@ -63,6 +63,10 @@ function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, it::IT,
 end
 
 function BSplineInterpolation(A::AbstractArray{Tel,N}, it::IT, axs) where {N,Tel,IT<:DimSpec{BSpline}}
+    @noinline err_axes(A, it, axs) = throw(ArgumentError("parentaxes $axs are inconsistent with coefficient array axes $(axes(A)) and interpolation type $it"))
+
+    paxs = padded_axes(axs, it)
+    all(map(⊆, paxs, axes(A))) || err_axes(A, it, axs)
     BSplineInterpolation(tweight(A), A, it, axs)
 end
 

@@ -72,4 +72,5 @@
     # Can construct from coefficients
     itp = interpolate(rand(5, 9), BSpline(Cubic(Flat(OnGrid()))))
     @test itp == Interpolations.BSplineInterpolation(itp.coefs, itp.it, itp.parentaxes)
+    @test_throws ArgumentError Interpolations.BSplineInterpolation(itp.coefs, itp.it, (2:3, 2:10))
 end
