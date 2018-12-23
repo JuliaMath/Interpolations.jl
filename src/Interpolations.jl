@@ -150,11 +150,11 @@ ordinary array index to the context of interpolation.
 For an ordinary vector `a`, `a[i]` extracts the element at index `i`.
 When interpolating, one is typically interested in a range of indexes and the output is
 some weighted combination of array values at these indexes.
-For example, for linear interpolation between `i` and `i+1` we have
+For example, for linear interpolation at a location `x` between integers `i` and `i+1`, we have
 
-    ret = (1-f)*a[i] + f*a[i]
+    ret = (1-f)*a[i] + f*a[i+1]
 
-This can be represented `a[wi]`, where
+where `f = x-i` lies between 0 and 1. This can be represented as `a[wi]`, where
 
     wi = WeightedIndex(i:i+1, (1-f, f))
 
