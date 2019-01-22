@@ -115,3 +115,8 @@ getknots(X::AbstractExtrapolation) = getknots(parent(X))
 Base.show(io::IO, ::MIME{Symbol("text/plain")}, X::ScaledInterpolation)   = show_ranged(io, X, getknots(X))
 Base.show(io::IO, ::MIME{Symbol("text/plain")}, X::GriddedInterpolation)  = show_ranged(io, X, getknots(X))
 Base.show(io::IO, ::MIME{Symbol("text/plain")}, X::AbstractExtrapolation) = show_ranged(io, X, getknots(X))
+
+# these are called by show(X)
+Base.show(io::IO, X::ScaledInterpolation)   = show_ranged(io, X, getknots(X))
+Base.show(io::IO, X::GriddedInterpolation)  = show_ranged(io, X, getknots(X))
+Base.show(io::IO, X::AbstractExtrapolation) = show_ranged(io, X, getknots(X))
