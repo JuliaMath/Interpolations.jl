@@ -11,11 +11,24 @@ using Test, LinearAlgebra, StaticArrays
     @test typeof(sitp) <: Interpolations.ScaledInterpolation
     @test parent(sitp) === itp
 
-    for (x,y) in zip(-3:.05:1.5, 1:.1:10)
+    for (x,y) in zip(-3:.05:1.5, 1:.1:10,)
         @test sitp(x) ≈ y
     end
 
     @test_throws ArgumentError scale(itp, reverse(-3:.5:1.5))
+
+    # Model linear interpolation of y = -3 + .5x by interpolating y=x
+    # and then scaling to the new x range, this time using a LinRange,
+    # which should give the same values as with the StepRangeLen used previously
+
+    itp = interpolate(1:1.0:10, BSpline(Linear()))
+
+    sitp = @inferred(scale(itp, LinRange(-3,1.5,10)))
+    @test typeof(sitp) <: Interpolations.ScaledInterpolation
+
+    for (x,y) in zip(-3:.05:1.5, 1:.1:10,)
+        @test sitp(x) ≈ y
+    end
 
     # Verify that it works in >1D, with different types of ranges
 
@@ -47,6 +60,20 @@ using Test, LinearAlgebra, StaticArrays
     # Test Hessians of scaled grids
     xs = -pi:.1:pi
     ys = -pi:.2:pi
+    zs = sin.(xs) .* sin.(ys')
+    itp = interpolate(zs, BSpline(Cubic(Line(OnGrid()))))
+    sitp = @inferred scale(itp, xs, ys)
+
+    for x in xs[2:end-1], y in ys[2:end-1]
+        h = @inferred(Interpolations.hessian(sitp, x, y))
+        @test issymmetric(h)
+        @test [-sin(x) * sin(y) cos(x) * cos(y)
+                cos(x) * cos(y) -sin(x) * sin(y)] ≈ h atol=0.03
+    end
+
+    # Test Hessians of scaled grids with LinRange
+    xs = LinRange(-pi, pi, 62)
+    ys = LinRange(-pi, pi, 32)
     zs = sin.(xs) .* sin.(ys')
     itp = interpolate(zs, BSpline(Cubic(Line(OnGrid()))))
     sitp = @inferred scale(itp, xs, ys)
