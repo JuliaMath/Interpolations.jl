@@ -21,6 +21,7 @@ export
     InPlace,
     InPlaceQ,
     Throw,
+    FFT,
 
     LinearInterpolation,
     CubicSplineInterpolation
@@ -433,5 +434,6 @@ include("utils.jl")
 include("io.jl")
 include("convenience-constructors.jl")
 include("deprecations.jl")
+include("fftbased/with_ffts.jl")
 
 end # module
