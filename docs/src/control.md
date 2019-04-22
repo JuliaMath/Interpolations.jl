@@ -103,7 +103,7 @@ Gridded(Constant())
 ```
 whereby nearest neighbor interpolation is used on the applied axis,
 ```julia
-NoInterp
+NoInterp()
 ```
 whereby the coordinate of the selected input vector MUST be located on a grid point. Requests for off grid
 coordinates results in the throwing of an error.
