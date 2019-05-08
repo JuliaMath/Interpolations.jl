@@ -41,8 +41,10 @@ count_interp_dims(::Type{<:Extrapolation{T,N,ITPT}}, n) where {T,N,ITPT} = count
     itp = parent(etp)
     eflag = etpflag(etp)
     xs = inbounds_position(eflag, bounds(itp), x, etp, x)
+    itpval = @inbounds(itp(xs...))
+    ((xs == x) & allisreal(x)) && return itpval
     g = @inbounds gradient(itp, xs...)
-    extrapolate_value(eflag, skip_flagged_nointerp(itp, x), skip_flagged_nointerp(itp, xs), Tuple(g), @inbounds(itp(xs...)))
+    extrapolate_value(eflag, skip_flagged_nointerp(itp, x), skip_flagged_nointerp(itp, xs), Tuple(g), itpval)
 end
 @inline function (etp::Extrapolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
     itp = parent(etp)
