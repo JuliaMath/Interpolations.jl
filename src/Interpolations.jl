@@ -416,11 +416,11 @@ checklubounds(ls, us, xs) = _checklubounds(true, ls, us, xs)
 _checklubounds(tf::Bool, ls, us, xs::Tuple{Number, Vararg{Any}}) =
     _checklubounds(tf & (ls[1] <= xs[1] <= us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
 _checklubounds(tf::Bool, ls, us, xs::Tuple{AbstractVector, Vararg{Any}}) =
-    _checklubounds(tf & all(ls[1] .<= xs[1] .<= us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
+    _checklubounds(tf & allbetween(ls[1], xs[1], us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
 _checklubounds(tf::Bool, ::Tuple{}, ::Tuple{}, ::Tuple{}) = tf
 
 maybe_clamp(itp, xs) = maybe_clamp(BoundsCheckStyle(itp), itp, xs)
-maybe_clamp(::NeedsCheck, itp, xs) = clamp.(xs, lbounds(itp), ubounds(itp))
+maybe_clamp(::NeedsCheck, itp, xs) = map(clamp, xs, lbounds(itp), ubounds(itp))
 maybe_clamp(::CheckWillPass, itp, xs) = xs
 
 include("nointerp/nointerp.jl")

@@ -97,3 +97,12 @@ function getindex!(dest, itp, xs...)
     end
     return dest
 end
+
+function allbetween(l::Real, xs, u::Real)
+    ret = true
+    @inbounds for x in xs
+        ret = ret & (l <= x) & (x <= u)
+    end
+    return ret
+end
+allbetween(l::Real, xs::AbstractRange, u::Real) = (l <= minimum(xs)) & (maximum(xs) <= u)
