@@ -1,7 +1,0 @@
-julia 0.7
-
-WoodburyMatrices 0.1.5
-Ratios
-AxisAlgorithms 0.3.0
-OffsetArrays
-StaticArrays

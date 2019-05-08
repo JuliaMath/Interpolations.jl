@@ -1,8 +1,8 @@
 language: julia
 sudo: false
 julia:
-    - 0.7
     - 1.0
+    - 1.1
     - nightly
 after_success:
   # push coverage results to Coveralls
