@@ -4,8 +4,16 @@
     wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
     coefficients(itp)[wis...]
 end
+@propagate_inbounds function (itp::GriddedInterpolation{T,N})(x::Vararg{Number,M}) where {T,M,N}
+    inds, trailing = split_trailing(itp, x)
+    @boundscheck (check1(trailing) || Base.throw_boundserror(itp, x))
+    @assert length(inds) == N
+    itp(inds...)
+end
 @inline function (itp::GriddedInterpolation)(x::Vararg{UnexpandedIndexTypes})
-    itp(to_indices(itp, x)...)
+    xis = to_indices(itp, x)
+    xis == x && error("evaluation not supported for GriddedInterpolation at positions $x")
+    itp(xis...)
 end
 
 @inline function gradient(itp::GriddedInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}

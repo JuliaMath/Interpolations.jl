@@ -14,6 +14,9 @@ using Test, LinearAlgebra, StaticArrays
     for (x,y) in zip(-3:.05:1.5, 1:.1:10,)
         @test sitp(x) ≈ y
     end
+    # trailing 1s, issue #301
+    @test sitp(0.8, 1) == sitp(0.8)
+
 
     @test_throws ArgumentError scale(itp, reverse(-3:.5:1.5))
 
