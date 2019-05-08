@@ -1,0 +1,32 @@
+name = "Interpolations"
+uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+version = "0.12.0"
+
+[deps]
+AxisAlgorithms = "13072b0f-2c55-5437-9ae7-d433b7a33950"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Ratios = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
+SharedArrays = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+WoodburyMatrices = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
+
+[compat]
+AxisAlgorithms = "≥ 0.3.0"
+WoodburyMatrices = "≥ 0.1.5"
+julia = "1"
+
+[extras]
+DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SharedArrays = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[targets]
+test = ["OffsetArrays", "Unitful", "SharedArrays", "ForwardDiff", "LinearAlgebra", "DualNumbers", "Random", "Test"]
