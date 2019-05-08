@@ -106,3 +106,8 @@ function allbetween(l::Real, xs, u::Real)
     return ret
 end
 allbetween(l::Real, xs::AbstractRange, u::Real) = (l <= minimum(xs)) & (maximum(xs) <= u)
+
+allisreal(x) = _allisreal(true, x...)
+@inline _allisreal(ret, x1::Real, xs...) = _allisreal(ret, xs...)
+@inline _allisreal(ret, x1, xs...) = _allisreal(false, xs...)
+_allisreal(ret) = ret
