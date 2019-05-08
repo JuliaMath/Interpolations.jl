@@ -147,7 +147,7 @@ end
 
 # We can't just return a tuple-of-types due to julia #12500
 tweight(A::AbstractArray) = Float64
-tweight(A::AbstractArray{Float32}) = Float32
+tweight(A::AbstractArray{T}) where T<:AbstractFloat = T
 tweight(A::AbstractArray{Rational{Int}}) = Rational{Int}
 tweight(A::AbstractArray{T}) where {T<:Integer} = typeof(float(zero(T)))
 
