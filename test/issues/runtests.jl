@@ -85,7 +85,6 @@ using Interpolations, Test, ForwardDiff
         println(io, GradientWrapper(eff, p, test))
         println(io, "Done.")
         str = String(take!(io))
-        @show str
         @test endswith(str, "Done.\n")
     end
 
