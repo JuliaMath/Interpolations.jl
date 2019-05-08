@@ -48,10 +48,14 @@ function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, it::IT,
     @noinline err_concrete(IT) = error("The b-spline type must be a concrete type (was $IT)")
     @noinline warn_concrete(A) = @warn("For performance reasons, consider using an array of a concrete type (typeof(A) == $(typeof(A)))")
     @noinline err_incomplete(it) = error("OnGrid/OnCell is not supplied for some of the interpolation modes in $it")
+    @noinline err_singleton(A, it) = throw(ArgumentError("size $(size(A)) is inconsistent with $it, use NoInterp along singleton dimensions"))
 
     isconcretetype(IT) || err_concrete(IT)
     isconcretetype(typeof(A)) || warn_concrete(A)
     iscomplete(it) || err_incomplete(it)
+
+    # Check that dimensions of size 1 are NoInterp
+    is_singleton_ok(A, it) || err_singleton(A, it)
 
     # Compute the output element type when positions have type TWeights
     if isempty(A)
@@ -71,6 +75,16 @@ function BSplineInterpolation(A::AbstractArray{Tel,N}, it::IT, axs) where {N,Tel
 end
 
 iscomplete(its::Tuple) = all(iscomplete, its)
+
+is_singleton_ok(A, it) = is_singleton_ok(size(A), it)
+@inline function is_singleton_ok(sz::Tuple, it)
+    if sz[1] == 1
+        it1 = getfirst(it)
+        it1 isa NoInterp || return false
+    end
+    return is_singleton_ok(Base.tail(sz), getrest(it))
+end
+is_singleton_ok(::Tuple{}, it) = true
 
 coefficients(itp::BSplineInterpolation) = itp.coefs
 interpdegree(itp::BSplineInterpolation) = interpdegree(itpflag(itp))

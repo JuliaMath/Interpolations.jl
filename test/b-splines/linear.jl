@@ -52,4 +52,13 @@
     itp = interpolate(x, BSpline(Linear()))
     @test itp(1.5, CartesianIndex((2, 3))) === itp(1.5, 2, 3)
     @test itp(CartesianIndex((1, 2)), 1.5) === itp(1, 2, 1.5)
+
+    # Issue #289
+    for (x, it) in ((ones(1, 3), (NoInterp(), BSpline(Linear()))),
+                    (ones(3, 1), (BSpline(Linear()), NoInterp())))
+        @test_throws ArgumentError interpolate(x, BSpline(Linear()))
+        itp = interpolate(x, it)
+        etp = extrapolate(itp, Flat())
+        @test sum(isnan.(etp)) == 0
+    end
 end
