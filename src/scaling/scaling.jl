@@ -67,6 +67,12 @@ ubound(ax::AbstractRange, ::DegreeBC, ::OnGrid) = last(ax)
     xl = maybe_clamp(sitp.itp, coordslookup(itpflag(sitp.itp), sitp.ranges, xs))
     @inbounds sitp.itp(xl...)
 end
+@propagate_inbounds function (itp::ScaledInterpolation{T,N})(x::Vararg{Number,M}) where {T,M,N}
+    inds, trailing = split_trailing(itp, x)
+    @boundscheck (check1(trailing) || Base.throw_boundserror(itp, x))
+    @assert length(inds) == N
+    itp(inds...)
+end
 @inline function (sitp::ScaledInterpolation)(x::Vararg{UnexpandedIndexTypes})
     xis = to_indices(sitp, x)
     xis == x && error("evaluation not supported for ScaledInterpolation at positions $x")

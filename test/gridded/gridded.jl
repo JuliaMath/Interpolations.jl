@@ -85,4 +85,7 @@ using Interpolations, Test
     @test itp(2) === 2.0f0
     @test itp(2.0) === 2.0
     @test itp(2.0f0) === 2.0f0
+
+    # trailing 1s, issue #301
+    @test itp(1.8, 1) == itp(1.8)
 end
