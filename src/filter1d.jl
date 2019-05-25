@@ -18,7 +18,7 @@ function A_ldiv_B_md!(dest, F, src, dim::Integer, b::AbstractVector)
 end
 
 # Filtering along the first dimension
-function _A_ldiv_B_md!(dest, F::LU{T,<:Tridiagonal{T}}, src,  R1::CartesianIndices{<:CartesianIndex{0}}, R2, b) where {T}
+function _A_ldiv_B_md!(dest, F::LU{T,<:Tridiagonal{T}}, src,  R1::CartesianIndices{0}, R2, b) where {T}
     n = size(F, 1)
     if n == 0
         return nothing
