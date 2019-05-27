@@ -1,84 +1,80 @@
-deval{N}(::Val{N}) = N
-padding{IT<:BSpline}(::Type{IT}) = Val{0}()
-@generated function padding{IT}(t::Type{IT})
-    pad = [deval(padding(IT.parameters[d])) for d = 1:length(IT.parameters)]
-    t = tuple(pad...)
-    :(Val{$t}())
+padded_axes(axs, it::InterpolationType) = (ax->padded_axis(ax, it)).(axs)
+padded_axes(axs::NTuple{N,AbstractUnitRange}, it::NTuple{N,InterpolationType}) where N =
+    padded_axis.(axs, it)
+
+padded_similar(::Type{TC}, inds::Tuple{Vararg{Base.OneTo{Int}}}) where TC = Array{TC}(undef, length.(inds))
+padded_similar(::Type{TC}, inds) where TC = OffsetArray{TC}(undef, inds)
+
+# Narrow ax by the amount that axpad is larger
+padinset(ax::AbstractUnitRange, axpad) = 2*first(ax)-first(axpad):2*last(ax)-last(axpad)
+function padinset(ax::Base.OneTo, axpad::Base.OneTo)
+    # We don't have any types that pad asymmetrically. Therefore if they both start at 1,
+    # they must be the same
+    @assert ax == axpad
+    return ax
 end
 
-@noinline function padded_index{N,pad}(indsA::NTuple{N,AbstractUnitRange{Int}}, ::Val{pad})
-    indspad = ntuple(i->indices_addpad(indsA[i], padextract(pad,i)), Val{N})
-    indscp = ntuple(i->indices_interior(indspad[i], padextract(pad,i)), Val{N})
-    indscp, indspad
-end
+ct!(coefs, indscp, A, indsA) = copyto!(coefs, CartesianIndices(indscp), A, CartesianIndices(indsA))
 
-copy_with_padding{IT}(A, ::Type{IT}) = copy_with_padding(eltype(A), A, IT)
-function copy_with_padding{TC,IT<:DimSpec{InterpolationType}}(::Type{TC}, A, ::Type{IT})
-    Pad = padding(IT)
-    indsA = indices(A)
-    indscp, indspad = padded_index(indsA, Pad)
-    coefs = similar(dims->Array{TC}(dims), indspad)
+copy_with_padding(A, it) = copy_with_padding(eltype(A), A, it)
+function copy_with_padding(::Type{TC}, A, it::DimSpec{InterpolationType}) where {TC}
+    indsA = axes(A)
+    indspad = padded_axes(indsA, it)
+    coefs = padded_similar(TC, indspad)
     if indspad == indsA
-        coefs = copy!(coefs, A)
+        coefs = copyto!(coefs, A)
     else
         fill!(coefs, zero(TC))
-        copy!(coefs, CartesianRange(indscp), A, CartesianRange(indsA))
+        ct!(coefs, indsA, A, indsA)
     end
-    coefs, Pad
+    coefs
 end
 
-prefilter!{TWeights, IT<:BSpline, GT<:GridType}(::Type{TWeights}, A, ::Type{IT}, ::Type{GT}) = A
-function prefilter{TWeights, TC, IT<:BSpline, GT<:GridType}(::Type{TWeights}, ::Type{TC}, A, ::Type{IT}, ::Type{GT})
-    coefs = similar(dims->Array{TC}(dims), indices(A))
-    prefilter!(TWeights, copy!(coefs, A), IT, GT), Val{0}()
+prefilter!(::Type{TWeights}, A::AbstractArray, ::BSpline{D}, ::GridType) where {TWeights,D<:Union{Constant,Linear}} = A
+
+function prefilter(
+    ::Type{TWeights}, ::Type{TC}, A::AbstractArray,
+    it::Union{BSpline,Tuple{Vararg{Union{BSpline,NoInterp}}}}
+    ) where {TWeights,TC}
+    ret = copy_with_padding(TC, A, it)
+    prefilter!(TWeights, ret, it)
 end
 
-function prefilter{TWeights,TC,IT<:Union{Cubic,Quadratic},GT<:GridType}(
-    ::Type{TWeights}, ::Type{TC}, A::AbstractArray, ::Type{BSpline{IT}}, ::Type{GT}
-    )
-    ret, Pad = copy_with_padding(TC, A, BSpline{IT})
-    prefilter!(TWeights, ret, BSpline{IT}, GT), Pad
-end
-
-function prefilter{TWeights,TC,IT<:Tuple{Vararg{Union{BSpline,NoInterp}}},GT<:DimSpec{GridType}}(
-    ::Type{TWeights}, ::Type{TC}, A::AbstractArray, ::Type{IT}, ::Type{GT}
-    )
-    ret, Pad = copy_with_padding(TC, A, IT)
-    prefilter!(TWeights, ret, IT, GT), Pad
-end
-
-function prefilter!{TWeights,TCoefs<:AbstractArray,IT<:Union{Quadratic,Cubic},GT<:GridType}(
-    ::Type{TWeights}, ret::TCoefs, ::Type{BSpline{IT}}, ::Type{GT}
-    )
-    local buf, shape, retrs
-    sz = map(length, indices(ret))
-    first = true
-    for dim in 1:ndims(ret)
-        M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[dim], IT, GT)
-        A_ldiv_B_md!(ret, M, ret, dim, b)
-    end
-    ret
-end
-
-function prefilter!{TWeights,TCoefs<:AbstractArray,IT<:Tuple{Vararg{Union{BSpline,NoInterp}}},GT<:DimSpec{GridType}}(
-    ::Type{TWeights}, ret::TCoefs, ::Type{IT}, ::Type{GT}
-    )
+function prefilter!(
+    ::Type{TWeights}, ret::TCoefs, it::BSpline
+    ) where {TWeights,TCoefs<:AbstractArray}
     local buf, shape, retrs
     sz = size(ret)
     first = true
     for dim in 1:ndims(ret)
-        it = iextract(IT, dim)
+        M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[dim], degree(it))
+        A_ldiv_B_md!(popwrapper(ret), M, popwrapper(ret), dim, b)
+    end
+    ret
+end
+
+function prefilter!(
+    ::Type{TWeights}, ret::TCoefs, its::Tuple{Vararg{Union{BSpline,NoInterp}}}
+    ) where {TWeights,TCoefs<:AbstractArray}
+    local buf, shape, retrs
+    sz = size(ret)
+    first = true
+    for dim in 1:ndims(ret)
+        it = iextract(its, dim)
         if it != NoInterp
-            M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[dim], bsplinetype(it), iextract(GT, dim))
+            M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[dim], degree(it))
             if M != nothing
-                A_ldiv_B_md!(ret, M, ret, dim, b)
+                A_ldiv_B_md!(popwrapper(ret), M, popwrapper(ret), dim, b)
             end
         end
     end
     ret
 end
 
-prefiltering_system(::Any, ::Any, ::Any, ::Any, ::Any) = nothing, nothing
+prefiltering_system(::Any, ::Any, ::Any, ::Any) = nothing, nothing
+
+popwrapper(A) = A
+popwrapper(A::OffsetArray) = A.parent
 
 """
     M, b = prefiltering_system{T,TC,GT<:GridType,D<:Degree}m(::T, ::Type{TC}, n::Int, ::Type{D}, ::Type{GT})

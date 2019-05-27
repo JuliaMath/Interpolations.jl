@@ -5,7 +5,7 @@ include(joinpath(JULIA_HOME, "..", "..", "examples", "ndgrid.jl"))
 
 # For the evaluation points, loop over 2:size(itp,d)-1.
 # Since some interpolants are fast, we must ensure this call is type-stable.
-@generated function iterrange{T,N}(itp::AbstractArray{T,N})
+@generated function iterrange(itp::AbstractArray{T,N}) where {T,N}
     min = ntuple(d->2, N)
     maxex = Expr(:tuple, Expr[:(size(itp,$d)-1) for d = 1:N]...)
     :(CartesianRange(CartesianIndex($min), CartesianIndex($maxex)))

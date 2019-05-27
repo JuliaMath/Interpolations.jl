@@ -1,149 +1,98 @@
-using Base.Cartesian
-
-import Base.getindex
-
-function gradient_coefficients(::Type{Gridded{Linear}}, N, dim)
-    exs = Expr[d==dim ? gradient_coefficients(iextract(Gridded{Linear}, dim), d) :
-                        coefficients(iextract(Gridded{Linear}, d), N, d) for d = 1:N]
-    Expr(:block, exs...)
-end
-
-
 # Indexing at a point
-function getindex_impl{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}})
-    meta = Expr(:meta, :inline)
-    quote
-        $meta
-        @nexprs $N d->begin
-            x_d = x[d]
-            k_d = itp.knots[d]
-            ix_d = searchsortedfirst(k_d, x_d, 1, length(k_d), Base.Order.ForwardOrdering()) - 1
-        end
-        $(define_indices(IT, N, P))
-        $(coefficients(IT, N))
-        @inbounds ret = $(index_gen(IT, N))
-        ret
+@inline function (itp::GriddedInterpolation{T,N})(x::Vararg{Number,N}) where {T,N}
+    @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
+    wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
+    coefficients(itp)[wis...]
+end
+@propagate_inbounds function (itp::GriddedInterpolation{T,N})(x::Vararg{Number,M}) where {T,M,N}
+    inds, trailing = split_trailing(itp, x)
+    @boundscheck (check1(trailing) || Base.throw_boundserror(itp, x))
+    @assert length(inds) == N
+    itp(inds...)
+end
+@inline function (itp::GriddedInterpolation)(x::Vararg{UnexpandedIndexTypes})
+    xis = to_indices(itp, x)
+    xis == x && error("evaluation not supported for GriddedInterpolation at positions $x")
+    itp(xis...)
+end
+
+@inline function gradient(itp::GriddedInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
+    @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
+    wis = weightedindexes((value_weights, gradient_weights), itpinfo(itp)..., x)
+    SVector(map(inds->coefficients(itp)[inds...], wis))
+end
+
+itpinfo(itp::GriddedInterpolation) = (tcollect(itpflag, itp), itp.knots)
+
+roundbounds(x::Integer, knotvec::AbstractVector) = gridded_roundbounds(x, knotvec)
+roundbounds(x::Number, knotvec::AbstractVector) = gridded_roundbounds(x, knotvec)
+function gridded_roundbounds(x, knotvec::AbstractVector)
+    i = find_knot_index(knotvec, x)
+    iclamp = max(i, first(axes1(knotvec)))
+    inext = min(iclamp+1, last(axes1(knotvec)))
+    ifelse(i < iclamp, i+1, ifelse(x - knotvec[iclamp] < knotvec[inext] - x, i, inext))
+end
+
+floorbounds(x::Integer, knotvec::AbstractVector) = gridded_floorbounds(x, knotvec)
+floorbounds(x, knotvec::AbstractVector) = gridded_floorbounds(x, knotvec)
+function gridded_floorbounds(x, knotvec::AbstractVector)
+    i = find_knot_index(knotvec, x)
+    max(i, first(axes1(knotvec)))
+end
+
+@inline find_knot_index(knotv, x) = searchsortedfirst(knotv, x, Base.Order.ForwardOrdering()) - 1
+
+@inline function weightedindex_parts(fs::F, mode::Gridded, knotvec::AbstractVector, x) where F
+    i = find_knot_index(knotvec, x)
+    ax1 = axes1(knotvec)
+    iclamp = clamp(i, first(ax1), last(ax1)-1)
+    weightedindex(fs, degree(mode), knotvec, x, iclamp)
+end
+
+function weightedindex(fs::F, deg::Constant, knotvec, x, iclamp) where F
+    pos, δx = positions(deg, knotvec,  x)
+    (position=pos, coefs=fmap(fs, deg, δx))
+end
+function weightedindex(fs::F, deg::Degree, knotvec, x, iclamp) where F
+    @inbounds l, u = knotvec[iclamp], knotvec[iclamp+1]
+    δx = ratio(x - l, u - l)
+    (position=iclamp, coefs=rescale_gridded(fs, fmap(fs, deg, δx), u-l))
+end
+
+rescale_gridded(fs::F, coefs, Δx) where F =
+    (rescale_gridded(fs[1], coefs[1], Δx), rescale_gridded(Base.tail(fs), Base.tail(coefs), Δx)...)
+rescale_gridded(::Tuple{}, ::Tuple{}, Δx) = ()
+rescale_gridded(::typeof(value_weights), coefs, Δx) = coefs
+rescale_gridded(::typeof(gradient_weights), coefs, Δx) = coefs./Δx
+rescale_gridded(::typeof(hessian_weights), coefs, Δx) = coefs./Δx.^2
+
+@inline function (itp::GriddedInterpolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
+    @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
+    itps = tcollect(itpflag, itp)
+    wis = dimension_wis(value_weights, itps, itp.knots, x)
+    coefs = coefficients(itp)
+    ret = [coefs[i...] for i in Iterators.product(wis...)]
+    reshape(ret, shape(wis...))
+end
+
+function dimension_wis(f::F, itps, knots, xs) where F
+    itpflag, knotvec, x = itps[1], knots[1], xs[1]
+    function makewi(y)
+        pos, coefs = weightedindex_parts((f,), itpflag, knotvec, y)
+        maybe_weightedindex(pos, coefs[1])
     end
+    (makewi.(x), dimension_wis(f, Base.tail(itps), Base.tail(knots), Base.tail(xs))...)
 end
-
-@generated function getindex{T,N}(itp::GriddedInterpolation{T,N}, x::Number...)
-    getindex_impl(itp)
+function dimension_wis(f::F, itps::Tuple{NoInterp,Vararg{Any}}, knots, xs) where F
+    (Int.(xs[1]), dimension_wis(f, Base.tail(itps), Base.tail(knots), Base.tail(xs))...)
 end
+dimension_wis(f, ::Tuple{}, ::Tuple{}, ::Tuple{}) = ()
 
-# Because of the "vectorized" definition below, we need a definition for CartesianIndex
-@generated function getindex{T,N}(itp::GriddedInterpolation{T,N}, index::CartesianIndex{N})
-    args = [:(index[$d]) for d = 1:N]
-    :(getindex(itp, $(args...)))
-end
 
-# Indexing with vector inputs. Here, it pays to pre-process the input indexes,
-# because N*n is much smaller than n^N.
-# TODO: special-case N=1, because there is no reason to separately cache the indexes.
-@generated function getindex!{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(dest, itp::GriddedInterpolation{T,N,TCoefs,IT,K,P}, xv...)
-    length(xv) == N || error("Can only be called with $N indexes")
-    indexes_exprs = Expr[define_indices_d(iextract(IT, d), d, P) for d = 1:N]
-    coefficient_exprs = Expr[coefficients(iextract(IT, d), N, d) for d = 1:N]
-    # A manual @nloops (the interaction of d with the two exprs above is tricky...)
-    ex = :(@nref($N,dest,i) = $(index_gen(IT, N)))
-    for d = 1:N
-        isym, xsym, xvsym, ixsym, ixvsym = Symbol("i_",d), Symbol("x_",d), Symbol("xv_",d), Symbol("ix_",d), Symbol("ixv_",d)
-        ex = quote
-            for $isym = 1:length($xvsym)
-                $xsym  = $xvsym[$isym]
-                $ixsym = $ixvsym[$isym]
-                $(indexes_exprs[d])
-                $(coefficient_exprs[d])
-                $ex
-            end
-        end
-    end
-    quote
-        @inbounds begin
-            @nexprs $N d->begin
-                xv_d = xv[d]
-                k_d = itp.knots[d]
-                ixv_d = Array{Int}( length(xv_d))  # ixv_d[i] is the smallest value such that k_d[ixv_d[i]] <= x_d[i]
-                # If x_d is sorted and has quite a few entries, it's better to match
-                # entries of x_d and k_d by iterating through them both in unison.
-                l_d = length(k_d)   # FIXME: check l_d == 1 someday, see FIXME above
-                # estimate the time required for searchsortedfirst vs. linear traversal
-                den = 5*log(l_d) - 1   # 5 is arbitrary, for now (it's the coefficient of ssf compared to the while loop below)
-                ascending = den*length(xv_d) > l_d  # if this is (or becomes) false, use searchsortedfirst
-                i = 2  # this clamps ixv_d .>= 1
-                knext = k_d[i]
-                xjold = xv_d[1]
-                for j = 1:length(xv_d)
-                    xj = xv_d[j]
-                    ascending = ascending & (xj >= xjold)
-                    if ascending
-                        while i < length(k_d) && knext < xj
-                            knext = k_d[i+=1]
-                        end
-                        ixv_d[j] = i-1
-                        xjold = xj
-                    else
-                        ixv_d[j] = searchsortedfirst(k_d, xj, 1, l_d, Base.Order.ForwardOrdering()) - 1
-                    end
-                end
-            end
-            $ex
-        end
-        dest
-    end
-end
-
-function getindex{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::GriddedInterpolation{T,N,TCoefs,IT,K,P}, x...)
-    dest = Array{T}( map(length, x))::Array{T,N}
-    getindex!(dest, itp, x...)
-end
-
-function gradient_impl{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(itp::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}})
-    meta = Expr(:meta, :inline)
-    # For each component of the gradient, alternately calculate
-    # coefficients and set component
-    n = count_interp_dims(IT, N)
-    exs = Array{Expr}( 2n)
-    cntr = 0
-    for d = 1:N
-        if count_interp_dims(iextract(IT, d), 1) > 0
-            cntr += 1
-            exs[2cntr-1] = gradient_coefficients(IT, N, d)
-            exs[2cntr] = :(@inbounds g[$cntr] = $(index_gen(IT, N)))
-        end
-    end
-    gradient_exprs = Expr(:block, exs...)
-    quote
-        $meta
-        length(g) == $n || throw(ArgumentError(string("The length of the provided gradient vector (", length(g), ") did not match the number of interpolating dimensions (", n, ")")))
-        @nexprs $N d->begin
-            x_d = x[d]
-            k_d = itp.knots[d]
-            ix_d = searchsortedfirst(k_d, x_d, 1, length(k_d), Base.Order.ForwardOrdering()) - 1
-        end
-        # Calculate the indices of all coefficients that will be used
-        # and define fx = x - xi in each dimension
-        $(define_indices(IT, N, P))
-
-        $gradient_exprs
-
-        g
-    end
-end
-
-@generated function gradient!{T,N}(g::AbstractVector, itp::GriddedInterpolation{T,N}, x::Number...)
-    length(x) == N || error("Can only be called with $N indexes")
-    gradient_impl(itp)
-end
-
-@generated function gradient!{T,N}(g::AbstractVector, itp::GriddedInterpolation{T,N}, index::CartesianIndex{N})
-    args = [:(index[$d]) for d = 1:N]
-    :(gradient!(g, itp, $(args...)))
-end
-
-function getindex_return_type{T,N,TCoefs,IT<:DimSpec{Gridded},K,P}(::Type{GriddedInterpolation{T,N,TCoefs,IT,K,P}}, argtypes)
+function getindex_return_type(::Type{GriddedInterpolation{T,N,TCoefs,IT,K}}, argtypes) where {T,N,TCoefs,IT<:DimSpec{Gridded},K}
     Tret = TCoefs
     for a in argtypes
-        Tret = Base.promote_op(@functorize(*), Tret, a) # the macro is used to support julia 0.4
+        Tret = Base.promote_op(*, Tret, a)
     end
     Tret
 end

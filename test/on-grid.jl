@@ -1,7 +1,6 @@
-
 module OnGridTests
 
-using Interpolations, Base.Test
+using Interpolations, Test
 
 nx, ny, nz = 10, 8, 9
 xg, yg, zg = 1:nx, 1:ny, 1:nz
@@ -19,7 +18,7 @@ function OneD()
     println("Testing evaluation on grid and boundary in 1D...")
     for deg in simpledegs, gb in gridbehvs
         fg = Float64[f1(x) for x in xg]
-        
+
         itp = Interpolation(fg, deg(gb()), ExtrapError())
 
         for i in xg

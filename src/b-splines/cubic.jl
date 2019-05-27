@@ -1,5 +1,8 @@
-immutable Cubic{BC<:Flag} <: Degree{3} end
-Cubic{BC<:Flag}(::BC) = Cubic{BC}()
+struct Cubic{BC<:BoundaryCondition} <: DegreeBC{3}
+    bc::BC
+end
+
+(deg::Cubic)(gt::GridType) = Cubic(deg.bc(gt))
 
 """
 Assuming uniform knots with spacing 1, the `i`th piece of cubic spline
@@ -24,144 +27,46 @@ When we derive boundary conditions we will use derivatives `y_0'(x)` and
 """
 Cubic
 
-"""
-`define_indices_d` for a cubic b-spline calculates `ix_d = floor(x_d)` and
-`fx_d = x_d - ix_d` (corresponding to `i` `and `δx` in the docstring for
-`Cubic`), as well as auxiliary quantities `ixm_d`, `ixp_d` and `ixpp_d`
-"""
-function define_indices_d{BC}(::Type{BSpline{Cubic{BC}}}, d, pad)
-    symix, symixm, symixp = Symbol("ix_",d), Symbol("ixm_",d), Symbol("ixp_",d)
-    symixpp, symx, symfx = Symbol("ixpp_",d), Symbol("x_",d), Symbol("fx_",d)
-    quote
-        # ensure that all of ix_d, ixm_d, ixp_d, and ixpp_d are in-bounds no
-        # matter the value of pad
-        $symix = clamp(floor(Int, $symx), first(inds_itp[$d]) + $(1-pad), last(inds_itp[$d]) + $(pad-2))
-        $symfx = $symx - $symix
-        $symix += $pad # padding for oob coefficient
-        $symixm = $symix - 1
-        $symixp = $symix + 1
-        $symixpp = $symixp + 1
-    end
+function positions(deg::Cubic, ax, x)
+    xf = floorbounds(x, ax)
+    xf -= ifelse(xf > last(ax)-1, oneunit(xf), zero(xf))
+    δx = x - xf
+    expand_index(deg, fast_trunc(Int, xf), ax, δx), δx
 end
 
-"""
-`define_indices_d`  for a cubic, periodic b-spline calculates `ix_d = floor(x_d)`
-and `fx_d = x_d - ix_d` (corresponding to `i` and `δx` in the docstring entry
-for `Cubic`), as well as auxiliary quantities `ixm_d`, `ixp_d` and `ixpp_d`.
+expand_index(::Cubic{BC}, xi::Number, ax::AbstractUnitRange, δx) where BC = xi-1
+expand_index(::Cubic{Periodic{GT}}, xi::Number, ax::AbstractUnitRange, δx) where GT<:GridType =
+    (modrange(xi-1, ax), modrange(xi, ax), modrange(xi+1, ax), modrange(xi+2, ax))
 
-If any `ixX_d` for `x ∈ {m, p, pp}` (note: not `c_d`) should fall outside of
-the data interval, they wrap around.
-"""
-function define_indices_d(::Type{BSpline{Cubic{Periodic}}}, d, pad)
-    symix, symixm, symixp = Symbol("ix_",d), Symbol("ixm_",d), Symbol("ixp_",d)
-    symixpp, symx, symfx = Symbol("ixpp_",d), Symbol("x_",d), Symbol("fx_",d)
-    quote
-        tmp = inds_itp[$d]
-        $symix = clamp(floor(Int, $symx), first(tmp), last(tmp))
-        $symfx = $symx - $symix
-        $symixm = modrange($symix - 1, tmp)
-        $symixp = modrange($symix + 1, tmp)
-        $symixpp = modrange($symix + 2, tmp)
-    end
+function value_weights(::Cubic, δx)
+    x3, xcomp3 = cub(δx), cub(1-δx)
+    (SimpleRatio(1,6) * xcomp3,
+     SimpleRatio(2,3) - sqr(δx) + SimpleRatio(1,2)*x3,
+     SimpleRatio(2,3) - sqr(1-δx) + SimpleRatio(1,2)*xcomp3,
+     SimpleRatio(1,6) * x3)
 end
 
-padding{BC<:Flag}(::Type{BSpline{Cubic{BC}}}) = Val{1}()
-padding(::Type{BSpline{Cubic{Periodic}}}) = Val{0}()
-
-"""
-In `coefficients` for a cubic b-spline we assume that `fx_d = x-ix_d`
-and we define `cX_d` for `X ⋹ {m, _, p, pp}` such that
-
-    cm_d  = p(fx_d)
-    c_d   = q(fx_d)
-    cp_d  = q(1-fx_d)
-    cpp_d = p(1-fx_d)
-
-where `p` and `q` are defined in the docstring entry for `Cubic`, and
-`fx_d` in the docstring entry for `define_indices_d`.
-"""
-function coefficients{C<:Cubic}(::Type{BSpline{C}}, N, d)
-    symm, sym =  Symbol("cm_",d), Symbol("c_",d)
-    symp, sympp = Symbol("cp_",d) ,Symbol("cpp_",d)
-    symfx = Symbol("fx_",d)
-    symfx_cub = Symbol("fx_cub_", d)
-    sym_1m_fx_cub = Symbol("one_m_fx_cub_", d)
-    quote
-        $symfx_cub = cub($symfx)
-        $sym_1m_fx_cub = cub(1-$symfx)
-        $symm = SimpleRatio(1,6)*$sym_1m_fx_cub
-        $sym  = SimpleRatio(2,3) - sqr($symfx) + SimpleRatio(1,2)*$symfx_cub
-        $symp = SimpleRatio(2,3) - sqr(1-$symfx) + SimpleRatio(1,2)*$sym_1m_fx_cub
-        $sympp = SimpleRatio(1,6)*$symfx_cub
-    end
+function gradient_weights(::Cubic, δx)
+    x2, xcomp2 = sqr(δx), sqr(1-δx)
+    (-SimpleRatio(1,2) * xcomp2,
+     -2*δx + SimpleRatio(3,2)*x2,
+     +2*(1-δx) - SimpleRatio(3,2)*xcomp2,
+     SimpleRatio(1,2) * x2)
 end
 
-"""
-In `gradient_coefficients` for a cubic b-spline we assume that `fx_d = x-ix_d`
-and we define `cX_d` for `X ⋹ {m, _, p, pp}` such that
+hessian_weights(::Cubic, δx) = (1-δx, 3*δx-2, 3*(1-δx)-2, δx)
 
-    cm_d  = p'(fx_d)
-    c_d   = q'(fx_d)
-    cp_d  = q'(1-fx_d)
-    cpp_d = p'(1-fx_d)
-
-where `p` and `q` are defined in the docstring entry for `Cubic`, and
-`fx_d` in the docstring entry for `define_indices_d`.
-"""
-function gradient_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
-    symm, sym, symp, sympp = Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d), Symbol("cpp_",d)
-    symfx = Symbol("fx_",d)
-    symfx_sqr = Symbol("fx_sqr_", d)
-    sym_1m_fx_sqr = Symbol("one_m_fx_sqr_", d)
-    quote
-        $symfx_sqr = sqr($symfx)
-        $sym_1m_fx_sqr = sqr(1 - $symfx)
-
-        $symm  = -SimpleRatio(1,2) * $sym_1m_fx_sqr
-        $sym   =  SimpleRatio(3,2) * $symfx_sqr     - 2 * $symfx
-        $symp  = -SimpleRatio(3,2) * $sym_1m_fx_sqr + 2 * (1 - $symfx)
-        $sympp =  SimpleRatio(1,2) * $symfx_sqr
-    end
-end
-
-"""
-In `hessian_coefficients` for a cubic b-spline we assume that `fx_d = x-ix_d`
-and we define `cX_d` for `X ⋹ {m, _, p, pp}` such that
-
-    cm_d  = p''(fx_d)
-    c_d   = q''(fx_d)
-    cp_d  = q''(1-fx_d)
-    cpp_d = p''(1-fx_d)
-
-where `p` and `q` are defined in the docstring entry for `Cubic`, and
-`fx_d` in the docstring entry for `define_indices_d`.
-"""
-function hessian_coefficients{C<:Cubic}(::Type{BSpline{C}}, d)
-    symm, sym, symp, sympp = Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d), Symbol("cpp_",d)
-    symfx = Symbol("fx_",d)
-    quote
-        $symm  = 1 - $symfx
-        $sym   = 3 * $symfx - 2
-        $symp  = 1 - 3 * $symfx
-        $sympp = $symfx
-    end
-end
-
-function index_gen{C<:Cubic,IT<:DimSpec{BSpline}}(::Type{BSpline{C}}, ::Type{IT}, N::Integer, offsets...)
-    if length(offsets) < N
-        d = length(offsets)+1
-        symm, sym, symp, sympp =  Symbol("cm_",d), Symbol("c_",d), Symbol("cp_",d), Symbol("cpp_",d)
-        return :($symm * $(index_gen(IT, N, offsets...,-1)) + $sym * $(index_gen(IT, N, offsets..., 0)) +
-                 $symp * $(index_gen(IT, N, offsets..., 1)) + $sympp * $(index_gen(IT, N, offsets..., 2)))
-    else
-        indices = [offsetsym(offsets[d], d) for d = 1:N]
-        return :(itp.coefs[$(indices...)])
-    end
-end
 
 # ------------ #
 # Prefiltering #
 # ------------ #
+
+padded_axis(ax::AbstractUnitRange, ::BSpline{<:Cubic}) = first(ax)-1:last(ax)+1
+padded_axis(ax::AbstractUnitRange, ::BSpline{Cubic{Periodic{GT}}}) where GT<:GridType = ax
+
+# # Due to padding we can extend the bounds
+# lbound(ax, ::BSpline{Cubic{BC}}, ::OnGrid) where BC = first(ax) - 0.5
+# ubound(ax, ::BSpline{Cubic{BC}}, ::OnGrid) where BC = last(ax) + 0.5
 
 """
 `Cubic`: continuity in function value, first and second derivatives yields
@@ -171,7 +76,7 @@ end
         1/6 2/3 1/6
            ⋱  ⋱   ⋱
 """
-function inner_system_diags{T,C<:Cubic}(::Type{T}, n::Int, ::Type{C})
+function inner_system_diags(::Type{T}, n::Int, ::Cubic) where {T}
     du = fill(convert(T, SimpleRatio(1, 6)), n-1)
     d = fill(convert(T, SimpleRatio(2, 3)), n)
     dl = copy(du)
@@ -184,16 +89,16 @@ Applying this condition yields
 
     -cm + cp = 0
 """
-function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
-                                   ::Type{Cubic{Flat}}, ::Type{OnGrid})
-    dl, d, du = inner_system_diags(T, n, Cubic{Flat})
-    d[1] = d[end] = -one(T)
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             degree::Cubic{Flat{OnGrid}}) where {T,TC}
+    dl, d, du = inner_system_diags(T, n, degree)
+    d[1] = d[end] = -oneunit(T)
     du[1] = dl[end] = zero(T)
 
     # Now Woodbury correction to set `[1, 3], [n, n-2] ==> 1`
-    specs = WoodburyMatrices.sparse_factors(T, n, (1, 3, one(T)), (n, n-2, one(T)))
+    specs = WoodburyMatrices.sparse_factors(T, n, (1, 3, oneunit(T)), (n, n-2, oneunit(T)))
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -210,9 +115,9 @@ or, equivalently,
 were to use `y_0'(x)` we would have to introduce new coefficients, so that would not
 close the system. Instead, we extend the outermost polynomial for an extra half-cell.)
 """
-function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
-                                   ::Type{Cubic{Flat}}, ::Type{OnCell})
-    dl, d, du = inner_system_diags(T,n,Cubic{Flat})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             degree::Cubic{Flat{OnCell}}) where {T,TC}
+    dl, d, du = inner_system_diags(T,n,degree)
     d[1] = d[end] = -9
     du[1] = dl[end] = 11
 
@@ -222,11 +127,11 @@ function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
     specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, 3, T(-3)),
                                   (n, n-2, T(-3)),
-                                  (1, 4, one(T)),
-                                  (n, n-3, one(T))
+                                  (1, 4, oneunit(T)),
+                                  (n, n-3, oneunit(T))
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -239,9 +144,9 @@ Applying this condition yields
 were to use `y_0'(x)` we would have to introduce new coefficients, so that would not
 close the system. Instead, we extend the outermost polynomial for an extra half-cell.)
 """
-function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
-                                   ::Type{Cubic{Line}}, ::Type{OnCell})
-    dl,d,du = inner_system_diags(T,n,Cubic{Line})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             degree::Cubic{Line{OnCell}}) where {T,TC}
+    dl,d,du = inner_system_diags(T,n,degree)
     d[1] = d[end] = 3
     du[1] = dl[end] = -7
 
@@ -251,11 +156,11 @@ function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
     specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, 3, T(5)),
                                   (n, n-2, T(5)),
-                                  (1, 4, -one(T)),
-                                  (n, n-3, -one(T))
+                                  (1, 4, -oneunit(T)),
+                                  (n, n-3, -oneunit(T))
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -264,20 +169,20 @@ condition gives:
 
     1 cm -2 c + 1 cp = 0
 """
-function prefiltering_system{T,TC}(::Type{T}, ::Type{TC}, n::Int,
-                                   ::Type{Cubic{Line}}, ::Type{OnGrid})
-    dl,d,du = inner_system_diags(T,n,Cubic{Line})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             degree::Cubic{Line{OnGrid}}) where {T,TC}
+    dl,d,du = inner_system_diags(T,n,degree)
     d[1] = d[end] = 1
     du[1] = dl[end] = -2
 
     # now need Woodbury correction to set :
     #    - [1, 3] and [n, n-2] ==> 1
     specs = WoodburyMatrices.sparse_factors(T, n,
-                                  (1, 3, one(T)),
-                                  (n, n-2, one(T)),
+                                  (1, 3, oneunit(T)),
+                                  (n, n-2, oneunit(T)),
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -288,16 +193,16 @@ as periodic, yielding
 
 where `N` is the number of data points.
 """
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
-                                                ::Type{Cubic{Periodic}}, ::Type{GT})
-    dl, d, du = inner_system_diags(T,n,Cubic{Periodic})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             degree::Cubic{<:Periodic}) where {T,TC}
+    dl, d, du = inner_system_diags(T,n,degree)
 
     specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, n, du[1]),
                                   (n, 1, dl[end])
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end
 
 """
@@ -307,14 +212,14 @@ continuous derivative at the second-to-last cell boundary; this means
 
     1 cm -3 c + 3 cp -1 cpp = 0
 """
-function prefiltering_system{T,TC,GT<:GridType}(::Type{T}, ::Type{TC}, n::Int,
-                                                ::Type{Cubic{Free}}, ::Type{GT})
-    dl, d, du = inner_system_diags(T,n,Cubic{Periodic})
+function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
+                             degree::Cubic{<:Free}) where {T,TC}
+    dl, d, du = inner_system_diags(T,n,degree)
 
     specs = WoodburyMatrices.sparse_factors(T, n,
                                   (1, n, du[1]),
                                   (n, 1, dl[end])
                                   )
 
-    Woodbury(lufact!(Tridiagonal(dl, d, du), Val{false}), specs...), zeros(TC, n)
+    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end

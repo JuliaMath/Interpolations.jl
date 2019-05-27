@@ -1,7 +1,9 @@
-import Base.LinAlg.LU, Base.getindex
+import Base: getindex
 import AxisAlgorithms: A_ldiv_B_md!, _A_ldiv_B_md!
 
 ### Tridiagonal inversion along a particular dimension, first offsetting the values by b
+
+A_ldiv_B_md!(dest, ::Nothing, src, dim::Integer, ::Nothing) = dest
 
 function A_ldiv_B_md!(dest, F, src, dim::Integer, b::AbstractVector)
     1 <= dim <= max(ndims(dest),ndims(src)) || throw(DimensionMismatch("The chosen dimension $dim is larger than $(ndims(src)) and $(ndims(dest))"))
@@ -10,13 +12,13 @@ function A_ldiv_B_md!(dest, F, src, dim::Integer, b::AbstractVector)
     size(dest) == size(src) || throw(DimensionMismatch("Sizes $(size(dest)), $(size(src)) do not match"))
     check_matrix(F)
     length(b) == size(src,dim) || throw(DimensionMismatch("length(b) = $(length(b)), which does not match $(size(src,dim))"))
-    R1 = CartesianRange(size(dest)[1:dim-1])  # these are not type-stable, so let's use a function barrier
-    R2 = CartesianRange(size(dest)[dim+1:end])
+    R1 = CartesianIndices(size(dest)[1:dim-1])  # these are not type-stable, so let's use a function barrier
+    R2 = CartesianIndices(size(dest)[dim+1:end])
     _A_ldiv_B_md!(dest, F, src, R1, R2, b)
 end
 
 # Filtering along the first dimension
-function _A_ldiv_B_md!{T,CI<:CartesianIndex{0}}(dest, F::LU{T,Tridiagonal{T}}, src,  R1::CartesianRange{CI}, R2, b)
+function _A_ldiv_B_md!(dest, F::LU{T,<:Tridiagonal{T}}, src,  R1::CartesianIndices{0}, R2, b) where {T}
     n = size(F, 1)
     if n == 0
         return nothing
@@ -24,7 +26,7 @@ function _A_ldiv_B_md!{T,CI<:CartesianIndex{0}}(dest, F::LU{T,Tridiagonal{T}}, s
     dl = F.factors.dl
     d  = F.factors.d
     du = F.factors.du
-    dinv = 1./F.factors.d  # might not want to do this for small R2
+    dinv = 1 ./ d  # might not want to do this for small R2
     @inbounds for I2 in R2
         # Forward substitution
         dest[1, I2] = src[1, I2] + b[1]
@@ -41,12 +43,12 @@ function _A_ldiv_B_md!{T,CI<:CartesianIndex{0}}(dest, F::LU{T,Tridiagonal{T}}, s
 end
 
 # Filtering along any other dimension
-function _A_ldiv_B_md!{T}(dest, F::LU{T,Tridiagonal{T}}, src, R1, R2, b)
+function _A_ldiv_B_md!(dest, F::LU{T,<:Tridiagonal{T}}, src, R1, R2, b) where T
     n = size(F, 1)
     dl = F.factors.dl
     d  = F.factors.d
     du = F.factors.du
-    dinv = 1./d  # might not want to do this for small R1 and R2
+    dinv = 1 ./ d  # might not want to do this for small R1 and R2
     # Forward substitution
     @inbounds for I2 in R2
         @simd for I1 in R1
@@ -82,7 +84,7 @@ function _A_ldiv_B_md!(dest, W::Woodbury, src,  R1, R2, b)
     AxisAlgorithms.sub!(dest, tmp3)
 end
 
-function check_matrix{T}(F::LU{T,Tridiagonal{T}})
+function check_matrix(F::LU{T,<:Tridiagonal{T}}) where T
     for i = 1:size(F,1)
         F.ipiv[i] == i || error("For efficiency, pivoting is not supported")
     end

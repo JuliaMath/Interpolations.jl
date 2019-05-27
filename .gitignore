@@ -22,3 +22,6 @@
 *.synctex.gz(busy)
 *.pdfsync
 *.run.xml
+
+## Build folder of Documenter.jl
+docs/build/
