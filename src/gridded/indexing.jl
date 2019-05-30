@@ -41,13 +41,11 @@ function gridded_floorbounds(x, knotvec::AbstractVector)
 end
 
 @inline find_knot_index(knotv, x) = searchsortedfirst(knotv, x, Base.Order.ForwardOrdering()) - 1
-@inline find_knot_index(knotv, x::Array) = searchsortedfirst_vec(knotv, x) .- 1
+@inline find_knot_index(knotv, x::AbstractVector) = searchsortedfirst_vec(knotv, x) .- 1
 
 @inline function weightedindex_parts(fs::F, mode::Gridded, knotvec::AbstractVector, x) where F
     i = find_knot_index(knotvec, x)
-    ax1 = axes1(knotvec)
-    iclamp = clamp(i, first(ax1), last(ax1)-1)
-    weightedindex(fs, degree(mode), knotvec, x, iclamp)
+    weightedindex_parts2(fs, mode, knotvec, x, i)
 end
 
 @inline function weightedindex_parts2(fs::F, mode::Gridded, knotvec::AbstractVector, x, i) where F
@@ -76,7 +74,7 @@ rescale_gridded(::typeof(hessian_weights), coefs, Δx) = coefs./Δx.^2
 @inline function (itp::GriddedInterpolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     itps = tcollect(itpflag, itp)
-    if x[1] isa Vector
+    if x[1] isa AbstractVector
         wis = dimension_wis_vec(value_weights, itps, itp.knots, x)
     else
         wis = dimension_wis(value_weights, itps, itp.knots, x)
@@ -141,12 +139,9 @@ end
 function searchsortedfirst_vec(v::AbstractVector, x::AbstractVector)
     issorted(x) || return searchsortedfirst.(Ref(v), x)
     out = zeros(Int, length(x))
-    firstlo = 1
-    lo = firstlo
-    firsthi = length(v)
-    hi = firsthi
-    it = Base.OneTo(length(x))
-    @inbounds for i in it
+    lo = 1
+    hi = length(v)
+    @inbounds for i in 1:length(x)
         xx = x[i]
         y = searchsortedfirst_exp_left(v, xx, lo, hi)
         out[i] = y
