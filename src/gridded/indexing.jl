@@ -41,9 +41,14 @@ function gridded_floorbounds(x, knotvec::AbstractVector)
 end
 
 @inline find_knot_index(knotv, x) = searchsortedfirst(knotv, x, Base.Order.ForwardOrdering()) - 1
+@inline find_knot_index(knotv, x::AbstractVector) = searchsortedfirst_vec(knotv, x) .- 1
 
 @inline function weightedindex_parts(fs::F, mode::Gridded, knotvec::AbstractVector, x) where F
     i = find_knot_index(knotvec, x)
+    weightedindex_parts2(fs, mode, knotvec, x, i)
+end
+
+@inline function weightedindex_parts2(fs::F, mode::Gridded, knotvec::AbstractVector, x, i) where F
     ax1 = axes1(knotvec)
     iclamp = clamp(i, first(ax1), last(ax1)-1)
     weightedindex(fs, degree(mode), knotvec, x, iclamp)
@@ -69,7 +74,11 @@ rescale_gridded(::typeof(hessian_weights), coefs, Δx) = coefs./Δx.^2
 @inline function (itp::GriddedInterpolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     itps = tcollect(itpflag, itp)
-    wis = dimension_wis(value_weights, itps, itp.knots, x)
+    if x[1] isa AbstractVector
+        wis = dimension_wis_vec(value_weights, itps, itp.knots, x)
+    else
+        wis = dimension_wis(value_weights, itps, itp.knots, x)
+    end
     coefs = coefficients(itp)
     ret = [coefs[i...] for i in Iterators.product(wis...)]
     reshape(ret, shape(wis...))
@@ -83,6 +92,17 @@ function dimension_wis(f::F, itps, knots, xs) where F
     end
     (makewi.(x), dimension_wis(f, Base.tail(itps), Base.tail(knots), Base.tail(xs))...)
 end
+
+function dimension_wis_vec(f::F, itps, knots, xs) where F
+    itpflag, knotvec, x = itps[1], knots[1], xs[1]
+    ivec = find_knot_index(knotvec, x)
+    function makewi(y, i)
+        pos, coefs = weightedindex_parts2((f,), itpflag, knotvec, y, i)
+        maybe_weightedindex(pos, coefs[1])
+    end
+    (makewi.(x, ivec), dimension_wis(f, Base.tail(itps), Base.tail(knots), Base.tail(xs))...)
+end
+
 function dimension_wis(f::F, itps::Tuple{NoInterp,Vararg{Any}}, knots, xs) where F
     (Int.(xs[1]), dimension_wis(f, Base.tail(itps), Base.tail(knots), Base.tail(xs))...)
 end
@@ -95,4 +115,37 @@ function getindex_return_type(::Type{GriddedInterpolation{T,N,TCoefs,IT,K}}, arg
         Tret = Base.promote_op(*, Tret, a)
     end
     Tret
+end
+
+Base.@propagate_inbounds function searchsortedfirst_exp_left(v, xx, lo, hi)
+    for i in 0:4
+        ind = lo + i
+        ind > hi && return ind
+        xx <= v[ind] && return ind
+    end
+    n = 3
+    tn2 = 2^n
+    tn2m1 = 2^(n-1)
+    ind = lo + tn2
+    while ind <= hi
+        xx <= v[ind] && return searchsortedfirst(v, xx, lo + tn2 - tn2m1, ind, Base.Order.Forward)
+        tn2 *= 2
+        tn2m1 *= 2
+        ind = lo + tn2
+    end
+    return searchsortedfirst(v, xx, lo + tn2 - tn2m1, hi, Base.Order.Forward)
+end
+
+function searchsortedfirst_vec(v::AbstractVector, x::AbstractVector)
+    issorted(x) || return searchsortedfirst.(Ref(v), x)
+    out = zeros(Int, length(x))
+    lo = 1
+    hi = length(v)
+    @inbounds for i in 1:length(x)
+        xx = x[i]
+        y = searchsortedfirst_exp_left(v, xx, lo, hi)
+        out[i] = y
+        lo = min(y, hi)
+    end
+    return out
 end
