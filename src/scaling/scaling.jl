@@ -94,7 +94,7 @@ coordslookup(::Any, ::Tuple{}, ::Tuple{}) = ()
 coordlookup(::NoInterp, r, i) = i
 coordlookup(::Flag, r, x) = coordlookup(r, x)
 
-coordlookup(r::UnitRange, x) = x - r.start + oneunit(eltype(r))
+coordlookup(r::AbstractUnitRange, x) = x - first(r) + oneunit(eltype(r))
 # coordlookup(i::Bool, r::AbstractRange, x) = i ? coordlookup(r, x) : convert(typeof(coordlookup(r,x)), x)
 coordlookup(r::StepRange, x) = (x - r.start) / r.step + oneunit(eltype(r))
 
