@@ -1,5 +1,27 @@
 using Interpolations, Test
 
+@testset "==" begin
+    
+    # issue #333
+    knots = ([1,1.2],)
+    vals = [1.0, 2.0]
+    scheme = Gridded(Linear())
+    itp = interpolate(knots, vals , scheme)
+    @test itp == itp
+    @test itp == deepcopy(itp)
+    @test itp != interpolate(([1,1.3],), vals, scheme)
+    @test itp != interpolate(knots, [1.0, 3.0], scheme)
+    @test itp != interpolate(knots, vals, Gridded(Constant()))
+    
+    scheme = BSpline(Quadratic(Reflect(OnCell())))
+    vals = [1.0, 2.0]
+    itp = interpolate(vals, scheme)
+    @test itp == itp
+    @test itp == deepcopy(itp)
+    @test itp != interpolate(vals, BSpline(Linear()))
+    @test itp != interpolate(randn(2), scheme)
+end
+
 @testset "Core" begin
     A = reshape([0], 1, 1, 1, 1, 1)
     wis = ntuple(d->Interpolations.WeightedAdjIndex(1, (1,)), ndims(A))
