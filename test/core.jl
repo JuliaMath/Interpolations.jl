@@ -1,7 +1,7 @@
 using Interpolations, Test
 
 @testset "==" begin
-    
+
     # issue #333
     knots = ([1,1.2],)
     vals = [1.0, 2.0]
@@ -12,7 +12,7 @@ using Interpolations, Test
     @test itp != interpolate(([1,1.3],), vals, scheme)
     @test itp != interpolate(knots, [1.0, 3.0], scheme)
     @test itp != interpolate(knots, vals, Gridded(Constant()))
-    
+
     scheme = BSpline(Quadratic(Reflect(OnCell())))
     vals = [1.0, 2.0]
     itp = interpolate(vals, scheme)
@@ -20,6 +20,11 @@ using Interpolations, Test
     @test itp == deepcopy(itp)
     @test itp != interpolate(vals, BSpline(Linear()))
     @test itp != interpolate(randn(2), scheme)
+
+    vals = rand(Float64, 2,3)
+    itp1 = interpolate(vals, BSpline(Quadratic(Flat(OnGrid()))))
+    itp2 = interpolate(Float64.(vals), BSpline(Quadratic(Flat(OnGrid()))))
+    @test itp1 == itp2
 end
 
 @testset "Core" begin

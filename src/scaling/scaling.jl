@@ -7,6 +7,11 @@ struct ScaledInterpolation{T,N,ITPT,IT,RT} <: AbstractInterpolationWrapper{T,N,I
     ranges::RT
 end
 
+function Base.:(==)(o1::ScaledInterpolation, o2::ScaledInterpolation)
+    o1.ranges == o2.ranges &&
+    o1.itp == o2.itp
+end
+
 Base.parent(A::ScaledInterpolation) = A.itp
 count_interp_dims(::Type{<:ScaledInterpolation{T,N,ITPT}}, n) where {T,N,ITPT} = count_interp_dims(ITPT, n)
 BoundsCheckStyle(sitp::ScaledInterpolation) = BoundsCheckStyle(sitp.itp)

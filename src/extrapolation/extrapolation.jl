@@ -3,6 +3,11 @@ struct Extrapolation{T,N,ITPT,IT,ET} <: AbstractExtrapolation{T,N,ITPT,IT}
     et::ET
 end
 
+function Base.:(==)(o1::Extrapolation, o2::Extrapolation)
+    o1.et == o2.et &&
+    o1.itp == o2.itp
+end
+
 Base.parent(A::Extrapolation) = A.itp
 itpflag(etp::Extrapolation) = itpflag(etp.itp)
 
