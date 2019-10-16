@@ -43,6 +43,13 @@ struct BSplineInterpolation{T,N,TCoefs<:AbstractArray,IT<:DimSpec{BSpline},Axs<:
     parentaxes::Axs
     it::IT
 end
+
+function Base.:(==)(o1::BSplineInterpolation, o2::BSplineInterpolation)
+    o1.it == o2.it &&
+    o1.parentaxes == o2.parentaxes &&
+    o1.coefs == o2.coefs
+end
+
 function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, it::IT, axs) where {N,Tel,TWeights<:Real,IT<:DimSpec{BSpline}}
     # String interpolation causes allocation, noinline avoids that unless they get called
     @noinline err_concrete(IT) = error("The b-spline type must be a concrete type (was $IT)")
