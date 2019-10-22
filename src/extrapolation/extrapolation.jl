@@ -123,7 +123,7 @@ function inbounds_index((flagl,flagu)::Tuple{Nothing,Throw}, (l,u), x, etp, xN)
 end
 
 function inbounds_index((flagl,flagu)::Tuple{Union{Flat,Line},Flag}, (l,u), x, etp, xN)
-    inbounds_index((nothing,flagu), (l,u), maxp(x,l), etp, xN)
+    inbounds_index((nothing,flagu), (l,u), maxp(l,x), etp, xN)
 end
 function inbounds_index((flagl,flagu)::Tuple{Nothing,Union{Flat,Line}}, (l,u), x, etp, xN)
     minp(x,u)
@@ -145,8 +145,8 @@ end
 
 minp(a::T, b::T) where T = min(a, b)
 minp(a, b) = min(promote(a, b)...)
-maxp(a::T, b::T) where T = max(b, a)
-maxp(a, b) = max(promote(b, a)...)
+maxp(a::T, b::T) where T = max(a, b)
+maxp(a, b) = max(promote(a, b)...)
 
 function reflect(y, l, u)
     yr = mod(y - l, 2(u-l)) + l
