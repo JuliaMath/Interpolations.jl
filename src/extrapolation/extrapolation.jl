@@ -145,8 +145,8 @@ end
 
 minp(a::T, b::T) where T = min(a, b)
 minp(a, b) = min(promote(a, b)...)
-maxp(a::T, b::T) where T = max(a, b)
-maxp(a, b) = max(promote(a, b)...)
+maxp(a::T, b::T) where T = max(b, a)
+maxp(a, b) = max(promote(b, a)...)
 
 function reflect(y, l, u)
     yr = mod(y - l, 2(u-l)) + l
