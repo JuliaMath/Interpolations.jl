@@ -50,6 +50,14 @@ abstract type AbstractInterpolation{T,N,IT<:DimSpec{InterpolationType}} <: Abstr
 abstract type AbstractInterpolationWrapper{T,N,ITPT,IT} <: AbstractInterpolation{T,N,IT} end
 abstract type AbstractExtrapolation{T,N,ITPT,IT} <: AbstractInterpolationWrapper{T,N,ITPT,IT} end
 
+function Base.:(==)(itp1::AbstractInterpolation, itp2::AbstractInterpolation)
+    propertynames(itp1) == propertynames(itp2) || return false
+    for pname in propertynames(itp1)
+        getproperty(itp1, pname) == getproperty(itp2, pname) || return false
+    end
+    return true
+end
+
 """
     BoundaryCondition
 

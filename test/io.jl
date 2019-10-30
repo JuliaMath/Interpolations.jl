@@ -46,12 +46,14 @@ using Test
         itp = interpolate((range(0.0, stop=0.3, length=4),), A, Gridded(Linear()))
         io = IOBuffer()
         show(io, MIME("text/plain"), itp)
-        str = String(take!(io))
-        @test str == "4-element interpolate((0.0:0.1:0.3,), ::Array{Float64,1}, Gridded(Linear())) with element type Float64:\n 0.25\n 0.5 \n 0.75\n 1.0 "
+        str1 = String(take!(io))
+        str2 = "4-element interpolate((0.0:0.1:0.3,), ::Array{Float64,1}, Gridded(Linear())) with element type Float64:\n 0.25\n 0.5 \n 0.75\n 1.0"
+        @test filter(!isspace, str1) == filter(!isspace, str2)
         io2 = IOBuffer()
         show(io2, itp)
-        str2 = String(take!(io2))
-        @test str2 == "4-element interpolate((0.0:0.1:0.3,), ::Array{Float64,1}, Gridded(Linear())) with element type Float64:\n 0.25\n 0.5 \n 0.75\n 1.0 "
+        str1 = String(take!(io2))
+        str2 = "4-element interpolate((0.0:0.1:0.3,), ::Array{Float64,1}, Gridded(Linear())) with element type Float64:\n 0.25\n 0.5 \n 0.75\n 1.0"
+        @test filter(!isspace, str1) == filter(!isspace, str2)
     end
 
     @testset "scaled" begin

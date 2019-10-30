@@ -17,6 +17,13 @@ struct GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{Abst
     coefs::Array{TCoefs,N}
     it::IT
 end
+
+function Base.:(==)(o1::GriddedInterpolation, o2::GriddedInterpolation)
+    o1.it == o2.it &&
+    o1.knots == o2.knots &&
+    o1.coefs == o2.coefs
+end
+
 function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{TCoefs,N}, it::IT) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}
     isconcretetype(IT) || error("The b-spline type must be a leaf type (was $IT)")
     isconcretetype(TCoefs) || @warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")

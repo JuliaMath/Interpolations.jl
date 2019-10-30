@@ -118,6 +118,14 @@ struct MonotonicInterpolation{T, TCoeffs, TEl, TInterpolationType<:MonotonicInte
     d::Vector{TCoeffs} # coefficients of cubic parts of piecewise polynomials
 end
 
+function Base.:(==)(o1::MonotonicInterpolation, o2::MonotonicInterpolation)
+    o1.it == o2.it &&
+    o1.knots == o2.knots &&
+    o1.A == o2.A &&
+    o1.m == o2.m &&
+    o1.c == o2.c &&
+    o1.d == o2.d
+end
 
 size(A::MonotonicInterpolation) = size(A.knots)
 axes(A::MonotonicInterpolation) = axes(A.knots)

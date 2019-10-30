@@ -3,6 +3,11 @@ mutable struct FilledExtrapolation{T,N,ITP<:AbstractInterpolation,IT,FT} <: Abst
     fillvalue::FT
 end
 
+function Base.:(==)(o1::FilledExtrapolation, o2::FilledExtrapolation)
+    o1.fillvalue == o2.fillvalue &&
+    o1.itp == o2.itp
+end
+
 function FilledExtrapolation(itp::AbstractInterpolation{T,N,IT}, fillvalue) where {T,N,IT}
     Te = promote_type(T,typeof(fillvalue))
     FilledExtrapolation{Te,N,typeof(itp),IT,typeof(fillvalue)}(itp, fillvalue)
