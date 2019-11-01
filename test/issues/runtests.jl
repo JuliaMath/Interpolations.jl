@@ -129,4 +129,21 @@ using Interpolations, Test, ForwardDiff
         j = ForwardDiff.gradient(itp_test, [2.0])
         @test j ≈ Interpolations.gradient(build_itp(), 2.0)
     end
+
+    @testset "issue 335" begin
+        function build_itp()
+            A_x = 1:5
+            A = A_x
+            knots = (A_x,)
+            LinearInterpolation(knots, A, extrapolation_bc=Line())
+        end
+        function itp_test(x::AbstractVector)
+            itp = build_itp()
+            return itp(x...)
+        end
+
+        @test ForwardDiff.gradient(itp_test, [1.0]) ≈ Interpolations.gradient(build_itp(), 1.0)
+        @test ForwardDiff.gradient(itp_test, [5.0]) ≈ Interpolations.gradient(build_itp(), 5.0)
+    end
+
 end
