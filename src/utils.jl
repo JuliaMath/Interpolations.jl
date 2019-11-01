@@ -91,7 +91,7 @@ function _inbounds((l,u)::Tuple{Number,Number}, x::AbstractVector)
     ret
 end
 
-function getindex!(dest, itp, xs...)
+function getindex!(dest, itp, xs::Vararg{AbstractArray,N}) where N
     for (i, x) in zip(eachindex(dest), Iterators.product(xs...))
         dest[i] = itp(x...)
     end
