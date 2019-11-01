@@ -123,7 +123,7 @@ function inbounds_index((flagl,flagu)::Tuple{Nothing,Throw}, (l,u), x, etp, xN)
 end
 
 function inbounds_index((flagl,flagu)::Tuple{Union{Flat,Line},Flag}, (l,u), x, etp, xN)
-    inbounds_index((nothing,flagu), (l,u), maxp(x,l), etp, xN)
+    inbounds_index((nothing,flagu), (l,u), maxp(l,x), etp, xN)
 end
 function inbounds_index((flagl,flagu)::Tuple{Nothing,Union{Flat,Line}}, (l,u), x, etp, xN)
     minp(x,u)
