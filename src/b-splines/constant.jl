@@ -1,4 +1,7 @@
-struct Constant <: Degree{0} end
+struct Constant <: Degree{0}
+    mode
+    Constant(mode=:nearest) = new(mode)
+end
 
 """
 Constant b-splines are *nearest-neighbor* interpolations, and effectively
@@ -6,8 +9,14 @@ return `A[round(Int,x)]` when interpolating.
 """
 Constant
 
-function positions(::Constant, ax, x)  # discontinuity occurs at half-integer locations
-    xm = roundbounds(x, ax)
+function positions(c::Constant, ax, x)  # discontinuity occurs at half-integer locations
+    if c.mode == :previous
+        xm = floorbounds(x, ax)
+    elseif c.mode == :next
+        xm = ceilbounds(x, ax)
+    else
+        xm = roundbounds(x, ax)
+    end
     δx = x - xm
     fast_trunc(Int, xm), δx
 end
