@@ -133,6 +133,11 @@ function interpolate(::Type{TWeights}, ::Type{TC}, A, it::IT) where {TWeights,TC
     BSplineInterpolation(TWeights, Apad, it, axes(A))
 end
 
+function interpolate(::Type{TWeights}, ::Type{TC}, A, it::IT, λ::Real, k::Int) where {TWeights,TC,IT<:DimSpec{BSpline}}
+    Apad = prefilter(TWeights, TC, A, it, λ, k)
+    BSplineInterpolation(TWeights, Apad, it, axes(A))
+end
+
 """
     itp = interpolate(A, interpmode, gridstyle)
 
@@ -150,6 +155,33 @@ It may also be a tuple of such values, if you want to use different interpolatio
 """
 function interpolate(A::AbstractArray, it::IT) where {IT<:DimSpec{BSpline}}
     interpolate(tweight(A), tcoef(A), A, it)
+end
+
+"""
+    itp = interpolate(A, interpmode, gridstyle, λ, k)
+
+Interpolate an array `A` in the mode determined by `interpmode` and `gridstyle`
+with regularization following [1], of order `k` and constant `λ`. 
+`interpmode` may be one of
+
+- `BSpline(NoInterp())`
+- `BSpline(Linear())`
+- `BSpline(Quadratic(BC()))` (see [`BoundaryCondition`](@ref))
+- `BSpline(Cubic(BC()))`
+
+It may also be a tuple of such values, if you want to use different interpolation schemes along each axis.
+
+`gridstyle` should be one of `OnGrid()` or `OnCell()`.
+
+`k` corresponds to the derivative to penalize. It also corresponds to the order of the polynomial
+least squares estimate that arises from the limit λ->∞. A value of 2 is the most common.
+
+`λ` is non-negative. If its value is zero, it falls back to non-regularized interpolation.
+
+[1] https://projecteuclid.org/euclid.ss/1038425655.
+"""
+function interpolate(A::AbstractArray, it::IT, λ::Real, k::Int) where {IT<:DimSpec{BSpline}}
+    interpolate(tweight(A), tcoef(A), A, it, λ, k)
 end
 
 # We can't just return a tuple-of-types due to julia #12500
