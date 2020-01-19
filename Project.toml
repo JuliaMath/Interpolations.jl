@@ -15,7 +15,7 @@ WoodburyMatrices = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
 
 [compat]
 AxisAlgorithms = "≥ 0.3.0"
-OffsetArrays = "0.10, 0.11"
+OffsetArrays = "0.10, 0.11, 1.0"
 Ratios = "0.3"
 StaticArrays = "0.10, 0.11, 0.12"
 WoodburyMatrices = "≥ 0.1.5"
