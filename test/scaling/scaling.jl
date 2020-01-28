@@ -128,3 +128,10 @@ end
     sitp = scale(interpolate(A, BSpline(Cubic(Line(OnGrid())))), 1:3, 1:2)
     @test first(eachvalue(sitp)) ≈ @SVector [1.,2.]
 end
+
+@testset "axes" begin
+    saxs = -50:10:50
+    itp = interpolate(-5:5, BSpline(Linear()))
+    sitp = @inferred(scale(itp, saxs))
+    @test collect(eachvalue(sitp)) ≈ OffsetArray(-5:0.1:5, -50:50)
+end
