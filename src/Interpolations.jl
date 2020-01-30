@@ -107,6 +107,28 @@ axes(exp::AbstractExtrapolation) = axes(exp.itp)
 
 twotuple(r::AbstractUnitRange) = (first(r), last(r))
 twotuple(x, y) = (x, y)
+
+"""
+    bounds(itp::AbstractInterpolation)
+
+Return the `bounds` of the domain of `itp`. This is best explained by example:
+
+```jldoctest
+julia> itp = interpolate([1 2 3; 4 5 6], BSpline(Linear()));
+
+julia> Interpolations.bounds(itp)
+((1, 2), (1, 3))
+
+julia> data = 1:3;
+
+julia> knots = ([10, 11, 13.5],);
+
+julia> itp = interpolate(knots, data, Gridded(Linear()));
+
+julia> Interpolations.bounds(itp)
+((10.0, 13.5),)
+```
+"""
 bounds(itp::AbstractInterpolation) = map(twotuple, lbounds(itp), ubounds(itp))
 bounds(itp::AbstractInterpolation, d) = bounds(itp)[d]
 
