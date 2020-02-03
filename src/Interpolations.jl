@@ -111,7 +111,7 @@ twotuple(x, y) = (x, y)
 """
     bounds(itp::AbstractInterpolation)
 
-Return the `bounds` of the domain of `itp`. This is best explained by example:
+Return the `bounds` of the domain of `itp` as a tuple of `(min, max)` pairs for each coordinate. This is best explained by example:
 
 ```jldoctest
 julia> itp = interpolate([1 2 3; 4 5 6], BSpline(Linear()));
