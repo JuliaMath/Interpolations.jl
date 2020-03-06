@@ -88,16 +88,26 @@ diffop(n::Int, k::Int) = diffop(Float64, n, k)
 function prefilter!(
     ::Type{TWeights}, ret::TCoefs, it::BSpline, λ::Real, k::Int
     ) where {TWeights,TCoefs<:AbstractArray}
-    local buf, shape, retrs
+
     sz = size(ret)
-    first = true
-    if ndims(ret) > 1
-        @warn "Smooth BSpline only available for Vectors, fallback to non-smooth"
-        prefilter!(TWeights, ret, it)
+
+    # Test if regularizing is allowed
+    fallback = if ndims(ret) > 1
+        @warn "Smooth BSpline only available for Vectors, fallback to non-smoothed"
+        true
+    elseif λ < 0
+        @warn "Smooth BSpline require a non-negative λ, fallback to non-smoothed: $(λ)"
+        true
+    elseif λ == 0
+        true
+    else
+        false
     end
-    if λ <= 0
-        prefilter!(TWeights, ret, it)
+    
+    if fallback
+        return prefilter!(TWeights, ret, it)
     end
+
     M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[1], degree(it))
     ### TEST REGULARIZATION
     n = sz[1]
@@ -114,7 +124,6 @@ function prefilter!(
     ) where {TWeights,TCoefs<:AbstractArray}
     local buf, shape, retrs
     sz = size(ret)
-    first = true
     for dim in 1:ndims(ret)
         it = iextract(its, dim)
         if it != NoInterp

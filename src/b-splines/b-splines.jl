@@ -173,8 +173,8 @@ It may also be a tuple of such values, if you want to use different interpolatio
 
 `gridstyle` should be one of `OnGrid()` or `OnCell()`.
 
-`k` corresponds to the derivative to penalize. It also corresponds to the order of the polynomial
-least squares estimate that arises from the limit λ->∞. A value of 2 is the most common.
+`k` corresponds to the derivative to penalize. In the limit λ->∞, the interpolation function is
+a polynomial of order `k-1`. A value of 2 is the most common.
 
 `λ` is non-negative. If its value is zero, it falls back to non-regularized interpolation.
 
@@ -203,6 +203,16 @@ function interpolate!(::Type{TWeights}, A::AbstractArray, it::IT) where {TWeight
 end
 function interpolate!(A::AbstractArray, it::IT) where {IT<:DimSpec{BSpline}}
     interpolate!(tweight(A), A, it)
+end
+
+function interpolate!(::Type{TWeights}, A::AbstractArray, it::IT, λ::Real, k::Int) where {TWeights,IT<:DimSpec{BSpline}}
+    # Set the bounds of the interpolant inward, if necessary
+    axsA = axes(A)
+    axspad = padded_axes(axsA, it)
+    BSplineInterpolation(TWeights, prefilter!(TWeights, A, it, λ, k), it, fix_axis.(padinset.(axsA, axspad)))
+end
+function interpolate!(A::AbstractArray, it::IT, λ::Real, k::Int) where {IT<:DimSpec{BSpline}}
+    interpolate!(tweight(A), A, it, λ, k)
 end
 
 lut!(dl, d, du) = lu!(Tridiagonal(dl, d, du), Val(false))
