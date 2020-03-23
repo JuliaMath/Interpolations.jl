@@ -5,8 +5,8 @@
         f1(x) = 1.0 + 0.1*x + 0.01*x^2 + 0.001*x^3
 
         xmax = 10
-        xi = range(0, xmax, length=11)
-        xfine = range(0, xmax, length=101)
+        xi = range(0, stop=xmax, length=11)
+        xfine = range(0, stop=xmax, length=101)
 
         A0 = f0.(xi)
         A1 = f1.(xi)
