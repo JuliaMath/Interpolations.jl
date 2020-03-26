@@ -107,15 +107,15 @@ end
 Monotonic interpolation up to third order represented by type, knots and
 coefficients.
 """
-struct MonotonicInterpolation{T, TCoeffs, TEl, TInterpolationType<:MonotonicInterpolationType,
+struct MonotonicInterpolation{T, TCoeffs1, TCoeffs2, TCoeffs3, TEl, TInterpolationType<:MonotonicInterpolationType,
     TKnots<:AbstractVector{<:Number}, TACoeff <: AbstractArray{TEl,1}} <: AbstractInterpolation{T,1,DimSpec{TInterpolationType}}
 
     it::TInterpolationType
     knots::TKnots
     A::TACoeff # constant parts of piecewise polynomials
-    m::Vector{TCoeffs} # coefficients of linear parts of piecewise polynomials
-    c::Vector{TCoeffs} # coefficients of quadratic parts of piecewise polynomials
-    d::Vector{TCoeffs} # coefficients of cubic parts of piecewise polynomials
+    m::Vector{TCoeffs1} # coefficients of linear parts of piecewise polynomials
+    c::Vector{TCoeffs2} # coefficients of quadratic parts of piecewise polynomials
+    d::Vector{TCoeffs3} # coefficients of cubic parts of piecewise polynomials
 end
 
 function Base.:(==)(o1::MonotonicInterpolation, o2::MonotonicInterpolation)
@@ -134,10 +134,10 @@ itpflag(A::MonotonicInterpolation) = A.it
 coefficients(A::MonotonicInterpolation) = A.A
 
 function MonotonicInterpolation(::Type{TWeights}, it::TInterpolationType, knots::TKnots, A::AbstractArray{TEl,1},
-    m::Vector{TCoeffs}, c::Vector{TCoeffs}, d::Vector{TCoeffs}) where {TWeights, TCoeffs, TEl, TInterpolationType<:MonotonicInterpolationType, TKnots<:AbstractVector{<:Number}}
+    m::Vector{TCoeffs1}, c::Vector{TCoeffs2}, d::Vector{TCoeffs3}) where {TWeights, TCoeffs1, TCoeffs2, TCoeffs3, TEl, TInterpolationType<:MonotonicInterpolationType, TKnots<:AbstractVector{<:Number}}
 
     isconcretetype(TInterpolationType) || error("The spline type must be a leaf type (was $TInterpolationType)")
-    isconcretetype(TCoeffs) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
+    isconcretetype(tcoef(A)) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
 
     check_monotonic(knots, A)
 
@@ -148,22 +148,23 @@ function MonotonicInterpolation(::Type{TWeights}, it::TInterpolationType, knots:
         T = typeof(cZero * first(A))
     end
 
-    MonotonicInterpolation{T, TCoeffs, TEl, TInterpolationType, TKnots, typeof(A)}(it, knots, A, m, c, d)
+    MonotonicInterpolation{T, TCoeffs1, TCoeffs2, TCoeffs3, TEl, TInterpolationType, TKnots, typeof(A)}(it, knots, A, m, c, d)
 end
 
-function interpolate(::Type{TWeights}, ::Type{TCoeffs}, knots::TKnots,
-    A::AbstractArray{TEl,1}, it::TInterpolationType) where {TWeights,TCoeffs,TEl,TKnots<:AbstractVector{<:Number},TInterpolationType<:MonotonicInterpolationType}
+function interpolate(::Type{TWeights}, ::Type{TCoeffs1},::Type{TCoeffs2},::Type{TCoeffs3}, knots::TKnots,
+    A::AbstractArray{TEl,1}, it::TInterpolationType) where {TWeights,TCoeffs1,TCoeffs2,TCoeffs3,TEl,TKnots<:AbstractVector{<:Number},TInterpolationType<:MonotonicInterpolationType}
 
     check_monotonic(knots, A)
 
     # first we need to determine tangents (m)
     n = length(knots)
-    m, Δ = calcTangents(TCoeffs, knots, A, it)
-    c = Vector{TCoeffs}(undef, n-1)
-    d = Vector{TCoeffs}(undef, n-1)
+    m, Δ = calcTangents(TCoeffs1, knots, A, it)
+    c = Vector{TCoeffs2}(undef, n-1)
+    d = Vector{TCoeffs3}(undef, n-1)
     for k ∈ 1:n-1
         if TInterpolationType == LinearMonotonicInterpolation
-            c[k] = d[k] = zero(TCoeffs)
+            c[k] = zero(TCoeffs2)
+            d[k] = zero(TCoeffs3)
         else
             xdiff = knots[k+1] - knots[k]
             c[k] = (3*Δ[k] - 2*m[k] - m[k+1]) / xdiff
@@ -177,7 +178,7 @@ end
 function interpolate(knots::AbstractVector{<:Number}, A::AbstractArray{TEl,1},
     it::TInterpolationType) where {TEl,TInterpolationType<:MonotonicInterpolationType}
 
-    interpolate(tweight(A), tcoef(A), knots, A, it)
+    interpolate(tweight(A), typeof(first(A)/first(knots)), typeof(first(A)/first(knots)^2), typeof(first(A)/first(knots)^3), knots, A, it)
 end
 
 function (itp::MonotonicInterpolation)(x::Number)
@@ -282,6 +283,7 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
     m = Vector{TCoeffs}(undef, n)
+    buff = Vector{typeof(first(Δ)^2)}(undef, n)
     for k in 1:n-1
         Δk = (y[k+1] - y[k]) / (x[k+1] - x[k])
         Δ[k] = Δk
@@ -317,8 +319,8 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
         end
         α = m[k] / Δk
         β = m[k+1] / Δk
-        τ = 3.0 / sqrt(α^2 + β^2)
-        if τ < 1.0 # if we're outside the circle with radius 3 then move onto the circle
+        τ = 3.0 * oneunit(α) / sqrt(α^2 + β^2)
+        if τ < 1.0   # if we're outside the circle with radius 3 then move onto the circle
             m[k] = τ * α * Δk
             m[k+1] = τ * β * Δk
         end
@@ -341,7 +343,7 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
         Δ[k] = Δk
         if k == 1   # left endpoint
             m[k] = Δk
-        elseif Δ[k-1] * Δk <= zero(TCoeffs)
+        elseif Δ[k-1] * Δk <= zero(Δk^2)
             m[k] = zero(TCoeffs)
         else
             α = (1.0 + (x[k+1] - x[k]) / (x[k+1] - x[k-1])) / 3.0
