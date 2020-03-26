@@ -290,10 +290,10 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
         else
             # If any consecutive secant lines change sign (i.e. curve changes direction), initialize the tangent to zero.
             # This is needed to make the interpolation monotonic. Otherwise set tangent to the average of the secants.
-            if Δk <= zero(Δk)
+            if Δ[k-1] * Δk <= zero(Δk^2)
                 m[k] = zero(TCoeffs)
             else
-                m[k] = Δ[k-1] * (Δ[k-1] + Δk) / 2.0
+                m[k] =  (Δ[k-1] + Δk) / 2.0
             end
         end
     end
