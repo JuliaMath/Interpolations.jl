@@ -25,9 +25,10 @@ end
 @propagate_inbounds function gradient(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
     wis = weightedindexes((value_weights, gradient_weights), itpinfo(itp)..., x)
-    return _gradient(itp.coefs, wis)   # work around #311
+    return SVector(_gradient(itp.coefs, wis...))   # work around #311
 end
-@noinline _gradient(coefs, wis) = SVector(map(inds->coefs[inds...], wis))
+@inline _gradient(coefs, inds, moreinds...) = (coefs[inds...], _gradient(coefs, moreinds...)...)
+_gradient(coefs) = ()
 
 @propagate_inbounds function gradient!(dest, itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     dest .= gradient(itp, x...)
