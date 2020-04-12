@@ -5,6 +5,12 @@ end
 
 
 """
+    Quadratic(bc::BoundaryCondition)
+
+Indicate that the corresponding axis should use quadratic interpolation.
+
+# Extended help
+
 Assuming uniform knots with spacing 1, the `i`th piece of quadratic spline
 implemented here is defined as follows:
 

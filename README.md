@@ -10,6 +10,12 @@ Documentation:
 
 **NEWS** v0.9 was a breaking release. See the [news](NEWS.md) for details on how to update.
 
+**NEWS** This package is officially looking for a maintainer.
+The original authors are only fixing bugs that affect them personally.
+However, to facilitate transition to a long-term maintainer,
+for a period of time they will make a concerted attempt to review pull requests.
+Step forward soon to avoid the risk of not being able to take advantage of such offers of support.
+
 This package implements a variety of interpolation schemes for the
 Julia language.  It has the goals of ease-of-use, broad algorithmic
 support, and exceptional performance.

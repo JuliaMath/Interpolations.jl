@@ -40,9 +40,12 @@ import Base: convert, size, axes, promote_rule, ndims, eltype, checkbounds, axes
 
 abstract type Flag end
 abstract type InterpolationType <: Flag end
+"`NoInterp()` indicates that the corresponding axis must use integer indexing (no interpolation is to be performed)"
 struct NoInterp <: InterpolationType end
 abstract type GridType <: Flag end
+"`OnGrid()` indicates that the boundary condition applies at the first & last nodes"
 struct OnGrid <: GridType end
+"`OnCell()` indicates that the boundary condition applies a half-gridspacing beyond the first & last nodes"
 struct OnCell <: GridType end
 
 const DimSpec{T} = Union{T,Tuple{Vararg{Union{T,NoInterp}}},NoInterp}
@@ -73,23 +76,27 @@ An abstract type with one of the following values (see the help for each for det
 - `InPlace(gt)`
 - `InPlaceQ(gt)`
 
-where `gt` is the grid type, e.g., `OnGrid()` or `OnCell()`. `OnGrid` means that the boundary
-condition "activates" at the first and/or last integer location within the interpolation region,
-`OnCell` means the interpolation extends a half-integer beyond the edge before
-activating the boundary condition.
+where `gt` is the grid type, e.g., [`OnGrid()`](@ref) or [`OnCell()`](@ref).
 """
 abstract type BoundaryCondition <: Flag end
 # Put the gridtype into the boundary condition, since that's all it affects (see issue #228)
 # Nothing is used for extrapolation
+"`Throw(gt)` causes beyond-the-edge extrapolation to throw an error"
 struct Throw{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+"`Flat(gt)` sets the extrapolation slope to zero"
 struct Flat{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+"`Line(gt)` uses a constant slope for extrapolation"
 struct Line{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
 struct Free{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+"`Periodic(gt)` applies periodic boundary conditions"
 struct Periodic{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+"`Reflect(gt)` applies reflective boundary conditions"
 struct Reflect{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+"`InPlace(gt)` is a boundary condition that allows prefiltering to occur in-place (it typically requires padding)"
 struct InPlace{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
-# InPlaceQ is exact for an underlying quadratic. This is nice for ground-truth testing
-# of in-place (unpadded) interpolation.
+"""`InPlaceQ(gt)` is similar to `InPlace(gt)`, but is exact when the values being interpolated
+arise from an underlying quadratic. It is primarily useful for testing purposes,
+allowing near-exact (to machine precision) comparisons against ground truth."""
 struct InPlaceQ{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
 const Natural = Line
 
@@ -114,7 +121,7 @@ twotuple(x, y) = (x, y)
 
 Return the `bounds` of the domain of `itp` as a tuple of `(min, max)` pairs for each coordinate. This is best explained by example:
 
-```jldoctest
+```jldoctest; setup = :(using Interpolations)
 julia> itp = interpolate([1 2 3; 4 5 6], BSpline(Linear()));
 
 julia> bounds(itp)
@@ -337,7 +344,7 @@ Compute the weights for interpolation of the value at an offset `δx` from the "
 
 # Example
 
-```jldoctest
+```jldoctest; setup = :(using Interpolations)
 julia> Interpolations.value_weights(Linear(), 0.2)
 (0.8, 0.2)
 ```
@@ -354,7 +361,7 @@ Compute the weights for interpolation of the gradient at an offset `δx` from th
 
 # Example
 
-```jldoctest
+```jldoctest; setup = :(using Interpolations)
 julia> Interpolations.gradient_weights(Linear(), 0.2)
 (-1.0, 1.0)
 ```
@@ -371,7 +378,7 @@ Compute the weights for interpolation of the hessian at an offset `δx` from the
 
 # Example
 
-```jldoctest
+```jldoctest; setup = :(using Interpolations)
 julia> Interpolations.hessian_weights(Linear(), 0.2)
 (0.0, 0.0)
 ```
