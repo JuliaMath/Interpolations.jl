@@ -59,7 +59,7 @@ Compute `WeightedIndex` values for evaluation at the position `xs...`.
 typically `value_weights`, `gradient_weights`, and/or `hessian_weights`.
 `itpflags` and `nodes` can be obtained from `itpinfo(itp)...`.
 
-See the "developer documenation" for further information.
+See the "developer documentation" for further information.
 """
 @inline function weightedindexes(fs::F, itpflags::NTuple{N,Flag}, knots::NTuple{N,AbstractVector}, xs::NTuple{N,Number}) where {F,N}
     # parts = map((flag, knotvec, x)->weightedindex_parts(fs, flag, knotvec, x), itpflags, knots, xs)
