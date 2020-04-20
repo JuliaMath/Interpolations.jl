@@ -1,6 +1,12 @@
 struct Linear <: Degree{1} end  # boundary conditions not supported
 
 """
+    Linear()
+
+Indicate that the corresponding axis should use linear interpolation.
+
+# Extended help
+
 Assuming uniform knots with spacing 1, the `i`th piece of linear b-spline
 implemented here is defined as follows.
 
