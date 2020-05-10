@@ -85,10 +85,21 @@ using Test
     end
 
     @testset "Monotonic" begin
-        A = rand(20)
         A_x = collect(1.0:2.0:40.0)
+        A = map(x->x^2, A_x)
         itp = interpolate(A_x, A, FritschButlandMonotonicInterpolation())
-        @test summary(itp) == "20-element interpolate(::Array{Float64,1}, ::Array{Float64,1}, FritschButlandMonotonicInterpolation()) with element type Float64"
+        teststring = "20-element interpolate(::Array{Float64,1}, ::Array{Float64,1}, FritschButlandMonotonicInterpolation()) with element type Float64"
+        @test summary(itp) == teststring
+
+        io = IOBuffer()
+        show(io, itp)
+        str = String(take!(io))
+        @test occursin(teststring, str)
+
+        io2 = IOBuffer()
+        show(io2, MIME("text/plain"), itp)
+        str = String(take!(io2))
+        @test occursin(teststring, str)
     end
 
     @testset "Extrapolation" begin

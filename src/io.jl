@@ -107,16 +107,19 @@ function show_ranged(io::IO, X, knots)
     Base.print_array(io, [X(x...) for x in Iterators.product(knots...)])
 end
 
-getknots(X::BSplineInterpolation)  = axes(X)
-getknots(X::ScaledInterpolation)   = X.ranges
-getknots(X::GriddedInterpolation)  = X.knots
-getknots(X::AbstractExtrapolation) = getknots(parent(X))
+getknots(X::BSplineInterpolation)   = axes(X)
+getknots(X::ScaledInterpolation)    = X.ranges
+getknots(X::GriddedInterpolation)   = X.knots
+getknots(X::AbstractExtrapolation)  = getknots(parent(X))
+getknots(X::MonotonicInterpolation) = (X.knots,)
 
-Base.show(io::IO, ::MIME{Symbol("text/plain")}, X::ScaledInterpolation)   = show_ranged(io, X, getknots(X))
-Base.show(io::IO, ::MIME{Symbol("text/plain")}, X::GriddedInterpolation)  = show_ranged(io, X, getknots(X))
-Base.show(io::IO, ::MIME{Symbol("text/plain")}, X::AbstractExtrapolation) = show_ranged(io, X, getknots(X))
+Base.show(io::IO, ::MIME{Symbol("text/plain")}, X::ScaledInterpolation)    = show_ranged(io, X, getknots(X))
+Base.show(io::IO, ::MIME{Symbol("text/plain")}, X::GriddedInterpolation)   = show_ranged(io, X, getknots(X))
+Base.show(io::IO, ::MIME{Symbol("text/plain")}, X::AbstractExtrapolation)  = show_ranged(io, X, getknots(X))
+Base.show(io::IO, ::MIME{Symbol("text/plain")}, X::MonotonicInterpolation) = show_ranged(io, X, getknots(X))
 
 # these are called by show(X)
-Base.show(io::IO, X::ScaledInterpolation)   = show_ranged(io, X, getknots(X))
-Base.show(io::IO, X::GriddedInterpolation)  = show_ranged(io, X, getknots(X))
-Base.show(io::IO, X::AbstractExtrapolation) = show_ranged(io, X, getknots(X))
+Base.show(io::IO, X::ScaledInterpolation)    = show_ranged(io, X, getknots(X))
+Base.show(io::IO, X::GriddedInterpolation)   = show_ranged(io, X, getknots(X))
+Base.show(io::IO, X::AbstractExtrapolation)  = show_ranged(io, X, getknots(X))
+Base.show(io::IO, X::MonotonicInterpolation) = show_ranged(io, X, getknots(X))

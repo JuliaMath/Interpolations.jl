@@ -25,9 +25,10 @@ end
 @propagate_inbounds function gradient(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
     wis = weightedindexes((value_weights, gradient_weights), itpinfo(itp)..., x)
-    return _gradient(itp.coefs, wis)   # work around #311
+    return SVector(_gradient(itp.coefs, wis...))   # work around #311
 end
-@noinline _gradient(coefs, wis) = SVector(map(inds->coefs[inds...], wis))
+@inline _gradient(coefs, inds, moreinds...) = (coefs[inds...], _gradient(coefs, moreinds...)...)
+_gradient(coefs) = ()
 
 @propagate_inbounds function gradient!(dest, itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     dest .= gradient(itp, x...)
@@ -50,7 +51,16 @@ end
     itp.(Iterators.product(x...))
 end
 
+"""
+    weightedindexes(fs, itpflags, nodes, xs)
 
+Compute `WeightedIndex` values for evaluation at the position `xs...`.
+`fs` is a function or tuple of functions indicating the types of index required,
+typically `value_weights`, `gradient_weights`, and/or `hessian_weights`.
+`itpflags` and `nodes` can be obtained from `itpinfo(itp)...`.
+
+See the "developer documentation" for further information.
+"""
 @inline function weightedindexes(fs::F, itpflags::NTuple{N,Flag}, knots::NTuple{N,AbstractVector}, xs::NTuple{N,Number}) where {F,N}
     # parts = map((flag, knotvec, x)->weightedindex_parts(fs, flag, knotvec, x), itpflags, knots, xs)
     parts = map3argf(weightedindex_parts, fs, itpflags, knots, xs)

@@ -210,7 +210,7 @@ function Base.iterate(iter::ScaledIterator)
     item, cistate = ret
     wis = getindex.(iter.wis, Tuple(item))
     ces = cache_evaluations(iter.sitp.itp.coefs, indexes(wis[1]), weights(wis[1]), Base.tail(wis))
-    return _reduce(+, weights(wis[1]).*ces), ScaledIterState(cistate, first(iter.breaks1), ces)
+    return _reduce(+, weights(wis[1]).*ces), ScaledIterState(cistate, firstindex(iter.breaks1), ces)
 end
 
 function Base.iterate(iter::ScaledIterator, state)
@@ -227,7 +227,7 @@ function Base.iterate(iter::ScaledIterator, state)
     # Re-evaluate. We're being a bit lazy here: in some cases, some of the cached values could be reused
     wis = getindex.(iter.wis, Tuple(item))
     ces = cache_evaluations(iter.sitp.itp.coefs, indexes(wis[1]), weights(wis[1]), Base.tail(wis))
-    return _reduce(+, weights(wis[1]).*ces), ScaledIterState(cistate, isnext1 ? state.ibreak+1 : first(iter.breaks1), ces)
+    return _reduce(+, weights(wis[1]).*ces), ScaledIterState(cistate, isnext1 ? state.ibreak+1 : firstindex(iter.breaks1), ces)
 end
 
 _reduce(op, list) = op(list[1], _reduce(op, Base.tail(list)))
