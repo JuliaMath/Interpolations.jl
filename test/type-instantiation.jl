@@ -68,10 +68,10 @@ for T in (
 end
 # sample one dimspec for each interpolation constructor to see that it
 # calls the construct_instance() function correctly
-@inferred(interpolate(A2, Tuple{BSpline{Linear},BSpline{Constant}}, Tuple{OnGrid,OnCell}))
-@inferred(interpolate!(copy(A2), Tuple{BSpline{Linear},BSpline{Constant}}, Tuple{OnGrid,OnCell}))
-@inferred(interpolate(A2, Tuple{BSpline{Linear},BSpline{Constant}}, (OnGrid(),OnCell())))
-@inferred(interpolate!(copy(A2), Tuple{BSpline{Linear},BSpline{Constant}}, (OnGrid(),OnCell())))
+@inferred(interpolate(A2, Tuple{BSpline{Linear},BSpline{<:Constant}}, Tuple{OnGrid,OnCell}))
+@inferred(interpolate!(copy(A2), Tuple{BSpline{Linear},BSpline{<:Constant}}, Tuple{OnGrid,OnCell}))
+@inferred(interpolate(A2, Tuple{BSpline{Linear},BSpline{<:Constant}}, (OnGrid(),OnCell())))
+@inferred(interpolate!(copy(A2), Tuple{BSpline{Linear},BSpline{<:Constant}}, (OnGrid(),OnCell())))
 @inferred(interpolate(A2, (BSpline(Linear()),BSpline(Constant())), Tuple{OnGrid,OnCell}))
 @inferred(interpolate!(copy(A2), (BSpline(Linear()),BSpline(Constant())), Tuple{OnGrid,OnCell}))
 
