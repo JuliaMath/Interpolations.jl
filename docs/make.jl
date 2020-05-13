@@ -8,7 +8,9 @@ pages=["Home" => "index.md",
         "Interpolation algorithms" => "control.md",
         "Extrapolation" => "extrapolation.md",
         "Convenience Constructors" => "convenience-construction.md",
+        "Developer documentation" => "devdocs.md",
         "Library" => "api.md"]
 )
 
-deploydocs(repo="github.com/JuliaMath/Interpolations.jl")
+deploydocs(repo="github.com/JuliaMath/Interpolations.jl",
+            push_preview=true)
