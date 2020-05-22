@@ -178,7 +178,9 @@ end
 function interpolate(knots::AbstractVector{<:Number}, A::AbstractArray{TEl,1},
     it::TInterpolationType) where {TEl,TInterpolationType<:MonotonicInterpolationType}
 
-    interpolate(tweight(A), typeof(first(A)/first(knots)), typeof(first(A)/first(knots)^2), typeof(first(A)/first(knots)^3), knots, A, it)
+    interpolate(tweight(A),typeof(oneunit(eltype(A)) / oneunit(eltype(knots))),
+        typeof(oneunit(eltype(A)) / oneunit(eltype(knots))^2),
+        typeof(oneunit(eltype(A)) / oneunit(eltype(knots))^3),knots,A,it)
 end
 
 function (itp::MonotonicInterpolation)(x::Number)
