@@ -271,7 +271,9 @@ Base.:(/)(wi::WeightedArbIndex, x::Number) = WeightedArbIndex(wi.indexes, wi.wei
 # This is to avoid ambiguities with methods that specialize on the array type rather than
 # the index type.
 Base.to_indices(A, I::Tuple{Vararg{Union{Int,WeightedIndex}}}) = I
-@propagate_inbounds Base._getindex(::IndexLinear, A::AbstractVector, i::Int) = getindex(A, i)  # ambiguity resolution
+if VERSION < v"1.6.0-DEV.104"
+    @propagate_inbounds Base._getindex(::IndexLinear, A::AbstractVector, i::Int) = getindex(A, i)  # ambiguity resolution
+end
 @inline function Base._getindex(::IndexStyle, A::AbstractArray{T,N}, I::Vararg{Union{Int,WeightedIndex},N}) where {T,N}
     interp_getindex(A, I, ntuple(d->0, Val(N))...)
 end
