@@ -7,7 +7,7 @@ export Lanczos
 
 Lanczos resampling via a kernel with size `a`.
 
-This form of interpolation is merely the discrete convolution of the samples with a Lanczos kernel of size `a`. The size is directly related to how "far" the interpolation will reach for information. A default value of 4 matches the OpenCV implementation `lanczos4`.
+This form of interpolation is merely the discrete convolution of the samples with a Lanczos kernel of size `a`. The size is directly related to how "far" the interpolation will reach for information, and has `O(a^2)` impact on runtime. A default value of 4 matches the OpenCV implementation `lanczos4`.
 """
 struct Lanczos <: InterpolationType
     a::Integer
@@ -31,10 +31,10 @@ struct LanczosInterpolation{T, N, IT<:DimSpec{Lanczos}} <: AbstractInterpolation
     it::IT
 end
 
-@generated function (lz::LanczosInterpolation{T, N})(pts...) where {T,N}
+@generated function (itp::LanczosInterpolation{T, N})(pts...) where {T,N}
     quote
-        a = lz.degree
-        K = lz.data
+        a = itp.degree
+        K = itp.data
         w = s = 0
         # get weighting
         @nloops $N i (d -> -a+1:a+1) begin
@@ -54,13 +54,13 @@ end
     end
 end
 
-getknots(lz::LanczosInterpolation) = axes(lz.data)
+getknots(itp::LanczosInterpolation) = axes(itp.data)
 
-size(lz::LanczosInterpolation) = size(lz.data)
-size(lz::LanczosInterpolation, i) = size(lz.data, i)
-axes(lz::LanczosInterpolation) = axes(lz.data)
-axes(lz::LanczosInterpolation, i) = axes(lz.data, i)
-lbounds(lz::LanczosInterpolation) = map(first, axes(lz.data))
-lbounds(lz::LanczosInterpolation, i) = first(axes(lz.data, i))
-ubounds(lz::LanczosInterpolation) = map(last, axes(lz.data))
-ubounds(lz::LanczosInterpolation, i) = last(axes(lz.data, i))
+size(itp::LanczosInterpolation) = size(itp.data)
+size(itp::LanczosInterpolation, i) = size(itp.data, i)
+axes(itp::LanczosInterpolation) = axes(itp.data)
+axes(itp::LanczosInterpolation, i) = axes(itp.data, i)
+lbounds(itp::LanczosInterpolation) = map(first, axes(itp.data))
+lbounds(itp::LanczosInterpolation, i) = first(axes(itp.data, i))
+ubounds(itp::LanczosInterpolation) = map(last, axes(itp.data))
+ubounds(itp::LanczosInterpolation, i) = last(axes(itp.data, i))
