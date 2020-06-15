@@ -55,6 +55,7 @@ end
 end
 
 getknots(itp::LanczosInterpolation) = axes(itp.data)
+coefficients(itp::LanczosInterpolation) = itp.data
 
 size(itp::LanczosInterpolation) = size(itp.data)
 size(itp::LanczosInterpolation, i) = size(itp.data, i)
