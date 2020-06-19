@@ -67,7 +67,13 @@ function positions(it::Lanczos, ax, x)
     fast_trunc(Int, xf) - it.n + 1, δx
 end
 
-function value_weights(it::Lanczos, δx)
+function value_weights(it::Lanczos, δx::T) where T
+    # LUTs
+    it.a == it.n == 4 && return _lanczos4(δx)
+
+    # short-circuit if integral
+    isinteger(δx) && return ntuple(i -> i == it.n - δx ? one(T) : zero(T), 2it.n)
+
     idxs = -it.n + 1:it.n
     cs = @. lanczos(idxs + δx, it.a, it.n)
     return Tuple(cs ./ sum(cs))
@@ -75,4 +81,20 @@ end
 
 function padded_axis(ax::AbstractUnitRange, it::Lanczos)
     return first(ax) - it.n + 1:last(ax) + it.n
+end
+
+# precise implementations for fast evaluation of common kernels
+
+const s45 = 0.70710678118654752440084436210485
+const l4_2d_cs = SA[1 0; -s45 -s45; 0 1; s45 -s45; -1 0; s45 s45; 0 -1; -s45 s45]
+
+function _lanczos4(δx::T) where T
+    isinteger(δx) && return ntuple(i -> i == 4 - δx ? one(T) : zero(T), 8)
+    y0 = -(δx + 3) * π/4
+    s0, c0 = sincos(y0)
+    cs = ntuple(8) do i
+        y = -(δx + 3 - i) * π / 4
+        (l4_2d_cs[i, 1] * s0 + l4_2d_cs[i, 2] * c0) / y^2
+    end
+    return cs ./ sum(cs)
 end
