@@ -146,8 +146,6 @@ ubound(ax::AbstractRange, deg::DegreeBC) = ubound(ax, deg, deg.bc.gt)
 
 lbound(ax::AbstractUnitRange, ::DegreeBC, ::OnCell) = first(ax) - 0.5
 ubound(ax::AbstractUnitRange, ::DegreeBC, ::OnCell) = last(ax) + 0.5
-lbound(ax::StepRangeLen{T}, ::DegreeBC, ::OnCell) where T = first(ax) - T(0.5)
-ubound(ax::StepRangeLen{T}, ::DegreeBC, ::OnCell) where T = last(ax)  + T(0.5)
 lbound(ax::AbstractUnitRange, ::DegreeBC, ::OnGrid) = first(ax)
 ubound(ax::AbstractUnitRange, ::DegreeBC, ::OnGrid) = last(ax)
 
