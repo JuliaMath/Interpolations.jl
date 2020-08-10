@@ -4,23 +4,22 @@ using StaticArrays
 export Lanczos
 
 """
-    Lanczos(a=4, n=a)
+    Lanczos{N}(a=4)
 
-Lanczos resampling via a kernel with scale parameter `a` and support over `n` neighbors.
+Lanczos resampling via a kernel with scale parameter `a` and support over `N` neighbors.
 
-This form of interpolation is merely the discrete convolution of the samples with a Lanczos kernel of size `a`. The size is directly related to how "far" the interpolation will reach for information, and has `O(n^2)` impact on runtime. A default value of 4 matches the OpenCV implementation `lanczos4`.
+This form of interpolation is merely the discrete convolution of the samples with a Lanczos kernel of size `a`. The size is directly related to how "far" the interpolation will reach for information, and has `O(N^2)` impact on runtime. A default value of 4 matches the OpenCV implementation `lanczos4`.
 """
-struct Lanczos <: InterpolationType
+struct Lanczos{N} <: InterpolationType
     a::Int
-    n::Int
     
-    function Lanczos(a, n)
-        n < a && @warn "Using a smaller support than scale for Lanczos window. Proceed with caution."
-        new(a, n)
+    function Lanczos{N}(a) where N
+        N < a && @warn "Using a smaller support than scale for Lanczos window. Proceed with caution."
+        new{N}(a)
     end
 end
 
-Lanczos(a=4) = Lanczos(a, a)
+Lanczos(a=4) = Lanczos{a}(a)
 
 """
     LanczosInterpolation
@@ -30,6 +29,8 @@ struct LanczosInterpolation{T,N,IT <: DimSpec{Lanczos},A <: AbstractArray{T,N},P
     parentaxes::P
     it::IT
 end
+
+@generated degree(::Lanczos{N}) where {N} = :($N)
 
 getknots(itp::LanczosInterpolation) = axes(itp)
 coefficients(itp::LanczosInterpolation) = itp.coefs
@@ -59,24 +60,25 @@ end
 function positions(it::Lanczos, ax, x)
     xf = floorbounds(x, ax)
     δx = x - xf
-    fast_trunc(Int, xf) - it.n + 1, δx
+    fast_trunc(Int, xf) - degree(it) + 1, δx
 end
 
 function value_weights(it::Lanczos, δx::S) where S
-    T = float(S)
+    N = degree(it)
     # short-circuit if integral
-    isinteger(δx) && return ntuple(i -> i == it.n - δx ? one(T) : zero(T), 2it.n)
+    isinteger(δx) && return ntuple(i->convert(float(S), i == N - δx), Val(2N))
 
     # LUTs
-    it.a == it.n == 4 && return _lanczos4(δx)
+    it.a === N === 4 && return _lanczos4(δx)
 
-    cs = ntuple(i -> lanczos(it.n - i + δx, it.a, it.n), 2it.n)
-    normed_cs = ntuple(i -> cs[i] / sum(cs), length(cs))
+    cs = ntuple(i -> lanczos(N - i + δx, it.a, N), Val(2N))
+    normed_cs = ntuple(i -> cs[i] / sum(cs), Val(length(cs)))
     return normed_cs
 end
 
 function padded_axis(ax::AbstractUnitRange, it::Lanczos)
-    return first(ax) - it.n + 1:last(ax) + it.n
+    N = degree(it)
+    return first(ax) - N + 1:last(ax) + N
 end
 
 # precise implementations for fast evaluation of common kernels
@@ -92,6 +94,7 @@ lanczos(x::T, a::Integer, n=a) where {T} = abs(x) < n ? T(sinc(x) * sinc(x / a))
 const s45 = 0.70710678118654752440084436210485
 const l4_2d_cs = SA[1 0; -s45 -s45; 0 1; s45 -s45; -1 0; s45 s45; 0 -1; -s45 s45]
 
+
 function _lanczos4(δx)
     p_4 = π / 4
     y0 = -(δx + 3) * p_4
@@ -100,6 +103,6 @@ function _lanczos4(δx)
         y = (δx + 4 - i) * p_4
         (l4_2d_cs[i, 1] * s0 + l4_2d_cs[i, 2] * c0) / y^2
     end
-    normed_cs = ntuple(i -> cs[i] / sum(cs), 8)
+    normed_cs = ntuple(i -> cs[i] / sum(cs), Val(8))
     return normed_cs
 end
