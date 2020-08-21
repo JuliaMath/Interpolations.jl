@@ -17,12 +17,12 @@ return `A[round(Int,x)]` when interpolating.
 """
 Constant
 
-function positions(c::Constant{Previous}, ax, x)  # discontinuity occurs at half-integer locations
+function positions(c::Constant{Previous}, ax, x)  # discontinuity occurs at integer locations
     xm = floorbounds(x, ax)
     δx = x - xm
     fast_trunc(Int, xm), δx
 end
-function positions(c::Constant{Next}, ax, x)  # discontinuity occurs at half-integer locations
+function positions(c::Constant{Next}, ax, x)  # discontinuity occurs at integer locations
     xm = ceilbounds(x, ax)
     δx = x - xm
     fast_trunc(Int, xm), δx
