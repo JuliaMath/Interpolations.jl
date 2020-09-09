@@ -10,6 +10,12 @@ export
 abstract type Degree{N} <: Flag end
 abstract type DegreeBC{N} <: Degree{N} end  # degree type supporting a BoundaryCondition
 
+"""
+    BSpline(degree)
+
+A flag signaling `BSpline` (integer-grid b-spline) interpolation along the corresponding axis.
+`degree` is one of [`Constant`](@ref), [`Linear`](@ref), [`Quadratic`](@ref), or [`Cubic`](@ref).
+"""
 struct BSpline{D<:Degree} <: InterpolationType
     degree::D
 end
@@ -38,6 +44,28 @@ function Base.show(io::IO, deg::DegreeBC)
     print(io, ')')
 end
 
+"""
+    BSplineInterpolation{T,N,TCoefs,IT,Axs}
+
+An interpolant-type for b-spline interpolation on a uniform grid with integer nodes.
+`T` indicates the element type for operations like `collect(itp)`, and may also agree with
+the values obtained from `itp(x, y, ...)` at least for certain types of `x` and `y`.
+`N` is the dimensionality of the interpolant. The remaining type-parameters
+describe the types of fields:
+- the `coefs` field holds the interpolation coefficients. Depending on prefiltering,
+  these may or may not be the same as the supplied array of interpolant values.
+- `parentaxes` holds the axes of the parent. Depending on prefiltering this may be
+  "narrower" than the axes of `coefs`.
+- `it` holds the interpolation type, e.g., `BSpline(Linear())` or `(BSpline(Quadratic(OnCell()),BSpline(Linear()))`.
+
+`BSplineInterpolation` objects are typically created with [`interpolate`](@ref).
+However, for customized control you may also construct them with
+
+    BSplineInterpolation(TWeights, coefs, it, axs)
+
+where `T` gets computed from the product of `TWeights` and `eltype(coefs)`.
+(This is equivalent to indicating that you'll be evaluating at locations `itp(x::TWeights, y::TWeights, ...)`.)
+"""
 struct BSplineInterpolation{T,N,TCoefs<:AbstractArray,IT<:DimSpec{BSpline},Axs<:Tuple{Vararg{AbstractUnitRange,N}}} <: AbstractInterpolation{T,N,IT}
     coefs::TCoefs
     parentaxes::Axs
@@ -139,19 +167,18 @@ function interpolate(::Type{TWeights}, ::Type{TC}, A, it::IT, λ::Real, k::Int) 
 end
 
 """
-    itp = interpolate(A, interpmode, gridstyle)
+    itp = interpolate(A, interpmode)
 
-Interpolate an array `A` in the mode determined by `interpmode` and `gridstyle`.
+Interpolate an array `A` in the mode determined by `interpmode`.
 `interpmode` may be one of
 
-- `BSpline(NoInterp())`
+- `NoInterp()`
+- `BSpline(Constant())`
 - `BSpline(Linear())`
-- `BSpline(Quadratic(BC()))` (see [`BoundaryCondition`](@ref))
-- `BSpline(Cubic(BC()))`
+- `BSpline(Quadratic(bc))` (see [`BoundaryCondition`](@ref))
+- `BSpline(Cubic(bc))`
 
 It may also be a tuple of such values, if you want to use different interpolation schemes along each axis.
-
-`gridstyle` should be one of `OnGrid()` or `OnCell()`.
 """
 function interpolate(A::AbstractArray, it::IT) where {IT<:DimSpec{BSpline}}
     interpolate(tweight(A), tcoef(A), A, it)

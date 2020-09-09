@@ -12,6 +12,8 @@ end
 
 const GridIndex{T} = Union{AbstractVector{T}, Tuple}
 
+# Note: the term "knots" is probably misused, these are more properly "nodes"
+
 struct GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{AbstractVector}}} <: AbstractInterpolation{T,N,IT}
     knots::K
     coefs::Array{TCoefs,N}
@@ -64,6 +66,20 @@ itpflag(A::GriddedInterpolation) = A.it
 function interpolate(::Type{TWeights}, ::Type{TCoefs}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {TWeights,TCoefs,Tel,N,IT<:DimSpec{Gridded}}
     GriddedInterpolation(TWeights, knots, A, it)
 end
+"""
+    itp = interpolate((nodes1, nodes2, ...), A, interpmode)
+
+Interpolate an array `A` on a non-uniform but rectangular grid specified by the given `nodes`,
+in the mode determined by `interpmode`.
+
+`interpmode` may be one of
+
+- `NoInterp()`
+- `Gridded(Constant())`
+- `Gridded(Linear())`
+
+It may also be a tuple of such values, if you want to use different interpolation schemes along each axis.
+"""
 function interpolate(knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {Tel,N,IT<:DimSpec{Gridded}}
     interpolate(tweight(A), tcoef(A), knots, A, it)
 end
