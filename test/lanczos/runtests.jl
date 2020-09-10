@@ -7,7 +7,7 @@ using Interpolations: degree,
                       lbounds,
                       ubounds
 
-# @testset "Lanczos" begin
+@testset "Lanczos" begin
 
 @testset "Lanczos($N)" for N in 2:4
     X = 1:100
