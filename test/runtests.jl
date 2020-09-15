@@ -28,6 +28,9 @@ const isci = get(ENV, "CI", "") in ("true", "True")
     # monotonic tests
     include("monotonic/runtests.jl")
 
+    # lanczos tests
+    include("lanczos/runtests.jl")
+
     # test gradient evaluation
     include("gradient.jl")
     isci && println("finished gradient")
