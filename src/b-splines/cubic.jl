@@ -7,7 +7,7 @@ end
 """
     Cubic(bc::BoundaryCondition)
 
-Indicate that the corresponding axis should use quadratic interpolation.
+Indicate that the corresponding axis should use cubic interpolation.
 
 # Extended help
 
