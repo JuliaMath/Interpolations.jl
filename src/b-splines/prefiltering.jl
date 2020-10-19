@@ -52,7 +52,6 @@ end
 function prefilter!(
     ::Type{TWeights}, ret::TCoefs, it::BSpline
     ) where {TWeights,TCoefs<:AbstractArray}
-    local buf, shape, retrs
     sz = size(ret)
     first = true
     for dim in 1:ndims(ret)
@@ -72,18 +71,7 @@ function diffop(::Type{TWeights}, n::Int, k::Int) where {TWeights}
 end
 diffop(n::Int, k::Int) = diffop(Float64, n, k)
 ### TODO: add compiled constructor for most common operators of order k=1,2
-#
-#function diffop(::Type{TWeights}, n::Int, k::Int) where {TWeights}
-#    D1 = spdiagm(0 => -ones(TWeights,n-1), 1 => ones(TWeights,n-1))[1:end-1, :]
-#    D = D1
-#    for i in 1:k-1
-#        D = diff(D; dims=1)
-##        D = D1[1+i:end, 1+i:end] * D
-##        lmul!(D1[1+i:end, 1+i:end], D)
-#    end
-#
-#    D' * D
-#end
+
 
 function prefilter!(
     ::Type{TWeights}, ret::TCoefs, it::BSpline, λ::Real, k::Int
@@ -109,11 +97,12 @@ function prefilter!(
     end
 
     M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[1], degree(it))
-    ### TEST REGULARIZATION
-    n = sz[1]
-    Q = Matrix(diffop(TWeights, n, k))
-    K = cholesky(Matrix(M)' * Matrix(M) + λ * Q)
-    B = Matrix(M)' * popwrapper(ret)
+    ## Solve with regularization
+    # Convert to dense Matrix because `*(Woodbury{Adjoint}, Woodbury)` is not defined
+    Mt = Matrix(M)'
+    Q = diffop(TWeights, sz[1], k)
+    K = cholesky(Mt * Matrix(M) + λ * Q)
+    B = Mt * popwrapper(ret)
     ldiv!(popwrapper(ret), K, B)
 
     ret
@@ -122,7 +111,6 @@ end
 function prefilter!(
     ::Type{TWeights}, ret::TCoefs, its::Tuple{Vararg{Union{BSpline,NoInterp}}}
     ) where {TWeights,TCoefs<:AbstractArray}
-    local buf, shape, retrs
     sz = size(ret)
     for dim in 1:ndims(ret)
         it = iextract(its, dim)
