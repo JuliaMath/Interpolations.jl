@@ -40,10 +40,18 @@ function prefilter(
     prefilter!(TWeights, ret, it)
 end
 
+function prefilter(
+    ::Type{TWeights}, ::Type{TC}, A::AbstractArray,
+    it::Union{BSpline,Tuple{Vararg{Union{BSpline,NoInterp}}}},
+    λ::Real, k::Int
+    ) where {TWeights,TC}
+    ret = copy_with_padding(TC, A, it)
+    prefilter!(TWeights, ret, it, λ, k)
+end
+
 function prefilter!(
     ::Type{TWeights}, ret::TCoefs, it::BSpline
     ) where {TWeights,TCoefs<:AbstractArray}
-    local buf, shape, retrs
     sz = size(ret)
     first = true
     for dim in 1:ndims(ret)
@@ -53,12 +61,57 @@ function prefilter!(
     ret
 end
 
+function diffop(::Type{TWeights}, n::Int, k::Int) where {TWeights}
+    D = spdiagm(0 => ones(TWeights,n))
+    for i in 1:k
+        D = diff(D; dims=1)
+    end
+    ## TODO: Normalize by n?
+    D' * D
+end
+diffop(n::Int, k::Int) = diffop(Float64, n, k)
+### TODO: add compiled constructor for most common operators of order k=1,2
+
+
+function prefilter!(
+    ::Type{TWeights}, ret::TCoefs, it::BSpline, λ::Real, k::Int
+    ) where {TWeights,TCoefs<:AbstractArray}
+
+    sz = size(ret)
+
+    # Test if regularizing is allowed
+    fallback = if ndims(ret) > 1
+        @warn "Smooth BSpline only available for Vectors, fallback to non-smoothed"
+        true
+    elseif λ < 0
+        @warn "Smooth BSpline require a non-negative λ, fallback to non-smoothed: $(λ)"
+        true
+    elseif λ == 0
+        true
+    else
+        false
+    end
+    
+    if fallback
+        return prefilter!(TWeights, ret, it)
+    end
+
+    M, b = prefiltering_system(TWeights, eltype(TCoefs), sz[1], degree(it))
+    ## Solve with regularization
+    # Convert to dense Matrix because `*(Woodbury{Adjoint}, Woodbury)` is not defined
+    Mt = Matrix(M)'
+    Q = diffop(TWeights, sz[1], k)
+    K = cholesky(Mt * Matrix(M) + λ * Q)
+    B = Mt * popwrapper(ret)
+    ldiv!(popwrapper(ret), K, B)
+
+    ret
+end
+
 function prefilter!(
     ::Type{TWeights}, ret::TCoefs, its::Tuple{Vararg{Union{BSpline,NoInterp}}}
     ) where {TWeights,TCoefs<:AbstractArray}
-    local buf, shape, retrs
     sz = size(ret)
-    first = true
     for dim in 1:ndims(ret)
         it = iextract(its, dim)
         if it != NoInterp

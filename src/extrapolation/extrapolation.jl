@@ -53,8 +53,7 @@ count_interp_dims(::Type{<:Extrapolation{T,N,ITPT}}, n) where {T,N,ITPT} = count
 end
 @inline function (etp::Extrapolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
     itp = parent(etp)
-    Tret = typeof(lispyprod(zero(T), x...))
-    ret = zeros(Tret, shape(x...))
+    ret = zeros(T, shape(x...))
     for (i, y) in zip(eachindex(ret), Iterators.product(x...))
         ret[i] = etp(y...)
     end

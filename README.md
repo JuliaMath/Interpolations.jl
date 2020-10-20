@@ -1,12 +1,9 @@
 # Interpolations
 
 [![Build Status](https://travis-ci.org/JuliaMath/Interpolations.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Interpolations.jl)
-[![PkgEval Status](http://pkg.julialang.org/badges/Interpolations_0.4.svg)](http://pkg.julialang.org/?pkg=Interpolations)
-[![Interpolations](http://pkg.julialang.org/badges/Interpolations_0.5.svg)](http://pkg.julialang.org/?pkg=Interpolations)
-
-Documentation:
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](http://juliamath.github.io/Interpolations.jl/latest)
 
+**NEWS** This package is currently under new maintainership. Please be patient while the new maintainer learns the new package. If you would like to volunteer, please mention this in an issue.
 
 **NEWS** v0.9 was a breaking release. See the [news](NEWS.md) for details on how to update.
 
@@ -17,7 +14,8 @@ support, and exceptional performance.
 Currently this package's support is best
 for [B-splines](https://en.wikipedia.org/wiki/B-spline) and also
 supports irregular grids.  However, the API has been designed with
-intent to support more options. Pull-requests are more than welcome!
+intent to support more options. Initial support for Lanczos
+interpolation was recently added. Pull-requests are more than welcome!
 It should be noted that the API may continue to evolve over time.
 
 Other interpolation packages for Julia include:
@@ -116,6 +114,6 @@ Interpolations wins in every case, sometimes by a very large margin.
 
 ## Contributing
 
-Work is very much in progress, but and help is always welcome. If you want to help out but don't know where to start, take a look at issue [#5 - our feature wishlist](https://github.com/JuliaMath/Interpolations.jl/issues/5) =) There is also some [developer documentation](doc/devdocs.md) that may help you understand how things work internally.
+Work is very much in progress, but and help is always welcome. If you want to help out but don't know where to start, take a look at issue [#5 - our feature wishlist](https://github.com/JuliaMath/Interpolations.jl/issues/5) =) There is also some [developer documentation](http://juliamath.github.io/Interpolations.jl/latest/devdocs/) that may help you understand how things work internally.
 
 Contributions in any form are appreciated, but the best pull requests come with tests!

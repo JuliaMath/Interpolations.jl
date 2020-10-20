@@ -1,6 +1,6 @@
 name = "Interpolations"
 uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.12.5"
+version = "0.13.0"
 
 [deps]
 AxisAlgorithms = "13072b0f-2c55-5437-9ae7-d433b7a33950"
@@ -14,8 +14,11 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 WoodburyMatrices = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
 
 [compat]
-AxisAlgorithms = "≥ 0.3.0"
-WoodburyMatrices = "≥ 0.1.5"
+AxisAlgorithms = "0.3, 1"
+OffsetArrays = "0.10, 0.11, 1.0.1"
+Ratios = "0.3, 0.4"
+StaticArrays = "0.10, 0.11, 0.12"
+WoodburyMatrices = "0.4, 0.5"
 julia = "1"
 
 [extras]

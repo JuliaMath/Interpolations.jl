@@ -5,6 +5,12 @@ end
 (deg::Cubic)(gt::GridType) = Cubic(deg.bc(gt))
 
 """
+    Cubic(bc::BoundaryCondition)
+
+Indicate that the corresponding axis should use cubic interpolation.
+
+# Extended help
+
 Assuming uniform knots with spacing 1, the `i`th piece of cubic spline
 implemented here is defined as follows.
 

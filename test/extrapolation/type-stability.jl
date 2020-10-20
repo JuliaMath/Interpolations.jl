@@ -69,4 +69,10 @@ using Test, Interpolations, DualNumbers, Unitful
     @test @inferred(itp(2018)) === 2.0f0 * u
     @test @inferred(etp(2018)) === 2.0f0 * u
     @test @inferred(etp(2019)) === 1.0f0 * u
+
+    # Unitful vector knots
+    t = [0.0, 1.0] * u"m"
+    itp = LinearInterpolation(t, y)
+    @test itp(0.5u"m") == 1.5f0 * u
+    @test itp([0.5, 0.75]u"m") == [1.5f0, 1.75f0] * u
 end

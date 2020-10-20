@@ -63,41 +63,44 @@ sitp(5.6, 7.1) # approximately log(5.6 + 7.1)
 These use a very similar syntax to BSplines, with the major exception
 being that one does not get to choose the grid representation (they
 are all `OnGrid`). As such one must specify a set of coordinate arrays
-defining the knots of the array.
+defining the nodes of the array.
 
 In 1D
 ```julia
 A = rand(20)
-A_x = collect(1.0:2.0:40.0)
-knots = (A_x,)
-itp = interpolate(knots, A, Gridded(Linear()))
+A_x = 1.0:2.0:40.0
+nodes = (A_x,)
+itp = interpolate(nodes, A, Gridded(Linear()))
 itp(2.0)
 ```
 
-The spacing between adjacent samples need not be constant, you can use the syntax
+The spacing between adjacent samples need not be constant; indeed, if they
+are constant, you'll get better performance with `scaled`.
+
+The general syntax is
 ```julia
-itp = interpolate(knots, A, options...)
+itp = interpolate(nodes, A, options...)
 ```
-where `knots = (xknots, yknots, ...)` to specify the positions along
+where `nodes = (xnodes, ynodes, ...)` specifies the positions along
 each axis at which the array `A` is sampled for arbitrary ("rectangular") samplings.
 
 For example:
 ```julia
 A = rand(8,20)
-knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
-itp = interpolate(knots, A, Gridded(Linear()))
+nodes = ([x^2 for x = 1:8], [0.2y for y = 1:20])
+itp = interpolate(nodes, A, Gridded(Linear()))
 itp(4,1.2)  # approximately A[2,6]
 ```
 One may also mix modes, by specifying a mode vector in the form of an explicit tuple:
 ```julia
-itp = interpolate(knots, A, (Gridded(Linear()),Gridded(Constant())))
+itp = interpolate(nodes, A, (Gridded(Linear()),Gridded(Constant())))
 ```
 
 Presently there are only three modes for gridded:
 ```julia
 Gridded(Linear())
 ```
-whereby a linear interpolation is applied between knots,
+whereby a linear interpolation is applied between nodes,
 ```julia
 Gridded(Constant())
 ```
@@ -132,7 +135,7 @@ x = sin.(2π*t)
 y = cos.(2π*t)
 A = hcat(x,y)
 
-itp = scale(interpolate(A, (BSpline(Cubic(Natural(OnGrid()))), NoInterp())), t, 1:2)
+itp = Interpolations.scale(interpolate(A, (BSpline(Cubic(Natural(OnGrid()))), NoInterp())), t, 1:2)
 
 tfine = 0:.01:1
 xs, ys = [itp(t,1) for t in tfine], [itp(t,2) for t in tfine]
