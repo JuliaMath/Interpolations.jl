@@ -30,14 +30,14 @@ end
 strip_prefix(str::AbstractString) = replace(str, "Interpolations."=>"")
 benchstr(::Type{T}) where {T<:Interpolations.GridType} = strip_prefix(string(T))
 
-benchstr(::Type{Constant}) = "Constant()"
+benchstr(::Type{<:Constant}) = "Constant()"
 benchstr(::Type{Linear}) = "Linear()"
 benchstr(::Type{Quadratic{BC}}, ::Type{GT}) where {BC<:Interpolations.BoundaryCondition,GT<:Interpolations.GridType} =
     string("Quadratic(", strip_prefix(string(BC)), "(", strip_prefix(string(GT)), "()))")
 benchstr(::Type{Cubic{BC}}, ::Type{GT}) where {BC<:Interpolations.BoundaryCondition,GT<:Interpolations.GridType} =
     string("Cubic(", strip_prefix(string(BC)), "(", strip_prefix(string(GT)), "()))")
 
-groupstr(::Type{Constant}) = "constant"
+groupstr(::Type{<:Constant}) = "constant"
 groupstr(::Type{Linear}) = "linear"
 groupstr(::Type{Quadratic}) = "quadratic"
 groupstr(::Type{Cubic}) = "cubic"
