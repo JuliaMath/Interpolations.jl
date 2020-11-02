@@ -40,6 +40,14 @@ function gridded_floorbounds(x, knotvec::AbstractVector)
     max(i, first(axes1(knotvec)))
 end
 
+ceilbounds(x::Integer, knotvec::AbstractVector) = gridded_ceilbounds(x, knotvec)
+ceilbounds(x, knotvec::AbstractVector) = gridded_ceilbounds(x, knotvec)
+function gridded_ceilbounds(x, knotvec::AbstractVector)
+    i = find_knot_index(knotvec, x)
+    iclamp = max(i, first(axes1(knotvec)))
+    min(iclamp+1, last(axes1(knotvec)))
+end
+
 @inline find_knot_index(knotv, x) = searchsortedfirst(knotv, x, Base.Order.ForwardOrdering()) - 1
 @inline find_knot_index(knotv, x::AbstractVector) = searchsortedfirst_vec(knotv, x) .- 1
 

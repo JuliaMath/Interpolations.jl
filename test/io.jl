@@ -8,12 +8,12 @@ using Test
         A = rand(8,20)
 
         itp = interpolate(A, BSpline(Constant()))
-        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Constant())) with element type Float64" ||
-              summary(itp) == "8×20 interpolate(::Array{Float64,2}, BSpline(Constant())) with element type Float64"
+        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Constant{Nearest}())) with element type Float64" ||
+              summary(itp) == "8×20 interpolate(::Array{Float64,2}, BSpline(Constant{Nearest}())) with element type Float64"
 
         itp = interpolate(A, BSpline(Constant()))
-        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Constant())) with element type Float64" ||
-              summary(itp) == "8×20 interpolate(::Array{Float64,2}, BSpline(Constant())) with element type Float64"
+        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Constant{Nearest}())) with element type Float64" ||
+              summary(itp) == "8×20 interpolate(::Array{Float64,2}, BSpline(Constant{Nearest}())) with element type Float64"
 
         itp = interpolate(A, BSpline(Linear()))
         @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Linear())) with element type Float64" ||
@@ -47,8 +47,8 @@ using Test
               summary(itp) == "8×20 interpolate((::Array{Int64,1},::Array{Float64,1}), ::Array{Float64,2}, Gridded(Linear())) with element type Float64"
 
         itp = interpolate(knots, A, (Gridded(Linear()),Gridded(Constant())))
-        @test summary(itp) == "8×20 interpolate((::Vector{Int64},::Vector{Float64}), ::Matrix{Float64}, (Gridded(Linear()), Gridded(Constant()))) with element type Float64" ||
-              summary(itp) == "8×20 interpolate((::Array{Int64,1},::Array{Float64,1}), ::Array{Float64,2}, (Gridded(Linear()), Gridded(Constant()))) with element type Float64"
+        @test summary(itp) == "8×20 interpolate((::Vector{Int64},::Vector{Float64}), ::Matrix{Float64}, (Gridded(Linear()), Gridded(Constant{Nearest}()))) with element type Float64" ||
+              summary(itp) == "8×20 interpolate((::Array{Int64,1},::Array{Float64,1}), ::Array{Float64,2}, (Gridded(Linear()), Gridded(Constant{Nearest}()))) with element type Float64"
 
         # issue #260
         A = (1:4)/4

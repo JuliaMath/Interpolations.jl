@@ -199,6 +199,16 @@ function _floorbounds(x, ax::Union{Tuple{Real,Real}, AbstractUnitRange})
     ifelse(x < l, floor(x+h), floor(x+zero(h)))
 end
 
+ceilbounds(x::Integer, ax::Tuple{Real,Real}) = x
+ceilbounds(x::Integer, ax::AbstractUnitRange) = x
+ceilbounds(x, ax::Tuple{Real,Real}) = _ceilbounds(x, ax)
+ceilbounds(x, ax::AbstractUnitRange) = _ceilbounds(x, ax)
+function _ceilbounds(x, ax::Union{Tuple{Real,Real}, AbstractUnitRange})
+    u = last(ax)
+    h = half(x)
+    ifelse(x > u, ceil(x+h), ceil(x+zero(h)))
+end
+
 half(x) = oneunit(x)/2
 
 symmatrix(h::NTuple{1,Any}) = SMatrix{1,1}(h)
