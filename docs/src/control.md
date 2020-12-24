@@ -149,4 +149,4 @@ using Plots
 scatter(x, y, label="knots")
 plot!(xs, ys, label="spline")
 ```
-![parametric spline](doc/images/parametric_spline.png)
+![parametric spline](/doc/images/parametric_spline.png)
