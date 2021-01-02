@@ -48,7 +48,7 @@ end
     end
     degree(flag) isa Union{NoInterp,Constant,Linear} || error("only Linear, Constant, and NoInterp supported, got $flag")
     length(k1) == 1 && error("dimensions of length 1 not yet supported")  # FIXME
-    issorted(k1) || error("knot-vectors must be sorted in increasing order")
+    issorted(k1) && allunique(k1) || error("knot-vectors must be unique and sorted in increasing order")
     check_gridded(getrest(itpflag), Base.tail(knots), Base.tail(axs))
 end
 check_gridded(::Any, ::Tuple{}, ::Tuple{}) = nothing

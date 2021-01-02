@@ -88,4 +88,8 @@ using Interpolations, Test
 
     # trailing 1s, issue #301
     @test itp(1.8, 1) == itp(1.8)
+
+    # issue #395
+    knots = ([0.0,0.0,1.0],) # not unique
+    @test_throws ErrorException interpolate(knots, [1.0, 1.0, 2.0], Gridded(Linear()))
 end
