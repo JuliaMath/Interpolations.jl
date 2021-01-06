@@ -16,9 +16,10 @@ KnotIterator(k::Tuple, bc::BoundaryCondition) = map(x -> KnotIterator(x, bc), k)
 KnotIterator(k::AbstractArray{T}, bc::ET) where {T,ET <: ExtrapSpec} = KnotIterator{T,ET}(k, bc)
 
 const RepeatKnots = Union{Periodic,Reflect}
-Base.length(iter::KnotIterator{T,ET}) where {T,ET} = length(iter.knots)
 Base.IteratorSize(::Type{KnotIterator{T,ET}}) where {T,ET <: RepeatKnots} = Base.IsInfinite()
-Base.length(::KnotIterator{T,ET}) where {T,ET <: RepeatKnots} = Int(Inf)
+Base.length(iter::KnotIterator) = _knot_length(iter, Base.IteratorSize(iter))
+_knot_length(iter::KnotIterator, ::Base.HasLength) = iter.nknots
+Base.size(iter::KnotIterator) = (length(iter),)
 
 Base.IteratorEltype(::Type{KnotIterator{T,ET}}) where {T,ET} = Base.HasEltype()
 Base.eltype(::Type{KnotIterator{T,ET}}) where {T,ET} = T
@@ -63,7 +64,7 @@ function knots(etp::AbstractExtrapolation)
     k = getknots(etp)
     bc = etpflag(etp)
     iter = KnotIterator(k, bc)
-    length(iter) == 1 ? only(iter) : Iterators.ProductIterator(iter)
+    length(iter) == 1 ? only(iter) : Iterators.product(iter...)
 end
 
 # Start at the first knot, with zero offset by default
