@@ -1,6 +1,23 @@
 using Test
 using Interpolations
 
+@testset "iterate - interface" begin
+    import Interpolations.KnotIterator
+    # Always have an eltype as we explictily track via T
+    @test Base.IteratorEltype(KnotIterator) == Base.HasEltype()
+    @test Base.IteratorEltype(KnotIterator{Int}) == Base.HasEltype()
+
+    # If missing ET type parameter -> SizeUnknown, as could be HasLength or
+    # IsInfinite
+    @test Base.IteratorSize(KnotIterator) == Base.SizeUnknown()
+    @test Base.IteratorSize(KnotIterator{Int}) == Base.SizeUnknown()
+    @test Base.IteratorSize(KnotIterator{Int,Flat}) == Base.HasLength()
+
+    # If ET is Directional -> Size based on Fwd Direction
+    @test Base.IteratorSize(KnotIterator{Int,Tuple{Flat,Periodic}}) == Base.IsInfinite()
+    @test Base.IteratorSize(KnotIterator{Int,Tuple{Periodic,Flat}}) == Base.HasLength()
+end
+
 @testset "iterate - 1d interpolation" begin
     itp = interpolate(1:5, BSpline(Linear()))
     kiter = knots(itp)
@@ -58,6 +75,7 @@ end
     @testset "extrapolation - $etp" for etp ∈ [ Throw(), Flat(), Line()]
         extrp = extrapolate(itp, etp)
         kiter = knots(extrp)
+        @test typeof(kiter) <: Interpolations.KnotIterator
         @test eltype(kiter) <: Int
         @test collect(kiter) == x
     end
@@ -65,6 +83,7 @@ end
     @testset "extrapolation - Periodic" begin
         extrp = extrapolate(itp, Periodic())
         k = knots(extrp)
+        @test typeof(k) <: Interpolations.KnotIterator
         k10 = Iterators.take(k, 10) |> collect
         @test k10 ≈ collect(1.0:10.0)
         @test extrp.(k10) ≈ vcat(x[1:end-1].^2, x[1:end-1].^2, x[1:2].^2)
@@ -72,15 +91,20 @@ end
     @testset "extrapolation - Reflect" begin
         extrp = extrapolate(itp, Reflect())
         k = knots(extrp)
+        @test typeof(k) <: Interpolations.KnotIterator
         k10 = Iterators.take(k, 10) |> collect
         @test k10 ≈ collect(1.0:10.0)
         @test extrp.(k10) ≈ vcat(x.^2, reverse(x[1:end - 1].^2), x[2].^2)
     end
 end
 
-@testset "2D - iteration - Bounded" begin
+ExtrapSpec2D = [
+    (Throw(), Line()),
+    (Throw(), (Throw(), Line())),
+]
+@testset "2D - iteration - bounded - $bc" for bc ∈ [Line(), (Throw(), Line())]
     etp = LinearInterpolation(([1, 2, 3], [1, 2, 3]), rand(3, 3);
-        extrapolation_bc=(Throw(), Line())
+        extrapolation_bc=(Throw(), bc)
     )
     kiter = knots(etp)
     @test Base.IteratorSize(kiter) == Base.HasShape{2}()
@@ -96,9 +120,9 @@ end
     @test k == kexp
 end
 
-@testset "2D - iteration - Unbounded" begin
+@testset "2D - iteration - Unbounded - $bc" for bc ∈ [Periodic(), (Throw(), Periodic())]
     etp = LinearInterpolation(([1, 2, 3], [1, 2, 3]), rand(3, 3);
-        extrapolation_bc=(Line(), Periodic(OnGrid()))
+        extrapolation_bc=(Line(), bc)
     )
     kiter = knots(etp)
     @test Base.IteratorSize(kiter) == Base.IsInfinite()

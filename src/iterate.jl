@@ -11,12 +11,19 @@ struct KnotIterator{T,ET <: ExtrapSpec}
     KnotIterator{T,ET}(k::AbstractArray{T}, bc::ET) where {T,ET} = new(k, bc, length(k))
 end
 
-KnotIterator(k::Tuple, bc::Tuple) = map(KnotIterator, k, bc)
-KnotIterator(k::Tuple, bc::BoundaryCondition) = map(x -> KnotIterator(x, bc), k)
-KnotIterator(k::AbstractArray{T}, bc::ET) where {T,ET <: ExtrapSpec} = KnotIterator{T,ET}(k, bc)
+KnotIterator(k::NTuple{N,AbstractArray}, bc::NTuple{N, ExtrapSpec}) where {N} = map(KnotIterator, k, bc)
+KnotIterator(k::NTuple{N,AbstractArray}, bc::BoundaryCondition) where {N} = map(x -> KnotIterator(x, bc), k)
+KnotIterator(k::AbstractArray{T}, bc::ET) where {T,ET <: ExtrapDimSpec} = KnotIterator{T,ET}(k, bc)
 
 const RepeatKnots = Union{Periodic,Reflect}
-Base.IteratorSize(::Type{KnotIterator{T,ET}}) where {T,ET <: RepeatKnots} = Base.IsInfinite()
+Base.IteratorSize(::Type{KnotIterator}) = Base.SizeUnknown()
+Base.IteratorSize(::Type{KnotIterator{T}}) where {T} = Base.SizeUnknown()
+
+Base.IteratorSize(::Type{KnotIterator{T,ET}}) where {T,ET} = _knot_iter_size(ET)
+_knot_iter_size(::Type{<:BoundaryCondition}) = Base.HasLength()
+_knot_iter_size(::Type{<:RepeatKnots}) = Base.IsInfinite()
+_knot_iter_size(::Type{Tuple{RevBC, FwdBC}}) where {RevBC,FwdBC} = _knot_iter_size(FwdBC)
+
 Base.length(iter::KnotIterator) = _knot_length(iter, Base.IteratorSize(iter))
 _knot_length(iter::KnotIterator, ::Base.HasLength) = iter.nknots
 Base.size(iter::KnotIterator) = (length(iter),)
@@ -88,7 +95,7 @@ end
 
 # For repeating knots iterate over knots, then increment offset
 # The last knot is "skipped" as it has the same coordinate as the first knot
-function nextstate(iter::KnotIterator{T,ET}, state) where {T,ET<:RepeatKnots}
+function nextstate(iter::KnotIterator{T,ET}, state) where {T,ET <: Union{RepeatKnots,Tuple{BoundaryCondition,RepeatKnots}}}
     idx, offset = state
     if idx + 1 < iter.nknots
         return idx + 1, offset
