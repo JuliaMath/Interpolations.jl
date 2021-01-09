@@ -98,6 +98,26 @@ end
     end
 end
 
+@testset "iterate - uneven - Periodic" begin
+    x = [1.0, 1.3, 2.4, 3.2, 4.0]
+    etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic())
+    kiter = knots(etp)
+    @test typeof(kiter) <: Interpolations.KnotIterator
+    k = Iterators.take(kiter, 10) |> collect
+    @test k == [1.0, 1.3, 2.4, 3.2, 4.0, 4.3, 5.4, 6.2, 7.0, 7.3]
+    @test etp.(k) ≈ vcat(x[1:end-1], x[1:end-1], x[1:2]).^2
+end
+
+@testset "iterate - uneven - Reflect" begin
+    x = [1.0, 1.3, 2.4, 3.2, 4.0]
+    etp = LinearInterpolation(x, x.^2, extrapolation_bc=Reflect())
+    kiter = knots(etp)
+    @test typeof(kiter) <: Interpolations.KnotIterator
+    k = Iterators.take(kiter, 10) |> collect
+    @test k == [1.0, 1.3, 2.4, 3.2, 4.0, 4.8, 5.6, 6.7, 7.0, 7.3]
+    @test etp.(k) ≈ vcat(x, reverse(x[1:end - 1]), x[2]).^2
+end
+
 ExtrapSpec2D = [
     (Throw(), Line()),
     (Throw(), (Throw(), Line())),

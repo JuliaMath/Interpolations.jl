@@ -4,6 +4,11 @@ export knots
 # Similar to ExtrapDimSpec but for only a single dimension
 const ExtrapSpec = Union{BoundaryCondition,Tuple{BoundaryCondition,BoundaryCondition}}
 
+# Macro to get create ExtrapSpec for checking if a KnotIterator has a given BC
+# for forward iteration
+macro FwdExtrapSpec(bc)
+    :( Union{$bc,Tuple{BoundaryCondition,$bc}} )
+end
 struct KnotIterator{T,ET <: ExtrapSpec}
     knots::Vector{T}
     bc::ET
@@ -74,33 +79,60 @@ function knots(etp::AbstractExtrapolation)
     length(iter) == 1 ? only(iter) : Iterators.product(iter...)
 end
 
-# Start at the first knot, with zero offset by default
-Base.iterate(iter::KnotIterator{T}) where {T} = iterate(iter, (1, zero(T)))
+# For non-repeating ET's iterate through once
+Base.iterate(iter::KnotIterator) where {T} = iterate(iter, 1)
+Base.iterate(iter::KnotIterator, idx::Integer) = idx <= iter.nknots ? (iter.knots[idx], idx+1) : nothing
 
-# Iterate over knots until curidx is nothing, dispatching to nextstate to handle
-# repeated / non-repeating, and directional boundary conditions
-function Base.iterate(iter::KnotIterator, state)
+# For repeating knots state is the knot index + offset value
+function Base.iterate(iter::KnotIterator{T,ET}) where {T,ET <: @FwdExtrapSpec RepeatKnots}
+    iterate(iter, (1, zero(T)))
+end
+
+# Periodic: Iterate over knots, updating the offset each cycle
+function Base.iterate(iter::KnotIterator{T,ET}, state) where {T, ET <: @FwdExtrapSpec(Periodic)}
+    isnothing(state) && return nothing
     curidx, offset = state[1], state[2]
-    isnothing(curidx) && return nothing
-    idx = inbounds_index(iter.bc, (1, iter.nknots), curidx, iter, state)
-    iter.knots[idx] + offset, nextstate(iter, state)
-end
 
-# For non-repeating knots, iterate over knots then return nothing
-function nextstate(iter::KnotIterator, state)
-    idx, offset = state
-    nextidx = idx < iter.nknots ? idx + 1 : nothing
-    (nextidx, offset)
-end
-
-# For repeating knots iterate over knots, then increment offset
-# The last knot is "skipped" as it has the same coordinate as the first knot
-function nextstate(iter::KnotIterator{T,ET}, state) where {T,ET <: Union{RepeatKnots,Tuple{BoundaryCondition,RepeatKnots}}}
-    idx, offset = state
-    if idx + 1 < iter.nknots
-        return idx + 1, offset
+    # Increment offset after cycling over all the knots
+    if mod(curidx, iter.nknots-1) != 0
+        nextstate = (curidx+1, offset)
     else
         knotrange = iter.knots[end] - iter.knots[1]
-        return 1, offset + knotrange
+        nextstate = (curidx+1, offset+knotrange)
     end
+
+    # Get the current knot
+    knot = iter.knots[periodic(curidx, 1, iter.nknots)] + offset
+    return knot, nextstate
+end
+
+# Reflect: Iterate over knots, updating the offset after a forward and backwards
+# cycle
+function Base.iterate(iter::KnotIterator{T, ET}, state) where {T, ET <: @FwdExtrapSpec(Reflect)}
+    isnothing(state) && return nothing
+    curidx, offset = state[1], state[2]
+
+    # Increment offset after a forward + backwards pass over the knots
+    cycleidx = mod(curidx, 2*iter.nknots-1)
+    if  cycleidx != 0
+        nextstate = (curidx+1, offset)
+    else
+        knotrange = iter.knots[end] - iter.knots[1]
+        nextstate = (curidx+1, offset+2*knotrange)
+    end
+
+    # Map global index onto knots, and get that knot
+    idx = reflect(curidx, 1, iter.nknots)
+    knot = iter.knots[idx]
+
+    # Add offset to map local knot to global position
+    if 0 < cycleidx <= iter.nknots
+        # Forward pass
+        knot = knot + offset
+    else
+        # backwards pass
+        knot = offset + 2*iter.knots[end] - knot
+    end
+
+    return knot, nextstate
 end
