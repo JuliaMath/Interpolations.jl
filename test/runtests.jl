@@ -49,5 +49,6 @@ const isci = get(ENV, "CI", "") in ("true", "True")
     include("io.jl")
     include("convenience-constructors.jl")
     include("readme-examples.jl")
+    include("iterate.jl")
 
 end

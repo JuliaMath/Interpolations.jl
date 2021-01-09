@@ -85,7 +85,7 @@ end
         k = knots(extrp)
         @test typeof(k) <: Interpolations.KnotIterator
         k10 = Iterators.take(k, 10) |> collect
-        @test k10 ≈ collect(1.0:10.0)
+        @test k10 ≈ collect(1:10)
         @test extrp.(k10) ≈ vcat(x[1:end-1].^2, x[1:end-1].^2, x[1:2].^2)
     end
     @testset "extrapolation - Reflect" begin
@@ -93,7 +93,7 @@ end
         k = knots(extrp)
         @test typeof(k) <: Interpolations.KnotIterator
         k10 = Iterators.take(k, 10) |> collect
-        @test k10 ≈ collect(1.0:10.0)
+        @test k10 ≈ collect(1:10)
         @test extrp.(k10) ≈ vcat(x.^2, reverse(x[1:end - 1].^2), x[2].^2)
     end
 end
