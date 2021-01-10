@@ -76,7 +76,7 @@ function knots(etp::AbstractExtrapolation)
     k = getknots(etp)
     bc = etpflag(etp)
     iter = KnotIterator(k, bc)
-    length(iter) == 1 ? only(iter) : Iterators.product(iter...)
+    length(iter) == 1 ? iter[1] : Iterators.product(iter...)
 end
 
 # For non-repeating ET's iterate through once
@@ -90,7 +90,7 @@ end
 
 # Periodic: Iterate over knots, updating the offset each cycle
 function Base.iterate(iter::KnotIterator{T,ET}, state) where {T, ET <: @FwdExtrapSpec(Periodic)}
-    isnothing(state) && return nothing
+    state === nothing && return nothing
     curidx, offset = state[1], state[2]
 
     # Increment offset after cycling over all the knots
@@ -109,7 +109,7 @@ end
 # Reflect: Iterate over knots, updating the offset after a forward and backwards
 # cycle
 function Base.iterate(iter::KnotIterator{T, ET}, state) where {T, ET <: @FwdExtrapSpec(Reflect)}
-    isnothing(state) && return nothing
+    state === nothing && return nothing
     curidx, offset = state[1], state[2]
 
     # Increment offset after a forward + backwards pass over the knots
