@@ -1,6 +1,3 @@
-
-export knots
-
 # Similar to ExtrapDimSpec but for only a single dimension
 const ExtrapSpec = Union{BoundaryCondition,Tuple{BoundaryCondition,BoundaryCondition}}
 
@@ -16,25 +13,36 @@ struct KnotIterator{T,ET <: ExtrapSpec}
     KnotIterator{T,ET}(k::AbstractArray{T}, bc::ET) where {T,ET} = new(k, bc, length(k))
 end
 
-KnotIterator(k::NTuple{N,AbstractArray}, bc::NTuple{N, ExtrapSpec}) where {N} = map(KnotIterator, k, bc)
-KnotIterator(k::NTuple{N,AbstractArray}, bc::BoundaryCondition) where {N} = map(x -> KnotIterator(x, bc), k)
-KnotIterator(k::AbstractArray{T}, bc::ET) where {T,ET <: ExtrapDimSpec} = KnotIterator{T,ET}(k, bc)
+# Dispatch on outputs of k = getknots and bc = etpflag to create one
+# KnotIterator per interpolation axis
+function KnotIterator(k::NTuple{N,AbstractArray}, bc::NTuple{N, ExtrapSpec}) where {N}
+    # One ExtrapSpec per Axis
+    map(KnotIterator, k, bc)
+end
+function KnotIterator(k::NTuple{N,AbstractArray}, bc::BoundaryCondition) where {N}
+    # All Axes use the same BoundaryCondition
+    map(x -> KnotIterator(x, bc), k)
+end
+function KnotIterator(k::AbstractArray{T}, bc::ET) where {T,ET <: ExtrapDimSpec}
+    # Prior dispatches will end up here: Axis knots: k and boundary condition bc
+    KnotIterator{T,ET}(k, bc)
+end
 
 const RepeatKnots = Union{Periodic,Reflect}
-Base.IteratorSize(::Type{KnotIterator}) = Base.SizeUnknown()
-Base.IteratorSize(::Type{KnotIterator{T}}) where {T} = Base.SizeUnknown()
+IteratorSize(::Type{KnotIterator}) = SizeUnknown()
+IteratorSize(::Type{KnotIterator{T}}) where {T} = SizeUnknown()
 
-Base.IteratorSize(::Type{KnotIterator{T,ET}}) where {T,ET} = _knot_iter_size(ET)
-_knot_iter_size(::Type{<:BoundaryCondition}) = Base.HasLength()
-_knot_iter_size(::Type{<:RepeatKnots}) = Base.IsInfinite()
+IteratorSize(::Type{KnotIterator{T,ET}}) where {T,ET} = _knot_iter_size(ET)
+_knot_iter_size(::Type{<:BoundaryCondition}) = HasLength()
+_knot_iter_size(::Type{<:RepeatKnots}) = IsInfinite()
 _knot_iter_size(::Type{Tuple{RevBC, FwdBC}}) where {RevBC,FwdBC} = _knot_iter_size(FwdBC)
 
-Base.length(iter::KnotIterator) = _knot_length(iter, Base.IteratorSize(iter))
-_knot_length(iter::KnotIterator, ::Base.HasLength) = iter.nknots
-Base.size(iter::KnotIterator) = (length(iter),)
+length(iter::KnotIterator) = _knot_length(iter, IteratorSize(iter))
+_knot_length(iter::KnotIterator, ::HasLength) = iter.nknots
+size(iter::KnotIterator) = (length(iter),)
 
-Base.IteratorEltype(::Type{KnotIterator{T,ET}}) where {T,ET} = Base.HasEltype()
-Base.eltype(::Type{KnotIterator{T,ET}}) where {T,ET} = T
+IteratorEltype(::Type{KnotIterator{T,ET}}) where {T,ET} = HasEltype()
+eltype(::Type{KnotIterator{T,ET}}) where {T,ET} = T
 
 """
     knots(itp::AbstractInterpolation)
@@ -65,9 +73,12 @@ julia> Iterators.take(knots(etp), 5) |> collect
 ```
 """
 function knots(itp::AbstractInterpolation)
-    # For interpolations -> Return an array or Iterators.flatten of the knots
-    I = Iterators.product(getknots(itp)...)
-    ndims(itp) == 1 ? Iterators.flatten(I) : I
+    # Constuct seperate KnotIterator for each dimension, and combine them using
+    # Iterators.product
+    k = getknots(itp)
+    bc = Throw()
+    iter = KnotIterator(k, bc)
+    length(iter) == 1 ? iter[1] : Iterators.product(iter...)
 end
 
 function knots(etp::AbstractExtrapolation)
@@ -80,16 +91,16 @@ function knots(etp::AbstractExtrapolation)
 end
 
 # For non-repeating ET's iterate through once
-Base.iterate(iter::KnotIterator) where {T} = iterate(iter, 1)
-Base.iterate(iter::KnotIterator, idx::Integer) = idx <= iter.nknots ? (iter.knots[idx], idx+1) : nothing
+iterate(iter::KnotIterator) where {T} = iterate(iter, 1)
+iterate(iter::KnotIterator, idx::Integer) = idx <= iter.nknots ? (iter.knots[idx], idx+1) : nothing
 
 # For repeating knots state is the knot index + offset value
-function Base.iterate(iter::KnotIterator{T,ET}) where {T,ET <: @FwdExtrapSpec RepeatKnots}
+function iterate(iter::KnotIterator{T,ET}) where {T,ET <: @FwdExtrapSpec RepeatKnots}
     iterate(iter, (1, zero(T)))
 end
 
 # Periodic: Iterate over knots, updating the offset each cycle
-function Base.iterate(iter::KnotIterator{T,ET}, state) where {T, ET <: @FwdExtrapSpec(Periodic)}
+function iterate(iter::KnotIterator{T,ET}, state) where {T, ET <: @FwdExtrapSpec(Periodic)}
     state === nothing && return nothing
     curidx, offset = state[1], state[2]
 
@@ -108,7 +119,7 @@ end
 
 # Reflect: Iterate over knots, updating the offset after a forward and backwards
 # cycle
-function Base.iterate(iter::KnotIterator{T, ET}, state) where {T, ET <: @FwdExtrapSpec(Reflect)}
+function iterate(iter::KnotIterator{T, ET}, state) where {T, ET <: @FwdExtrapSpec(Reflect)}
     state === nothing && return nothing
     curidx, offset = state[1], state[2]
 
