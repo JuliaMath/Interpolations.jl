@@ -22,16 +22,15 @@ Defines an iterator over the knots in `k` based on the boundary conditions `bc`.
 # Iterator Interface
 The following methods defining Julia's iterator interface have been defined
 
-`IteratorSize(::Type{KnotIterator})` -> Will give on of the following
+`IteratorSize(::Type{KnotIterator})` -> Will return one of the following
 - `Base.IsInfinite` if the iteration will produces an infinite sequence of knots
 - `Base.HasLength` if iteration will produce a finite sequence of knots
-- `Base.SizeUnknown` if we can't tell what the boundary condition is from only
-  the type
+- `Base.SizeUnknown` if we can't decided from only the type information
 
 `length` and `size` -> Are defined if IteratorSize is HasLength, otherwise will
 raise a MethodError.
 
-`IteratorEltype` will always return `HasEltype` as we always track the data
+`IteratorEltype` will always return `HasEltype`, as we always track the data
 types of the knots
 
 `eltype` will return the data type of the knots
@@ -91,7 +90,7 @@ AbstractExtrapolation.
 
 Iterator will yield scalar values for interpolations over a single dimension,
 and tuples of coordinates for higher dimension interpolations. Iteration over
-higher dimension is taken as the product of knots on each dimensions.
+higher dimensions is taken as the product of knots along each dimension.
 
 ie. Iterator.product(knots on first dim, knots on 2nd dim,...)
 
