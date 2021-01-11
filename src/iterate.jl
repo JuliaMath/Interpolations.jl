@@ -1,11 +1,9 @@
 # Similar to ExtrapDimSpec but for only a single dimension
 const ExtrapSpec = Union{BoundaryCondition,Tuple{BoundaryCondition,BoundaryCondition}}
 
-# Macro to get create ExtrapSpec for checking if a KnotIterator has a given BC
-# for forward iteration
-macro FwdExtrapSpec(bc)
-    :( Union{$bc,Tuple{BoundaryCondition,$bc}} )
-end
+# Type Alias to get Boundary Condition or forward boundary conditions if
+# directional
+const FwdExtrapSpec{FwdBC} = Union{FwdBC, Tuple{BoundaryCondition, FwdBC}}
 
 """
     KnotIterator{T,ET}(k::AbstractArray{T}, bc::ET)
@@ -132,12 +130,12 @@ iterate(iter::KnotIterator) = iterate(iter, 1)
 iterate(iter::KnotIterator, idx::Integer) = idx <= iter.nknots ? (iter.knots[idx], idx+1) : nothing
 
 # For repeating knots state is the knot index + offset value
-function iterate(iter::KnotIterator{T,ET}) where {T,ET <: @FwdExtrapSpec(RepeatKnots)}
+function iterate(iter::KnotIterator{T,ET}) where {T,ET <: FwdExtrapSpec{RepeatKnots}}
     iterate(iter, (1, zero(T)))
 end
 
 # Periodic: Iterate over knots, updating the offset each cycle
-function iterate(iter::KnotIterator{T,ET}, state::Tuple) where {T, ET <: @FwdExtrapSpec(Periodic)}
+function iterate(iter::KnotIterator{T,ET}, state::Tuple) where {T, ET <: FwdExtrapSpec{Periodic}}
     state === nothing && return nothing
     curidx, offset = state[1], state[2]
 
@@ -156,7 +154,7 @@ end
 
 # Reflect: Iterate over knots, updating the offset after a forward and backwards
 # cycle
-function iterate(iter::KnotIterator{T, ET}, state) where {T, ET <: @FwdExtrapSpec(Reflect)}
+function iterate(iter::KnotIterator{T, ET}, state) where {T, ET <: FwdExtrapSpec{Reflect}}
     state === nothing && return nothing
     curidx, offset = state[1], state[2]
 
