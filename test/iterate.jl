@@ -4,7 +4,7 @@ using Interpolations
 # Unit Tests for Base.IteratorEltype and Base.IteratorSize methods (Type Info Only)
 @testset "iterate - interface" begin
     import Interpolations.KnotIterator
-    # Always have an eltype as we explictily track via T
+    # Always have an eltype as we explicitly track via T
     @test Base.IteratorEltype(KnotIterator) == Base.HasEltype()
     @test Base.IteratorEltype(KnotIterator{Int}) == Base.HasEltype()
 
@@ -118,7 +118,7 @@ end
     @test typeof(itp) <: AbstractInterpolation
     kiter = knots(itp)
 
-    # Checkout construction before proceding
+    # Checkout construction before proceeding
     @test typeof(kiter) <: Interpolations.KnotIterator
     @test eltype(kiter) <: Int
     @test length(kiter) == 5
@@ -198,10 +198,6 @@ end
 
 # Unit tests for 2D iteration with directional boundary conditions that are
 # bounded (ie. knots do not repeat indefinitely)
-ExtrapSpec2D = [
-    (Throw(), Line()),
-    (Throw(), (Throw(), Line())),
-]
 @testset "2D - iteration - bounded - $bc" for bc ∈ [Line(), (Throw(), Line())]
     etp = LinearInterpolation(([1, 2, 3], [1, 2, 3]), rand(3, 3);
         extrapolation_bc=(Throw(), bc)

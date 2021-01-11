@@ -6,6 +6,44 @@ const ExtrapSpec = Union{BoundaryCondition,Tuple{BoundaryCondition,BoundaryCondi
 macro FwdExtrapSpec(bc)
     :( Union{$bc,Tuple{BoundaryCondition,$bc}} )
 end
+
+"""
+    KnotIterator{T,ET}(k::AbstractArray{T}, bc::ET)
+
+Defines an iterator over the knots in `k` based on the boundary conditions `bc`.
+
+# Fields
+- `knots::Vector{T}` The interpolated knots of the axis to iterate over
+- `bc::ET` The Boundary Condition for the axis
+- `nknots::Int` The number of interpolated knots (ie. `length(knots)`)
+
+`ET` is `Union{BoundaryCondition,Tuple{BoundaryCondition,BoundaryCondition}}`
+
+# Iterator Interface
+The following methods defining Julia's iterator interface have been defined
+
+`IteratorSize(::Type{KnotIterator})` -> Will give on of the following
+- `Base.IsInfinite` if the iteration will produces an infinite sequence of knots
+- `Base.HasLength` if iteration will produce a finite sequence of knots
+- `Base.SizeUnknown` if we can't tell what the boundary condition is from only
+  the type
+
+`length` and `size` -> Are defined if IteratorSize is HasLength, otherwise will
+raise a MethodError.
+
+`IteratorEltype` will always return `HasEltype` as we always track the data
+types of the knots
+
+`eltype` will return the data type of the knots
+
+`iterate` Defines iteration over the knots starting from the first one and
+moving in the forward direction along the axis.
+
+# Knots for Multi-dimensional Interpolants
+Iteration over the knots of a multi-dimensional interpolant is done by wrapping
+multiple KnotIterator within `Iterators.product`.
+
+"""
 struct KnotIterator{T,ET <: ExtrapSpec}
     knots::Vector{T}
     bc::ET
@@ -51,7 +89,7 @@ eltype(::Type{KnotIterator{T,ET}}) where {T,ET} = T
 Returns an iterator over knot locations for an AbstractInterpolation or
 AbstractExtrapolation.
 
-Iterator will yeild scalar values for interpolations over a single dimension,
+Iterator will yield scalar values for interpolations over a single dimension,
 and tuples of coordinates for higher dimension interpolations. Iteration over
 higher dimension is taken as the product of knots on each dimensions.
 
@@ -61,7 +99,7 @@ Extrapolations with Periodic or Reflect boundary conditions, will produce an
 infinite sequence of knots.
 
 # Example
-```julia-repl
+```jldoctest
 julia> etp = LinearInterpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic())
 julia> Iterators.take(knots(etp), 5) |> collect
 5-element Array{Float64,1}:
@@ -73,7 +111,7 @@ julia> Iterators.take(knots(etp), 5) |> collect
 ```
 """
 function knots(itp::AbstractInterpolation)
-    # Constuct seperate KnotIterator for each dimension, and combine them using
+    # Construct separate KnotIterator for each dimension, and combine them using
     # Iterators.product
     k = getknots(itp)
     bc = Throw()
@@ -82,7 +120,7 @@ function knots(itp::AbstractInterpolation)
 end
 
 function knots(etp::AbstractExtrapolation)
-    # Constuct seperate KnotIterator for each dimension, and combine them using
+    # Construct separate KnotIterator for each dimension, and combine them using
     # Iterators.product
     k = getknots(etp)
     bc = etpflag(etp)
@@ -91,16 +129,16 @@ function knots(etp::AbstractExtrapolation)
 end
 
 # For non-repeating ET's iterate through once
-iterate(iter::KnotIterator) where {T} = iterate(iter, 1)
+iterate(iter::KnotIterator) = iterate(iter, 1)
 iterate(iter::KnotIterator, idx::Integer) = idx <= iter.nknots ? (iter.knots[idx], idx+1) : nothing
 
 # For repeating knots state is the knot index + offset value
-function iterate(iter::KnotIterator{T,ET}) where {T,ET <: @FwdExtrapSpec RepeatKnots}
+function iterate(iter::KnotIterator{T,ET}) where {T,ET <: @FwdExtrapSpec(RepeatKnots)}
     iterate(iter, (1, zero(T)))
 end
 
 # Periodic: Iterate over knots, updating the offset each cycle
-function iterate(iter::KnotIterator{T,ET}, state) where {T, ET <: @FwdExtrapSpec(Periodic)}
+function iterate(iter::KnotIterator{T,ET}, state::Tuple) where {T, ET <: @FwdExtrapSpec(Periodic)}
     state === nothing && return nothing
     curidx, offset = state[1], state[2]
 
