@@ -8,6 +8,7 @@ pages=["Home" => "index.md",
         "Interpolation algorithms" => "control.md",
         "Extrapolation" => "extrapolation.md",
         "Convenience Constructors" => "convenience-construction.md",
+        "Knot Iteration" => "iterate.md",
         "Developer documentation" => "devdocs.md",
         "Library" => "api.md"]
 )
