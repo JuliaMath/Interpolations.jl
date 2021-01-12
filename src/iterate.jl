@@ -97,7 +97,10 @@ infinite sequence of knots.
 
 # Example
 ```jldoctest
-julia> etp = LinearInterpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic())
+julia> using Interpolations;
+
+julia> etp = LinearInterpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
+
 julia> Iterators.take(knots(etp), 5) |> collect
 5-element Array{Float64,1}:
  1.0
@@ -105,6 +108,7 @@ julia> Iterators.take(knots(etp), 5) |> collect
  2.3
  3.0
  3.2
+
 ```
 """
 function knots(itp::AbstractInterpolation)
