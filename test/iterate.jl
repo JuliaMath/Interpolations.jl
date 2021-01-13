@@ -1,5 +1,6 @@
 using Test
 using Interpolations
+using Interpolations: KnotRange
 
 # Unit Tests for Base.IteratorEltype and Base.IteratorSize methods (Type Info Only)
 @testset "iterate - interface" begin
@@ -214,36 +215,39 @@ end
 # Test Cases for iteration over the knots of 2D interpolant
 #   itersym Iterator under tests (ie. iter = knots(itp))
 #   type    The iterator type wrapped by Iterators.ProductIterator
-#   dim1    Iterator over the knots expected along 1st dimension
-#   dim2    Iterator over the knots expected along 2nd dimension
-macro test_knots(itersym, type, dim1, dim2)
-    quote
-        local $itersym = $(esc(itersym))
-        local dim1 = $(esc(dim1))
-        local dim2 = $(esc(dim2))
-        ref = Iterators.product(dim1, dim2)
-        @info "Ref: $ref"
+#   expect  One or more iterables for the knots along each dimension
+macro test_knots(itersym, type, expect...)
 
-        @testset "typechecks" begin
+    # 1D vs ND Checks
+    if length(expect) > 1
+        refExpr = :( Iterators.product($(expect...)) )
+        knotType = eval.(expect) .|> eltype |> x -> Tuple{x...}
+        typecheckExpr = quote
             @test typeof($itersym) <: Iterators.ProductIterator
             @test typeof($itersym.iterators) <: Tuple{$type, $type}
         end
+    else
+        refExpr = :( Iterators.flatten($(expect[1])) )
+        knotType = eval(expect[1]) |> eltype
+        typecheckExpr = :( @test typeof($itersym) <: $type{$knotType} )
+    end
 
+    # Assemble component tests into complete testset
+    quote
+        local $itersym = $(esc(itersym))
+        ref = $refExpr
+        @testset "typechecks" begin $typecheckExpr end
         @testset "eltype checks" begin
             @test Base.IteratorEltype($itersym) == Base.HasEltype()
-            @test eltype($itersym) == eltype(ref)
+            @test eltype($itersym) == $knotType
         end
-
-        @testset "IteratorSize, size and length checks" begin
+        @testset "IteratorSize, length and size checks" begin
             @test Base.IteratorSize($itersym) == Base.IteratorSize(ref)
             if Base.IteratorSize(ref) != Base.IsInfinite()
                 @test length($itersym) == length(ref)
-                @test size($itersym) == size(ref)
             end
         end
-
         @testset "check contents" begin
-            kiter, kref = [], []
             if Base.IteratorSize(ref) != Base.IsInfinite()
                 kiter = collect($itersym)
                 kref = collect(ref)
@@ -251,13 +255,12 @@ macro test_knots(itersym, type, dim1, dim2)
                 kiter = collect(Iterators.take($itersym, 10))
                 kref = collect(Iterators.tail($itersym, 10))
             end
-
             # Test Iterator Results
             @test typeof(kiter) <: AbstractArray
-            @test eltype(kiter) == Tuple{eltype(dim1), eltype(dim2)}
+            @test eltype(kiter) == $knotType
             @test length(kiter) == length(kref)
             @test size(kiter) == size(kref)
-            @test kiter == vec(kref)
+            @test kiter == kref
         end
     end
 end
@@ -315,20 +318,18 @@ end
 @testset "knotsbetween - interpolate - 1D" begin
     itp = interpolate(rand(10), BSpline(Linear()))
 
-    # Start and Stop specified
-    krange = knotsbetween(itp; start=2.1, stop=6.2)
-    @test typeof(krange) <: Interpolations.KnotRange
-    @test collect(krange) == collect(3:6)
-
-    # Just start
-    krange = knotsbetween(itp; start=3.2)
-    @test typeof(krange) <: Interpolations.KnotRange
-    @test collect(krange) == collect(4:10)
-
-    # Just stop
-    krange = knotsbetween(itp; stop=8.2)
-    @test typeof(krange) <: Interpolations.KnotRange
-    @test collect(krange) == collect(1:8)
+    @testset "start and stop" begin
+        krange = knotsbetween(itp; start=2.1, stop=6.2)
+        @test_knots krange KnotRange 3:6
+    end
+    @testset "start" begin
+        krange = knotsbetween(itp; start=3.2)
+        @test_knots krange KnotRange 4:10
+    end
+    @testset "stop" begin
+        krange = knotsbetween(itp; stop=8.2)
+        @test_knots krange KnotRange 1:8
+    end
 end
 
 @testset "knotsbetween - interpolate - 2D" begin
