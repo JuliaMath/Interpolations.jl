@@ -26,7 +26,8 @@ export
     LinearInterpolation,
     CubicSplineInterpolation,
 
-    knots
+    knots,
+    knotsbetween
 
     # see the following files for further exports:
     # b-splines/b-splines.jl

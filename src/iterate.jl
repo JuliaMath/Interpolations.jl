@@ -4,6 +4,7 @@ const ExtrapSpec = Union{BoundaryCondition,Tuple{BoundaryCondition,BoundaryCondi
 # Type Alias to get Boundary Condition or forward boundary conditions if
 # directional
 const FwdExtrapSpec{FwdBC} = Union{FwdBC, Tuple{BoundaryCondition, FwdBC}}
+const RevExtrapSpec{RevBC} = Union{RevBC, Tuple{RevBC, BoundaryCondition}}
 
 """
     KnotIterator{T,ET}(k::AbstractArray{T}, bc::ET)
@@ -129,14 +130,13 @@ function knots(etp::AbstractExtrapolation)
     length(iter) == 1 ? iter[1] : Iterators.product(iter...)
 end
 
-# For non-repeating ET's iterate through once
-iterate(iter::KnotIterator) = iterate(iter, 1)
-iterate(iter::KnotIterator, idx::Integer) = idx <= iter.nknots ? (iter.knots[idx], idx+1) : nothing
+# Initialize iteration based on KnotIterator
+_knot_start(::KnotIterator) = 1
+_knot_start(::KnotIterator{T,ET}) where {T,ET <: FwdExtrapSpec{RepeatKnots}} = (1, zero(T))
 
-# For repeating knots state is the knot index + offset value
-function iterate(iter::KnotIterator{T,ET}) where {T,ET <: FwdExtrapSpec{RepeatKnots}}
-    iterate(iter, (1, zero(T)))
-end
+# For non-repeating ET's iterate through once
+iterate(iter::KnotIterator) = iterate(iter, _knot_start(iter))
+iterate(iter::KnotIterator, idx::Integer) = idx <= iter.nknots ? (iter.knots[idx], idx+1) : nothing
 
 # Periodic: Iterate over knots, updating the offset each cycle
 function iterate(iter::KnotIterator{T,ET}, state::Tuple) where {T, ET <: FwdExtrapSpec{Periodic}}
@@ -185,4 +185,132 @@ function iterate(iter::KnotIterator{T, ET}, state) where {T, ET <: FwdExtrapSpec
     end
 
     return knot, nextstate
+end
+struct KnotRange{T, L <: IteratorSize}
+    iter::KnotIterator{T}
+    start
+    stop
+    function KnotRange(iter::KnotIterator{T}, start, stop) where {T}
+        if IteratorSize(iter) == HasLength || stop !== nothing
+            new{T, HasLength}(iter, start, stop)
+        else
+            new{T, IsInfinite}(iter, start, stop)
+        end
+    end
+end
+
+#KnotRange(iter::KnotIterator{T}, start, stop) where {T} = KnotRange{T}(iter, start, stop)
+
+IteratorSize(::Type{KnotRange}) = SizeUnknown()
+IteratorSize(::Type{KnotRange{T}}) where {T} = SizeUnknown()
+IteratorSize(::Type{<:KnotRange{T,L}}) where {T,L} = L()
+IteratorEltype(::Type{<:KnotRange}) = HasEltype()
+eltype(::Type{KnotRange{T}}) where {T} = T
+
+function length(iter::KnotRange{T,HasLength}) where {T}
+    sdx = _knot_start(iter.iter, iter.start)
+    edx = _knot_start(iter.iter, iter.stop)
+    @info "start: $sdx to stop: $edx"
+    edx === nothing ? length(iter.iter) - sdx : edx - sdx
+end
+size(iter::KnotRange{T,HasLength}) where {T} = (length(iter),)
+
+knotsbetween(itp; start=nothing, stop=nothing) = knotsbetween(itp, start, stop)
+knotsbetween(iter::KnotIterator, start, stop) = KnotRange(iter, start, stop)
+
+# If AbstractInterpolation -> Get Knots -> Then Convert to Knot Range
+knotsbetween(itp::AbstractInterpolation, start, stop) = knotsbetween(knots(itp), start, stop)
+
+knotsbetween(::Any, ::Nothing, ::Nothing) =
+    throw(ArgumentError("At least one of `start` or `stop` must be specified"))
+
+# Expand Nothing on Start/Stop if tuples
+function knotsbetween(iter::Iterators.ProductIterator, ::Nothing, stop::Tuple)
+    N = length(stop)
+    knotsbetween(iter, Tuple(repeat([nothing], N)), stop)
+end
+function knotsbetween(iter::Iterators.ProductIterator, start::Tuple, ::Nothing)
+    N = length(start)
+    knotsbetween(iter, start, Tuple(repeat([nothing], N)))
+end
+
+function knotsbetween(iter::Iterators.ProductIterator, start::Tuple, stop::Tuple)
+    # Get KnotIterator for each dimension -> Wrap with KnotRange -> Recombine
+    # with Iterators.product
+    kiter = map(knotsbetween, iter.iterators, start, stop)
+    Iterators.product(kiter...)
+end
+
+function iterate(iter::KnotRange, state)
+    y = iterate(iter.iter, state)
+    y === nothing && return nothing
+    if iter.stop !== nothing
+        return y[1] < iter.stop ? y : nothing
+    else
+        return y
+    end
+end
+
+# If state isn't provided -> Compute it for the KnotRange
+iterate(iter::KnotRange) = iterate(iter, _knot_start(iter.iter, iter.start))
+
+# If start is nothing -> Fall back to default start
+_knot_start(iter::KnotRange, ::Nothing) = _knot_start(iter.iter)
+_knot_start(iter::KnotIterator, ::Nothing) = _knot_start(iter)
+
+# If start is provided, decided if interpolated knot, or left / right
+# extrapolated knot
+function _knot_start(iter::KnotIterator{T,ET}, start) where {T, ET <: ExtrapDimSpec}
+    @info iter.knots[1], start, iter.knots[end]
+    if iter.knots[1] <= start < iter.knots[end]
+        # Starting knot is interpolated
+        @info _knot_start(ET, iter, start)
+        return _knot_start(ET, iter, start)
+    elseif start < iter.knots[1]
+        # Starting knot is extrapolated on the left side
+        return _knot_start_left(ET, iter, start)
+    else
+        # Starting knot is extrapolated on the right side
+        return _knot_start_right(ET, iter, start)
+    end
+end
+
+# Methods to dispatch to the correct _knot_start(ET, iter, state) based on
+# boundary conditions
+_knot_start_left(bc::Type{<:BoundaryCondition}, iter, start) = _knot_start(bc, iter, start)
+_knot_start_right(bc::Type{<:BoundaryCondition}, iter, start) = _knot_start(bc, iter, start)
+_knot_start_left(::Type{Tuple{RevBC,FwdBC}}, iter, start) where {RevBC,FwdBC} = _knot_start(RevBC, iter, start)
+_knot_start_right(::Type{Tuple{RevBC,FwdBC}}, iter, start) where {RevBC,FwdBC} = _knot_start(FwdBC, iter, start)
+
+# Starting iterator state for a non-repeating knot
+function _knot_start(::Type{<:BoundaryCondition}, iter, start)
+    findfirst(start .< iter.knots)
+end
+
+# Starting iterator state for a periodic knots
+function _knot_start(::Type{<:Periodic}, iter::KnotIterator{T}, start) where {T}
+    # Find starting offset
+    knotrange = iter.knots[end] - iter.knots[1]
+    cycleidx = floor(T, (start-iter.knots[1])/ knotrange)
+    offset = knotrange * cycleidx
+
+    # Find starting index
+    inbound_start = periodic(start, iter.knots[1], iter.knots[end])
+    idx = iter.nknots * cycleidx + findfirst(inbound_start .< iter.knots)
+
+    return idx, offset
+end
+
+# Starting iterator state for a reflecting knots
+function _knot_start(::Type{<:Reflect}, iter::KnotIterator{T}, start) where {T}
+    # Find starting offset
+    knotrange = iter.knots[end] - iter.knots[1]
+    cycleidx = floor(T, (start-iter.knots[1])/ knotrange)
+    offset = knotrange * cycleidx
+
+    # Find starting index
+    inbound_start = reflect(start, iter.knots[1], iter.knots[end])
+    idx = iter.nknots * cycleidx + findfirst(inbound_start .< iter.knots)
+
+    return idx, offset
 end
