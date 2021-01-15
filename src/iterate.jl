@@ -190,12 +190,9 @@ struct KnotRange{T, L <: IteratorSize}
     iter::KnotIterator{T}
     start
     stop
-    function KnotRange(iter::KnotIterator{T}, start, stop) where {T}
-        if IteratorSize(iter) == HasLength() || stop !== nothing
-            new{T, HasLength}(iter, start, stop)
-        else
-            new{T, IsInfinite}(iter, start, stop)
-        end
+    function KnotRange(iter::KnotIterator{T}, start, stop) where {T,ET}
+        L = IteratorSize(iter) == HasLength() || stop !== nothing ? HasLength : IsInfinite
+        new{T, L}(iter, start, stop)
     end
 end
 
@@ -210,8 +207,13 @@ eltype(::Type{<:KnotRange{T}}) where {T} = T
 function length(iter::KnotRange{T,HasLength}) where {T}
     sdx = _knot_start(iter.iter, iter.start)
     edx = _knot_stop(iter.iter, iter.stop)
-    edx - sdx + 1
+    _knot_iter_length(sdx, edx)
 end
+_knot_iter_length(sdx::Int, edx::Int) = max(edx - sdx + 1, 0)
+_knot_iter_length(sdx, edx) = _knot_iter_length(first(sdx), first(edx))
+_knot_iter_length(::Any, ::Nothing) = 0
+_knot_iter_length(::Nothing, ::Any) = 0
+
 size(iter::KnotRange{T,HasLength}) where {T} = (length(iter),)
 
 knotsbetween(itp; start=nothing, stop=nothing) = knotsbetween(itp, start, stop)
@@ -220,7 +222,7 @@ knotsbetween(iter::KnotIterator, start, stop) = KnotRange(iter, start, stop)
 # If AbstractInterpolation -> Get Knots -> Then Convert to Knot Range
 knotsbetween(itp::AbstractInterpolation, start, stop) = knotsbetween(knots(itp), start, stop)
 
-knotsbetween(::Any, ::Nothing, ::Nothing) =
+knotsbetween(::KnotIterator, ::Nothing, ::Nothing) =
     throw(ArgumentError("At least one of `start` or `stop` must be specified"))
 
 # Expand Nothing on Start/Stop if tuples
@@ -254,10 +256,10 @@ end
 iterate(iter::KnotRange) = iterate(iter, _knot_start(iter.iter, iter.start))
 
 # If start is nothing -> Fall back to default start
-_knot_start(iter::KnotRange, ::Nothing) = _knot_start(iter.iter)
+_knot_start(iter::KnotRange, start) = _knot_start(iter.iter, start)
 _knot_start(iter::KnotIterator, ::Nothing) = _knot_start(iter)
 
-_knot_stop(iter::KnotRange, ::Nothing) = _knot_stop(iter.iter)
+_knot_stop(iter::KnotRange, stop) = _knot_stop(iter.iter, stop)
 _knot_stop(iter::KnotIterator, ::Nothing) = _knot_stop(iter)
 _knot_stop(iter::KnotIterator) = length(iter)
 
@@ -276,7 +278,6 @@ function _knot_start(iter::KnotIterator{T,ET}, start) where {T, ET <: ExtrapDimS
     end
 end
 function _knot_stop(iter::KnotIterator{T,ET}, stop) where {T, ET <: ExtrapDimSpec}
-    _knot_stop(etptypes(ET)[1], iter, stop)
     if stop <= iter.knots[end]
         # Ending knot is interpolated / On the left Side
         return _knot_stop(etptypes(ET)[1], iter, stop)
@@ -298,24 +299,36 @@ end
 function _knot_start(::Type{<:Periodic}, iter::KnotIterator{T}, start) where {T}
     # Find starting offset
     knotrange = iter.knots[end] - iter.knots[1]
-    cycleidx = floor(T, (start-iter.knots[1])/ knotrange)
-    offset = knotrange * cycleidx
+    cycle = floor(Int, (start-iter.knots[1])/ knotrange)
 
     # Find starting index
-    inbound_start = periodic(start, iter.knots[1], iter.knots[end])
-    idx = iter.nknots * cycleidx + findfirst(inbound_start .< iter.knots)
+    cyclepos = periodic(start, iter.knots[1], iter.knots[end])
+    cycleidx = findfirst(cyclepos .< iter.knots)::Int
+    if cycleidx === iter.nknots
+        cycleidx = 1
+        cycle += 1
+    end
+
+    offset = knotrange * cycle
+    idx = (iter.nknots-1) * cycle + cycleidx
 
     return idx, offset
 end
 function _knot_stop(::Type{<:Periodic}, iter::KnotIterator{T}, stop) where {T}
     # Find stopping offset
     knotrange = iter.knots[end] - iter.knots[1]
-    cycleidx = floor(T, (stop-iter.knots[1])/ knotrange)
-    offset = knotrange * cycleidx
+    cycle = floor(Int, (stop-iter.knots[1])/ knotrange)
 
     # Find stopping index
-    inbound_stop = periodic(stop, iter.knots[1], iter.knots[end])
-    idx = iter.nknots * cycleidx + findlast(iter.knots .< inbound_stop)
+    cyclepos = periodic(stop, iter.knots[1], iter.knots[end])
+    if cyclepos == iter.knots[1]
+        cycleidx = iter.nknots -1
+        cycle -= 1
+    else
+        cycleidx = findlast(iter.knots .< cyclepos)::Int
+    end
+    offset = knotrange * cycle
+    idx = (iter.nknots-1) * cycle + cycleidx
 
     return idx, offset
 end
@@ -324,7 +337,7 @@ end
 function _knot_start(::Type{<:Reflect}, iter::KnotIterator{T}, start) where {T}
     # Find starting offset
     knotrange = iter.knots[end] - iter.knots[1]
-    cycleidx = floor(T, (start-iter.knots[1])/ knotrange)
+    cycleidx = floor(Int, (start-iter.knots[1])/ knotrange)
     offset = knotrange * cycleidx
 
     # Find starting index
@@ -336,7 +349,7 @@ end
 function _knot_stop(::Type{<:Reflect}, iter::KnotIterator{T}, stop) where {T}
     # Find stopping offset
     knotrange = iter.knots[end] - iter.knots[1]
-    cycleidx = floor(T, (stop-iter.knots[1])/ knotrange)
+    cycleidx = floor(Int, (stop-iter.knots[1])/ knotrange)
     offset = knotrange * cycleidx
 
     # Find stopping index

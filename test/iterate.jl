@@ -452,11 +452,33 @@ end
     end
     @testset "empty iterator" begin
         krange = knotsbetween(etp; start=3)
-        @test_knots krange KnotRange []
+        @test_knots krange KnotRange Float64[]
 
         krange = knotsbetween(etp; stop=1.0)
-        @test_knots krange KnotRange []
+        @test_knots krange KnotRange Float64[]
     end
+end
+
+@testset "_knot_start/stop - Periodic" begin
+    x = [1.0, 1.5, 1.75, 2.0]
+    etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic())
+    krange = knotsbetween(etp; stop = 1)
+    using Interpolations: _knot_start, _knot_stop
+
+    @test _knot_start(krange, 0.4) == (-1, -1.0)
+    @test _knot_start(krange, 0.7) == (0, -1.0)
+    @test _knot_start(krange, 0.8) == (1, 0.0)
+    @test _knot_start(krange, 1.0) == (2, 0.0)
+    @test _knot_start(krange, 1.5) == (3, 0.0)
+    @test _knot_start(krange, 2.3) == (5, 1.0)
+
+    @test _knot_stop(krange, 0.4) == (-2, -1.0)
+    @test _knot_stop(krange, 0.7) == (-1, -1.0)
+    @test _knot_stop(krange, 0.8) == (0, -1.0)
+    @test _knot_stop(krange, 1.0) == (0, -1.0)
+    @test _knot_stop(krange, 1.5) == (1, 0.0)
+    @test _knot_stop(krange, 2.0) == (3, 0.0)
+    @test _knot_stop(krange, 2.3) == (4, 1.0)
 end
 
 @testset "knotsbetween - extrapolate - 1D - Periodic" begin
@@ -490,13 +512,13 @@ end
     etp = LinearInterpolation(x, x.^2, extrapolation_bc=Reflect())
     @testset "start and stop" begin
         krange = knotsbetween(etp; start=0.0, stop=4.2)
-        expect = knot_ref([0.5, 0.75, 1.0, 1.5], Reflect(); stop=4.2)
+        expect = knot_ref([-1.0, -0.5, -0.25, 0.0], Reflect(); start=0.0, stop=4.2)
         @test_knots krange KnotRange expect
         @test all(0.0 .< collect(krange) .< 4.2)
     end
     @testset "start" begin
         krange = knotsbetween(etp; start=3.2)
-        expect = knot_ref([3.5, 3.75, 4.0, 4.5], Reflect())
+        expect = knot_ref([3.0, 3.5, 3.75, 4.0], Reflect(); start=3.2)
         @test_knots krange KnotRange expect
     end
     @testset "stop" begin
@@ -507,6 +529,6 @@ end
     end
     @testset "empty iterator" begin
         krange = knotsbetween(etp; start=1, stop=1)
-        @test_knots krange KnotRange []
+        @test_knots krange KnotRange Float64[]
     end
 end
