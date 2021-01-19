@@ -163,7 +163,7 @@ function iterate(iter::KnotIterator{T, ET}, state) where {T, ET <: FwdExtrapSpec
     curidx, offset = state[1], state[2]
 
     # Increment offset after a forward + backwards pass over the knots
-    cycleidx = mod(curidx, 2*iter.nknots-1)
+    cycleidx = mod(curidx, 2*iter.nknots-2)
     if  cycleidx != 0
         nextstate = (curidx+1, offset)
     else

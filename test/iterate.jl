@@ -194,6 +194,8 @@ end
         ktype = KnotIterator{Int, Tuple{typeof(RevBC), typeof(FwdBC)}}
         @test typeof(kiter) == ktype
 
+        @test_knots kiter KnotIterator knot_ref(1:10, FwdBC)
+
         if typeof(FwdBC) <: Union{Periodic, Reflect}
             @test Base.IteratorSize(kiter) == Base.IsInfinite()
             @test_throws MethodError length(kiter)
@@ -223,6 +225,8 @@ end
 
     # Check contents
     @test collect(kiter) == [1, 2, 3, 4, 5]
+
+    @test_knots kiter KnotIterator 1:5
 
     # Sample for loop
     kout = []
@@ -255,6 +259,8 @@ end
     @test eltype(k) <: Tuple{Int, Int}
     @test k == Iterators.product(1:3, 1:3) |> collect
 
+    @test_knots kiter KnotIterator 1:3 1:3
+
     # Sample for loop
     kout = []
     for (kx, ky) ∈ kiter
@@ -272,44 +278,32 @@ end
     kiter = knots(itp)
 
     # Checkout construction before proceeding
-    @test typeof(kiter) <: Interpolations.KnotIterator
-    @test eltype(kiter) <: Int
-    @test length(kiter) == 5
-    @test size(kiter) == (5,)
-    @test collect(kiter) == x
+    @test_knots kiter KnotIterator 1:5
 
     # Non-repeating Knots -> Should iterate over once and be done
     @testset "extrapolation - $etp" for etp ∈ [ Throw(), Flat(), Line()]
         extrp = extrapolate(itp, etp)
         kiter = knots(extrp)
-        @test typeof(kiter) <: Interpolations.KnotIterator
-        @test eltype(kiter) <: Int
-        @test length(kiter) == 5
-        @test size(kiter) == (5,)
-        @test collect(kiter) == x
+        @test_knots kiter KnotIterator knot_ref(1:5, etp)
     end
 
     # Repeating Knots -> Should Iterate indefinitely
     @testset "extrapolation - Periodic" begin
         extrp = extrapolate(itp, Periodic())
         k = knots(extrp)
-        @test typeof(k) <: Interpolations.KnotIterator
-        @test_throws MethodError length(k)
-        @test_throws MethodError size(k)
+        @test_knots k KnotIterator knot_ref(1:5, Periodic())
+
+        # Check that knots maps to the correct inbound knot
         k10 = Iterators.take(k, 10) |> collect
-        @test k10 ≈ collect(1:10)
         @test extrp.(k10) ≈ vcat(x[1:end-1].^2, x[1:end-1].^2, x[1:2].^2)
     end
     @testset "extrapolation - Reflect" begin
         extrp = extrapolate(itp, Reflect())
         k = knots(extrp)
-        @test typeof(k) <: Interpolations.KnotIterator
+        @test_knots k KnotIterator knot_ref(1:5, Reflect())
 
-        # Check length and size throw Method Errors (As Undefined)
-        @test Base.IteratorSize(k) == Base.IsInfinite()
-        @test_throws MethodError length(k)
-        @test_throws MethodError size(k)
 
+        # Check that knots maps to the correct inbound knot
         k10 = Iterators.take(k, 10) |> collect
         @test k10 ≈ collect(1:10)
         @test extrp.(k10) ≈ vcat(x.^2, reverse(x[1:end - 1].^2), x[2].^2)
@@ -322,12 +316,9 @@ end
     x = [1.0, 1.3, 2.4, 3.2, 4.0]
     etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic())
     kiter = knots(etp)
+    @test_knots kiter KnotIterator knot_ref(x, Periodic())
 
-    @test typeof(kiter) <: Interpolations.KnotIterator
-    @test Base.IteratorSize(kiter) == Base.IsInfinite()
-    @test_throws MethodError length(kiter)
-    @test_throws MethodError size(kiter)
-
+    # Check that knots maps to the correct inbound knot
     k = Iterators.take(kiter, 10) |> collect
     @test k == [1.0, 1.3, 2.4, 3.2, 4.0, 4.3, 5.4, 6.2, 7.0, 7.3]
     @test etp.(k) ≈ vcat(x[1:end-1], x[1:end-1], x[1:2]).^2
@@ -338,12 +329,9 @@ end
     x = [1.0, 1.3, 2.4, 3.2, 4.0]
     etp = LinearInterpolation(x, x.^2, extrapolation_bc=Reflect())
     kiter = knots(etp)
+    @test_knots kiter KnotIterator knot_ref(x, Reflect())
 
-    @test typeof(kiter) <: Interpolations.KnotIterator
-    @test Base.IteratorSize(kiter) == Base.IsInfinite()
-    @test_throws MethodError length(kiter)
-    @test_throws MethodError size(kiter)
-
+    # Check that knots maps to the correct inbound knot
     k = Iterators.take(kiter, 10) |> collect
     @test k == [1.0, 1.3, 2.4, 3.2, 4.0, 4.8, 5.6, 6.7, 7.0, 7.3]
     @test etp.(k) ≈ vcat(x, reverse(x[1:end - 1]), x[2]).^2
@@ -356,21 +344,7 @@ end
         extrapolation_bc=(Throw(), bc)
     )
     kiter = knots(etp)
-    @test typeof(kiter) <: Iterators.ProductIterator
-    @test eltype(kiter.iterators) <: Interpolations.KnotIterator
-
-    @test Base.IteratorSize(kiter) == Base.HasShape{2}()
-    @test length(kiter) == 9
-    @test size(kiter) == (3, 3)
-
-    @test Base.IteratorEltype(kiter) == Base.HasEltype()
-    @test eltype(kiter) == Tuple{Int,Int}
-
-    k = Iterators.take(kiter, 5) |> collect
-    @test length(k) == 5
-    @test typeof(k) <: Vector{Tuple{Int,Int}}
-    kexp = Iterators.product(1:3, 1:3) |> x -> Iterators.take(x, 5) |> collect
-    @test k == kexp
+    @test_knots kiter KnotIterator 1:3 1:3
 end
 
 # Unit tests for 2D iteration with directional boundary conditions that are
@@ -380,23 +354,7 @@ end
         extrapolation_bc=(Line(), bc)
     )
     kiter = knots(etp)
-    @test typeof(kiter) <: Iterators.ProductIterator
-    @test eltype(kiter.iterators) <: Interpolations.KnotIterator
-
-    # Check length and size throw ArgumentErrors (via Iterators.product)
-    @test Base.IteratorSize(kiter) == Base.IsInfinite()
-    @test_throws ArgumentError length(kiter)
-    @test_throws ArgumentError size(kiter)
-
-    @test Base.IteratorEltype(kiter) == Base.HasEltype()
-    @test eltype(kiter) == Tuple{Int,Int}
-
-    k = Iterators.take(kiter, 20) |> collect
-    @test length(k) == 20
-    @test typeof(k) <: Vector{Tuple{Int,Int}}
-    kexp = Iterators.product(1:3, Iterators.countfrom(1)) |>
-        x -> Iterators.take(x, 20) |> collect
-    @test k == kexp
+    @test_knots kiter KnotIterator 1:3 Iterators.countfrom(1)
 end
 
 @testset "knotsbetween - interpolate - 1D" begin
