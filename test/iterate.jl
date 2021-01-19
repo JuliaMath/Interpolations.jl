@@ -139,6 +139,39 @@ function knot_ref(seq, ::Reflect)
     Iterators.accumulate(+, iter)
 end
 
+@testset "knot_ref" begin
+    x = [1.0, 1.5, 1.75, 2.0]
+    # Non-Repeating Knots
+    @testset "knot_ref for $etp" for etp ∈ [Line(), Flat(), Throw()]
+        @test knot_ref(x, etp) == x
+        @test knot_ref(x, etp; start=1.2) |> collect == x[2:end]
+        @test knot_ref(x, etp; stop=1.8) |> collect == x[1:end-1]
+        @test knot_ref(x, etp; start=1.2, stop=1.8) |> collect == x[2:end-1]
+    end
+    # Check knot_ref for Periodic against expect knots
+    @testset "knot_ref for Periodic" begin
+        ref = [
+            1.0, 1.5, 1.75, 2.0, 2.5, 2.75, 3.0, 3.5, 3.75, 4.0, 4.5, 4.75,
+            5.0, 5.5, 5.75, 6.0, 6.5, 6.75, 7.0, 7.5, 7.75, 8.0, 8.5, 8.75,
+            9.0, 9.5, 9.75, 10.0, 10.5, 10.75, 11.0, 11.5, 11.75, 12.0
+        ]
+        @test knot_ref(x, Periodic(), start=2) |> typeof <: Iterators.DropWhile
+        @test knot_ref(x, Periodic(); start=1.0, stop=12.0) == ref[2:end-1]
+        @test knot_ref(x, Periodic(); start=2.3, stop=11.0) == ref[2.3 .< ref .< 11.0]
+   end
+    # Check knot_ref for Reflect against expect knots
+    @testset "knot_ref for Reflect" begin
+        ref = [
+            1.0, 1.5, 1.75, 2.0, 2.25, 2.5, 3.0, 3.5, 3.75, 4.0, 4.25, 4.5,
+            5.0, 5.5, 5.75, 6.0, 6.25, 6.5, 7.0, 7.5, 7.75, 8.0, 8.25, 8.5,
+            9.0, 9.5, 9.75, 10.0, 10.25, 10.5, 11.0, 11.5, 11.75, 12.0
+        ]
+        @test knot_ref(x, Reflect(), start=2) |> typeof <: Iterators.DropWhile
+        @test knot_ref(x, Reflect(); start=1.0, stop=12.0) == ref[2:end-1]
+        @test knot_ref(x, Reflect(); start=2.3, stop=11.0) == ref[2.3 .< ref .< 11.0]
+    end
+end
+
 # Unit Tests for Base.IteratorEltype and Base.IteratorSize methods (Type Info Only)
 @testset "iterate - interface" begin
     import Interpolations.KnotIterator
@@ -417,26 +450,64 @@ end
     end
 end
 
+macro test_knot_idx(f, iter, start, state, knot)
+    quote
+        # Wrap in @testset to get debug info on failure
+        local $iter = $(esc(iter))
+        @testset "$($f)($($iter)), $($start)) -> $($knot), $($state)" begin
+            # Check that state does correspond to knot
+            knot = first(iterate($iter, $state))
+            @test knot == $knot
+
+            # Check that f(start) -> state
+            state = $f($iter, $start)
+            @test state == $state
+        end
+    end
+end
+
 @testset "_knot_start/stop - Periodic" begin
     x = [1.0, 1.5, 1.75, 2.0]
     etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic())
-    krange = knotsbetween(etp; stop = 1)
+    krange = knotsbetween(etp; stop = 10)
     using Interpolations: _knot_start, _knot_stop
 
-    @test _knot_start(krange, 0.4) == (-1, -1.0)
-    @test _knot_start(krange, 0.7) == (0, -1.0)
-    @test _knot_start(krange, 0.8) == (1, 0.0)
-    @test _knot_start(krange, 1.0) == (2, 0.0)
-    @test _knot_start(krange, 1.5) == (3, 0.0)
-    @test _knot_start(krange, 2.3) == (5, 1.0)
+    @test_knot_idx _knot_start krange -2.1 (-8, -3.0) -2.0
+    @test_knot_idx _knot_start krange 0.4 (-1, -1.0) 0.5
+    @test_knot_idx _knot_start krange 0.7 (0, -1.0) 0.75
+    @test_knot_idx _knot_start krange 0.8 (1, 0.0) 1.0
+    @test_knot_idx _knot_start krange 1.0 (2, 0.0) 1.5
+    @test_knot_idx _knot_start krange 1.5 (3, 0.0) 1.75
+    @test_knot_idx _knot_start krange 2.3 (5, 1.0) 2.5
 
-    @test _knot_stop(krange, 0.4) == (-2, -1.0)
-    @test _knot_stop(krange, 0.7) == (-1, -1.0)
-    @test _knot_stop(krange, 0.8) == (0, -1.0)
-    @test _knot_stop(krange, 1.0) == (0, -1.0)
-    @test _knot_stop(krange, 1.5) == (1, 0.0)
-    @test _knot_stop(krange, 2.0) == (3, 0.0)
-    @test _knot_stop(krange, 2.3) == (4, 1.0)
+    @test_knot_idx _knot_stop krange 0.4 (-2, -1.0) 0.0
+    @test_knot_idx _knot_stop krange 0.7 (-1, -1.0) 0.5
+    @test_knot_idx _knot_stop krange 0.8 (0, -1.0) 0.75
+    @test_knot_idx _knot_stop krange 1.0 (0, -1.0) 0.75
+    @test_knot_idx _knot_stop krange 1.5 (1, 0.0) 1.0
+    @test_knot_idx _knot_stop krange 2.0 (3, 0.0) 1.75
+    @test_knot_idx _knot_stop krange 2.3 (4, 1.0) 2.0
+end
+
+@testset "_knot_start/stop - Reflect" begin
+    x = [1.0, 1.5, 1.75, 2.0]
+    etp = LinearInterpolation(x, x.^2, extrapolation_bc=Reflect())
+    krange = knotsbetween(etp; stop = 10)
+    using Interpolations: _knot_start, _knot_stop
+
+    @test_knot_idx _knot_start krange -2.1 (-8, -4.0) -2.0
+    @test_knot_idx _knot_start krange 0.2 (-1, -2.0) 0.25
+    @test_knot_idx _knot_start krange 1.6 (3, 0.0) 1.75
+    @test_knot_idx _knot_start krange 3.75 (10, 2.0) 4.0
+    @test_knot_idx _knot_start krange 5.4 (14, 4.0) 5.5
+
+    @test_knot_idx _knot_stop krange 0.4 (-1, -2.0) 0.25
+    @test_knot_idx _knot_stop krange 0.7 (0, -2.0) 0.5
+    @test_knot_idx _knot_stop krange 4.3 (11, 2.0) 4.25
+    @test_knot_idx _knot_stop krange 6.3 (17, 4.0) 6.25
+    @test_knot_idx _knot_stop krange 1.5 (1, 0.0) 1.0
+    @test_knot_idx _knot_stop krange 8.2 (22, 6.0) 8.0
+    @test_knot_idx _knot_stop krange 10.0 (27, 8.0) 9.75
 end
 
 @testset "knotsbetween - extrapolate - 1D - Periodic" begin
