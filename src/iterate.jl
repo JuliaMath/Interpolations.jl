@@ -255,6 +255,9 @@ end
 # If state isn't provided -> Compute it for the KnotRange
 iterate(iter::KnotRange) = iterate(iter, _knot_start(iter.iter, iter.start))
 
+# If there is nothing to iterate, the first state will be nothing
+iterate(::KnotIterator, ::Nothing) = nothing
+
 # If start is nothing -> Fall back to default start
 _knot_start(iter::KnotRange, start) = _knot_start(iter.iter, start)
 _knot_start(iter::KnotIterator, ::Nothing) = _knot_start(iter)
@@ -287,74 +290,63 @@ function _knot_stop(iter::KnotIterator{T,ET}, stop) where {T, ET <: ExtrapDimSpe
     end
 end
 
+_knot_start(ET, iter::KnotIterator, start) = _knot_start(ET, iter.knots, start)
+_knot_stop(ET, iter::KnotIterator, stop) = _knot_stop(ET, iter.knots, stop)
+
 # Starting iterator state for a non-repeating knot
-function _knot_start(::Type{<:BoundaryCondition}, iter, start)
-    findfirst(start .< iter.knots)
+function _knot_start(::Type{<:BoundaryCondition}, knots::Vector, start)
+    findfirst(start .< knots)
 end
-function _knot_stop(::Type{<:BoundaryCondition}, iter, stop)
-    findlast(iter.knots .< stop)
+function _knot_stop(::Type{<:BoundaryCondition}, knots::Vector, stop)
+    findlast(knots .< stop)
 end
 
 # Starting iterator state for a periodic knots
-function _knot_start(::Type{<:Periodic}, iter::KnotIterator{T}, start) where {T}
+function _knot_start(::Type{<:Periodic}, knots::Vector, start)
     # Find starting offset
-    knotrange = iter.knots[end] - iter.knots[1]
-    cycle = floor(Int, (start-iter.knots[1])/ knotrange)
+    knotrange = knots[end] - knots[1]
+    cycle = floor(Int, (start-knots[1])/ knotrange)
 
     # Find starting index
-    cyclepos = periodic(start, iter.knots[1], iter.knots[end])
-    cycleidx = findfirst(cyclepos .< iter.knots)::Int
-    if cycleidx === iter.nknots
+    cyclepos = periodic(start, knots[1], knots[end])
+    cycleidx = findfirst(cyclepos .< knots)::Int
+    if cycleidx === length(knots)
         cycleidx = 1
         cycle += 1
     end
 
     offset = knotrange * cycle
-    idx = (iter.nknots-1) * cycle + cycleidx
+    idx = (length(knots)-1) * cycle + cycleidx
 
     return idx, offset
 end
-function _knot_stop(::Type{<:Periodic}, iter::KnotIterator{T}, stop) where {T}
+function _knot_stop(::Type{<:Periodic}, knots::Vector, stop)
     # Find stopping offset
-    knotrange = iter.knots[end] - iter.knots[1]
-    cycle = floor(Int, (stop-iter.knots[1])/ knotrange)
+    knotrange = knots[end] - knots[1]
+    cycle = floor(Int, (stop-knots[1])/ knotrange)
 
     # Find stopping index
-    cyclepos = periodic(stop, iter.knots[1], iter.knots[end])
-    if cyclepos == iter.knots[1]
-        cycleidx = iter.nknots -1
+    cyclepos = periodic(stop, knots[1], knots[end])
+    if cyclepos == knots[1]
+        cycleidx = length(knots) -1
         cycle -= 1
     else
-        cycleidx = findlast(iter.knots .< cyclepos)::Int
+        cycleidx = findlast(knots .< cyclepos)::Int
     end
     offset = knotrange * cycle
-    idx = (iter.nknots-1) * cycle + cycleidx
+    idx = (length(knots)-1) * cycle + cycleidx
 
     return idx, offset
 end
 
 # Starting iterator state for a reflecting knots
-function _knot_start(::Type{<:Reflect}, iter::KnotIterator{T}, start) where {T}
-    # Find starting offset
-    knotrange = iter.knots[end] - iter.knots[1]
-    cycleidx = floor(Int, (start-iter.knots[1])/ knotrange)
-    offset = knotrange * cycleidx
-
-    # Find starting index
-    inbound_start = reflect(start, iter.knots[1], iter.knots[end])
-    idx = iter.nknots * cycleidx + findfirst(inbound_start .< iter.knots)
-
-    return idx, offset
+function _knot_start(::Type{<:Reflect}, knots::Vector, start)
+    refknots = knots[end] .+ (cumsum∘reverse∘diff)(knots)
+    knots = vcat(knots, refknots)
+    _knot_start(Periodic, knots, start)
 end
-function _knot_stop(::Type{<:Reflect}, iter::KnotIterator{T}, stop) where {T}
-    # Find stopping offset
-    knotrange = iter.knots[end] - iter.knots[1]
-    cycleidx = floor(Int, (stop-iter.knots[1])/ knotrange)
-    offset = knotrange * cycleidx
-
-    # Find stopping index
-    inbound_stop = reflect(stop, iter.knots[1], iter.knots[end])
-    idx = iter.nknots * cycleidx + findlast(iter.knots .< inbound_stop)
-
-    return idx, offset
+function _knot_stop(::Type{<:Reflect}, knots::Vector, stop)
+    refknots = knots[end] .+ (cumsum∘reverse∘diff)(knots)
+    knots = vcat(knots, refknots)
+    _knot_stop(Periodic, knots, stop)
 end
