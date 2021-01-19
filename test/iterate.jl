@@ -95,8 +95,13 @@ macro test_knots(itersym, type, expect...)
 
         # Type stability -> Check that methods are type suitable
         @testset "type stability" begin
-            @test_skip item, next = @inferred iterate($itersym)
-            @test_skip @inferred iterate($itersym, next)
+            iteratetype = Union{Nothing, knotType}
+            y = @inferred iteratetype iterate($itersym)
+            if y !== nothing
+                @test_nowarn @inferred iteratetype iterate($itersym, y[2])
+            end
+            isBounded && @test_nowarn @inferred Integer length($itersym)
+            @test_nowarn @inferred Type eltype($itersym)
         end
     end
 end
@@ -472,21 +477,21 @@ end
     krange = knotsbetween(etp; stop = 10)
     using Interpolations: _knot_start, _knot_stop
 
-    @test_knot_idx _knot_start krange -2.1 (-8, -3.0) -2.0
-    @test_knot_idx _knot_start krange 0.4 (-1, -1.0) 0.5
-    @test_knot_idx _knot_start krange 0.7 (0, -1.0) 0.75
-    @test_knot_idx _knot_start krange 0.8 (1, 0.0) 1.0
-    @test_knot_idx _knot_start krange 1.0 (2, 0.0) 1.5
-    @test_knot_idx _knot_start krange 1.5 (3, 0.0) 1.75
-    @test_knot_idx _knot_start krange 2.3 (5, 1.0) 2.5
+    @test_knot_idx _knot_start krange -2.1 -8 -2.0
+    @test_knot_idx _knot_start krange 0.4 -1 0.5
+    @test_knot_idx _knot_start krange 0.7 0 0.75
+    @test_knot_idx _knot_start krange 0.8 1 1.0
+    @test_knot_idx _knot_start krange 1.0 2 1.5
+    @test_knot_idx _knot_start krange 1.5 3 1.75
+    @test_knot_idx _knot_start krange 2.3 5 2.5
 
-    @test_knot_idx _knot_stop krange 0.4 (-2, -1.0) 0.0
-    @test_knot_idx _knot_stop krange 0.7 (-1, -1.0) 0.5
-    @test_knot_idx _knot_stop krange 0.8 (0, -1.0) 0.75
-    @test_knot_idx _knot_stop krange 1.0 (0, -1.0) 0.75
-    @test_knot_idx _knot_stop krange 1.5 (1, 0.0) 1.0
-    @test_knot_idx _knot_stop krange 2.0 (3, 0.0) 1.75
-    @test_knot_idx _knot_stop krange 2.3 (4, 1.0) 2.0
+    @test_knot_idx _knot_stop krange 0.4 -2 0.0
+    @test_knot_idx _knot_stop krange 0.7 -1 0.5
+    @test_knot_idx _knot_stop krange 0.8 0 0.75
+    @test_knot_idx _knot_stop krange 1.0 0 0.75
+    @test_knot_idx _knot_stop krange 1.5 1 1.0
+    @test_knot_idx _knot_stop krange 2.0 3 1.75
+    @test_knot_idx _knot_stop krange 2.3 4 2.0
 end
 
 @testset "_knot_start/stop - Reflect" begin
@@ -495,19 +500,19 @@ end
     krange = knotsbetween(etp; stop = 10)
     using Interpolations: _knot_start, _knot_stop
 
-    @test_knot_idx _knot_start krange -2.1 (-8, -4.0) -2.0
-    @test_knot_idx _knot_start krange 0.2 (-1, -2.0) 0.25
-    @test_knot_idx _knot_start krange 1.6 (3, 0.0) 1.75
-    @test_knot_idx _knot_start krange 3.75 (10, 2.0) 4.0
-    @test_knot_idx _knot_start krange 5.4 (14, 4.0) 5.5
+    @test_knot_idx _knot_start krange -2.1 -8 -2.0
+    @test_knot_idx _knot_start krange 0.2 -1 0.25
+    @test_knot_idx _knot_start krange 1.6 3 1.75
+    @test_knot_idx _knot_start krange 3.75 10 4.0
+    @test_knot_idx _knot_start krange 5.4 14 5.5
 
-    @test_knot_idx _knot_stop krange 0.4 (-1, -2.0) 0.25
-    @test_knot_idx _knot_stop krange 0.7 (0, -2.0) 0.5
-    @test_knot_idx _knot_stop krange 4.3 (11, 2.0) 4.25
-    @test_knot_idx _knot_stop krange 6.3 (17, 4.0) 6.25
-    @test_knot_idx _knot_stop krange 1.5 (1, 0.0) 1.0
-    @test_knot_idx _knot_stop krange 8.2 (22, 6.0) 8.0
-    @test_knot_idx _knot_stop krange 10.0 (27, 8.0) 9.75
+    @test_knot_idx _knot_stop krange 0.4 -1 0.25
+    @test_knot_idx _knot_stop krange 0.7 0 0.5
+    @test_knot_idx _knot_stop krange 4.3 11 4.25
+    @test_knot_idx _knot_stop krange 6.3 17 6.25
+    @test_knot_idx _knot_stop krange 1.5 1 1.0
+    @test_knot_idx _knot_stop krange 8.2 22 8.0
+    @test_knot_idx _knot_stop krange 10.0 27 9.75
 end
 
 @testset "knotsbetween - extrapolate - 1D - Periodic" begin

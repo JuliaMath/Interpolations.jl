@@ -132,67 +132,52 @@ end
 
 # Initialize iteration based on KnotIterator
 _knot_start(::KnotIterator) = 1
-_knot_start(::KnotIterator{T,ET}) where {T,ET <: FwdExtrapSpec{RepeatKnots}} = (1, zero(T))
 
 # For non-repeating ET's iterate through once
 iterate(iter::KnotIterator) = iterate(iter, _knot_start(iter))
-iterate(iter::KnotIterator, idx::Integer) = idx <= iter.nknots ? (iter.knots[idx], idx+1) : nothing
+iterate(iter::KnotIterator, idx) = idx <= iter.nknots ? (iter.knots[idx], idx+1) : nothing
+
+# If the state is nothing -> There is nothing to iterate
+iterate(::KnotIterator, ::Nothing) = nothing
 
 # Periodic: Iterate over knots, updating the offset each cycle
-function iterate(iter::KnotIterator{T,ET}, state::Tuple) where {T, ET <: FwdExtrapSpec{Periodic}}
-    state === nothing && return nothing
-    curidx, offset = state[1], state[2]
-
-    # Increment offset after cycling over all the knots
-    if mod(curidx, iter.nknots-1) != 0
-        nextstate = (curidx+1, offset)
-    else
-        knotrange = iter.knots[end] - iter.knots[1]
-        nextstate = (curidx+1, offset+knotrange)
-    end
-
+function iterate(iter::KnotIterator{T,ET}, state) where {T, ET <: FwdExtrapSpec{Periodic}}
     # Get the current knot
-    knot = iter.knots[periodic(curidx, 1, iter.nknots)] + offset
-    return knot, nextstate
+    knotrange = iter.knots[end] - iter.knots[1]
+    offset = knotrange * (cld(state, iter.nknots-1)-1)
+    knot = iter.knots[periodic(state, 1, iter.nknots)] + offset
+    return knot, state+1
 end
 
 # Reflect: Iterate over knots, updating the offset after a forward and backwards
 # cycle
 function iterate(iter::KnotIterator{T, ET}, state) where {T, ET <: FwdExtrapSpec{Reflect}}
-    state === nothing && return nothing
-    curidx, offset = state[1], state[2]
+    # Get the current knot
+    knotrange = iter.knots[end] - iter.knots[1]
+    offset = 2*knotrange * (cld(state, 2*iter.nknots-2)-1)
+    idx = mod(state-1, 2*iter.nknots-2)+1
 
-    # Increment offset after a forward + backwards pass over the knots
-    cycleidx = mod(curidx, 2*iter.nknots-2)
-    if  cycleidx != 0
-        nextstate = (curidx+1, offset)
+    if iter.nknots < idx
+        knot = offset + 2*iter.knots[end] - iter.knots[2*iter.nknots-idx]
     else
-        knotrange = iter.knots[end] - iter.knots[1]
-        nextstate = (curidx+1, offset+2*knotrange)
+        knot = iter.knots[idx] + offset
     end
 
-    # Map global index onto knots, and get that knot
-    idx = reflect(curidx, 1, iter.nknots)
-    knot = iter.knots[idx]
-
-    # Add offset to map local knot to global position
-    if 0 < cycleidx <= iter.nknots
-        # Forward pass
-        knot = knot + offset
-    else
-        # backwards pass
-        knot = offset + 2*iter.knots[end] - knot
-    end
-
-    return knot, nextstate
+    return knot, state+1
 end
 struct KnotRange{T, L <: IteratorSize}
     iter::KnotIterator{T}
-    start
-    stop
+    start::Union{Nothing, Int}
+    stop::Union{Nothing, Int}
     function KnotRange(iter::KnotIterator{T}, start, stop) where {T,ET}
-        L = IteratorSize(iter) == HasLength() || stop !== nothing ? HasLength : IsInfinite
-        new{T, L}(iter, start, stop)
+        if IteratorSize(iter) == HasLength() || stop !== nothing
+            L = HasLength
+            stopidx = _knot_stop(iter, stop)
+        else
+            L = IsInfinite
+            stopidx = nothing
+        end
+        new{T, L}(iter, _knot_start(iter, start), stopidx)
     end
 end
 
@@ -205,9 +190,7 @@ IteratorEltype(::Type{<:KnotRange}) = HasEltype()
 eltype(::Type{<:KnotRange{T}}) where {T} = T
 
 function length(iter::KnotRange{T,HasLength}) where {T}
-    sdx = _knot_start(iter.iter, iter.start)
-    edx = _knot_stop(iter.iter, iter.stop)
-    _knot_iter_length(sdx, edx)
+    _knot_iter_length(iter.start, iter.stop)
 end
 _knot_iter_length(sdx::Int, edx::Int) = max(edx - sdx + 1, 0)
 _knot_iter_length(sdx, edx) = _knot_iter_length(first(sdx), first(edx))
@@ -242,21 +225,24 @@ function knotsbetween(iter::Iterators.ProductIterator, start::Tuple, stop::Tuple
     Iterators.product(kiter...)
 end
 
-function iterate(iter::KnotRange, state)
+function iterate(iter::KnotRange{T}, state) where {T}
     y = iterate(iter.iter, state)
     y === nothing && return nothing
     if iter.stop !== nothing
-        return y[1] < iter.stop ? y : nothing
+        return iter.stop+1 < y[2] ? nothing : y
     else
         return y
     end
 end
 
 # If state isn't provided -> Compute it for the KnotRange
-iterate(iter::KnotRange) = iterate(iter, _knot_start(iter.iter, iter.start))
-
-# If there is nothing to iterate, the first state will be nothing
-iterate(::KnotIterator, ::Nothing) = nothing
+function iterate(iter::KnotRange)
+    if iter.stop === nothing || iter.start < iter.stop
+        iterate(iter, iter.start)
+    else
+        nothing
+    end
+end
 
 # If start is nothing -> Fall back to default start
 _knot_start(iter::KnotRange, start) = _knot_start(iter.iter, start)
@@ -295,10 +281,10 @@ _knot_stop(ET, iter::KnotIterator, stop) = _knot_stop(ET, iter.knots, stop)
 
 # Starting iterator state for a non-repeating knot
 function _knot_start(::Type{<:BoundaryCondition}, knots::Vector, start)
-    findfirst(start .< knots)
+    knots[end] <= start ? length(knots)+1 : findfirst(start .< knots)
 end
 function _knot_stop(::Type{<:BoundaryCondition}, knots::Vector, stop)
-    findlast(knots .< stop)
+    stop <= knots[1] ? 0 : findlast(knots .< stop)
 end
 
 # Starting iterator state for a periodic knots
@@ -315,10 +301,9 @@ function _knot_start(::Type{<:Periodic}, knots::Vector, start)
         cycle += 1
     end
 
-    offset = knotrange * cycle
     idx = (length(knots)-1) * cycle + cycleidx
 
-    return idx, offset
+    return idx
 end
 function _knot_stop(::Type{<:Periodic}, knots::Vector, stop)
     # Find stopping offset
@@ -333,10 +318,9 @@ function _knot_stop(::Type{<:Periodic}, knots::Vector, stop)
     else
         cycleidx = findlast(knots .< cyclepos)::Int
     end
-    offset = knotrange * cycle
     idx = (length(knots)-1) * cycle + cycleidx
 
-    return idx, offset
+    return idx
 end
 
 # Starting iterator state for a reflecting knots
