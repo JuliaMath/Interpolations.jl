@@ -180,9 +180,10 @@ end
 # Unit Tests for Base.IteratorEltype and Base.IteratorSize methods (Type Info Only)
 @testset "iterate - interface" begin
     import Interpolations.KnotIterator
-    # Always have an eltype as we explicitly track via T
-    @test Base.IteratorEltype(KnotIterator) == Base.HasEltype()
+    # Eletype is known iff type parameter is provided
+    @test Base.IteratorEltype(KnotIterator) == Base.EltypeUnknown()
     @test Base.IteratorEltype(KnotIterator{Int}) == Base.HasEltype()
+    @test Base.IteratorEltype(KnotIterator{Int,Flat}) == Base.HasEltype()
 
     # If missing ET type parameter -> SizeUnknown, as could be HasLength or
     # IsInfinite
@@ -194,9 +195,11 @@ end
 # Iterator Interface for KnotRange
 @testset "KnotRange - iterate interface" begin
     import Interpolations.KnotRange
-    # Always have an eltype as we explicitly track via T
-    @test Base.IteratorEltype(KnotRange) == Base.HasEltype()
+    # Eletype is known iff type parameter is provided
+    @test Base.IteratorEltype(KnotRange) == Base.EltypeUnknown()
     @test Base.IteratorEltype(KnotRange{Int}) == Base.HasEltype()
+    @test Base.IteratorEltype(KnotRange{Int,Base.UnitRange}) == Base.HasEltype()
+    @test Base.IteratorEltype(KnotRange{Int,Iterators.Count}) == Base.HasEltype()
 
     # If missing Range type parameter -> SizeUnknown, as could be HasLength or
     # IsInfinite

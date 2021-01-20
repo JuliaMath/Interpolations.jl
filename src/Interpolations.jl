@@ -38,7 +38,8 @@ export
 using LinearAlgebra, SparseArrays
 using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
 
-using Base: @propagate_inbounds, HasEltype, HasLength, IsInfinite, SizeUnknown
+using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
+    SizeUnknown
 import Base: convert, size, axes, promote_rule, ndims, eltype, checkbounds, axes1,
     iterate, length, IteratorEltype, IteratorSize
 

@@ -77,8 +77,9 @@ length(iter::KnotIterator) = _knot_length(iter, IteratorSize(iter))
 _knot_length(iter::KnotIterator, ::HasLength) = iter.nknots
 size(iter::KnotIterator) = (length(iter),)
 
-IteratorEltype(::Type{KnotIterator{T,ET}}) where {T,ET} = HasEltype()
-eltype(::Type{KnotIterator{T,ET}}) where {T,ET} = T
+IteratorEltype(::Type{KnotIterator}) = EltypeUnknown()
+IteratorEltype(::Type{<:KnotIterator{T}}) where {T} = HasEltype()
+eltype(::Type{<:KnotIterator{T}}) where {T} = T
 
 """
     knots(itp::AbstractInterpolation)
@@ -307,7 +308,9 @@ IteratorSize(::Type{KnotRange{T}}) where {T} = SizeUnknown()
 IteratorSize(::Type{KnotRange{T,R}}) where {T, R <: UnitRange} = HasLength()
 IteratorSize(::Type{KnotRange{T,R}}) where {T, R <: Iterators.Count} = IsInfinite()
 
-IteratorEltype(::Type{<:KnotRange}) = HasEltype()
+# If type parameter is not provided -> Eltype is Unknown otherwise known
+IteratorEltype(::Type{<:KnotRange}) = EltypeUnknown()
+IteratorEltype(::Type{<:KnotRange{T}}) where {T} = HasEltype()
 eltype(::Type{<:KnotRange{T}}) where {T} = T
 
 # Dispatch length and size to range
