@@ -198,11 +198,12 @@ end
     @test Base.IteratorEltype(KnotRange) == Base.HasEltype()
     @test Base.IteratorEltype(KnotRange{Int}) == Base.HasEltype()
 
-    # IteratorSize Stored Directly in KnotRange Type
+    # If missing Range type parameter -> SizeUnknown, as could be HasLength or
+    # IsInfinite
     @test Base.IteratorSize(KnotRange) == Base.SizeUnknown()
     @test Base.IteratorSize(KnotRange{Int}) == Base.SizeUnknown()
-    @test Base.IteratorSize(KnotRange{Int,Base.IsInfinite}) == Base.IsInfinite()
-    @test Base.IteratorSize(KnotRange{Int,Base.HasLength}) == Base.HasLength()
+    @test Base.IteratorSize(KnotRange{Int,Base.UnitRange}) == Base.HasLength()
+    @test Base.IteratorSize(KnotRange{Int,Iterators.Count}) == Base.IsInfinite()
 end
 
 # eltype units tests of KnotIterator / KnotRange
@@ -475,44 +476,44 @@ end
     x = [1.0, 1.5, 1.75, 2.0]
     etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic())
     krange = knotsbetween(etp; stop = 10)
-    using Interpolations: _knot_start, _knot_stop
+    using Interpolations: nextknotidx, priorknotidx
 
-    @test_knot_idx _knot_start krange -2.1 -8 -2.0
-    @test_knot_idx _knot_start krange 0.4 -1 0.5
-    @test_knot_idx _knot_start krange 0.7 0 0.75
-    @test_knot_idx _knot_start krange 0.8 1 1.0
-    @test_knot_idx _knot_start krange 1.0 2 1.5
-    @test_knot_idx _knot_start krange 1.5 3 1.75
-    @test_knot_idx _knot_start krange 2.3 5 2.5
+    @test_knot_idx(nextknotidx, krange, -2.1, -8, -2.0)
+    @test_knot_idx(nextknotidx, krange, 0.4, -1, 0.5)
+    @test_knot_idx(nextknotidx, krange, 0.7, 0, 0.75)
+    @test_knot_idx(nextknotidx, krange, 0.8, 1, 1.0)
+    @test_knot_idx(nextknotidx, krange, 1.0, 2, 1.5)
+    @test_knot_idx(nextknotidx, krange, 1.5, 3, 1.75)
+    @test_knot_idx(nextknotidx, krange, 2.3, 5, 2.5)
 
-    @test_knot_idx _knot_stop krange 0.4 -2 0.0
-    @test_knot_idx _knot_stop krange 0.7 -1 0.5
-    @test_knot_idx _knot_stop krange 0.8 0 0.75
-    @test_knot_idx _knot_stop krange 1.0 0 0.75
-    @test_knot_idx _knot_stop krange 1.5 1 1.0
-    @test_knot_idx _knot_stop krange 2.0 3 1.75
-    @test_knot_idx _knot_stop krange 2.3 4 2.0
+    @test_knot_idx(priorknotidx, krange, 0.4, -2, 0.0)
+    @test_knot_idx(priorknotidx, krange, 0.7, -1, 0.5)
+    @test_knot_idx(priorknotidx, krange, 0.8, 0, 0.75)
+    @test_knot_idx(priorknotidx, krange, 1.0, 0, 0.75)
+    @test_knot_idx(priorknotidx, krange, 1.5, 1, 1.0)
+    @test_knot_idx(priorknotidx, krange, 2.0, 3, 1.75)
+    @test_knot_idx(priorknotidx, krange, 2.3, 4, 2.0)
 end
 
 @testset "_knot_start/stop - Reflect" begin
     x = [1.0, 1.5, 1.75, 2.0]
     etp = LinearInterpolation(x, x.^2, extrapolation_bc=Reflect())
     krange = knotsbetween(etp; stop = 10)
-    using Interpolations: _knot_start, _knot_stop
+    using Interpolations: nextknotidx, priorknotidx
 
-    @test_knot_idx _knot_start krange -2.1 -8 -2.0
-    @test_knot_idx _knot_start krange 0.2 -1 0.25
-    @test_knot_idx _knot_start krange 1.6 3 1.75
-    @test_knot_idx _knot_start krange 3.75 10 4.0
-    @test_knot_idx _knot_start krange 5.4 14 5.5
+    @test_knot_idx(nextknotidx, krange, -2.1, -8, -2.0)
+    @test_knot_idx(nextknotidx, krange, 0.2, -1, 0.25)
+    @test_knot_idx(nextknotidx, krange, 1.6, 3, 1.75)
+    @test_knot_idx(nextknotidx, krange, 3.75, 10, 4.0)
+    @test_knot_idx(nextknotidx, krange, 5.4, 14, 5.5)
 
-    @test_knot_idx _knot_stop krange 0.4 -1 0.25
-    @test_knot_idx _knot_stop krange 0.7 0 0.5
-    @test_knot_idx _knot_stop krange 4.3 11 4.25
-    @test_knot_idx _knot_stop krange 6.3 17 6.25
-    @test_knot_idx _knot_stop krange 1.5 1 1.0
-    @test_knot_idx _knot_stop krange 8.2 22 8.0
-    @test_knot_idx _knot_stop krange 10.0 27 9.75
+    @test_knot_idx(priorknotidx, krange, 0.4, -1, 0.25)
+    @test_knot_idx(priorknotidx, krange, 0.7, 0, 0.5)
+    @test_knot_idx(priorknotidx, krange, 4.3, 11, 4.25)
+    @test_knot_idx(priorknotidx, krange, 6.3, 17, 6.25)
+    @test_knot_idx(priorknotidx, krange, 1.5, 1, 1.0)
+    @test_knot_idx(priorknotidx, krange, 8.2, 22, 8.0)
+    @test_knot_idx(priorknotidx, krange, 10.0, 27, 9.75)
 end
 
 @testset "knotsbetween - extrapolate - 1D - Periodic" begin
