@@ -334,13 +334,13 @@ function knotsbetween(iter::Iterators.ProductIterator, start::Union{Nothing, Tup
 end
 
 # Map iter, start and stop to N KnotRanges, handling start/stop being nothing
-function map_ranges(iter, start, ::Nothing)
+function map_ranges(iter, start::Tuple, ::Nothing)
     map((i, s) -> knotsbetween(i, s, nothing), iter, start)
 end
-function map_ranges(iter, ::Nothing, stop)
+function map_ranges(iter, ::Nothing, stop::Tuple)
     map((i, s) -> knotsbetween(i, nothing, s), iter, stop)
 end
-function map_ranges(iter, start, stop)
+function map_ranges(iter, start::Tuple, stop::Tuple)
     map(knotsbetween, iter, start, stop)
 end
 
