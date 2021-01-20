@@ -592,3 +592,20 @@ end
         @test_knots krange KnotRange Float64[]
     end
 end
+
+@testset "knotsbetween - empty iterator" begin
+    x = [1.0, 1.5, 1.75, 2.0]
+    etp = LinearInterpolation(x, x.^2)
+    @testset "start is out of bounds" begin
+        krange = knotsbetween(etp; start=2.0)
+        @test_knots krange KnotRange Float64[]
+    end
+    @testset "start and stop and out of bounds" begin
+        krange = knotsbetween(etp; start=-10, stop=0)
+        @test_knots krange KnotRange Float64[]
+    end
+    @testset "stop is less than start" begin
+        krange = knotsbetween(etp; start=1.8, stop=1.1)
+        @test_knots krange KnotRange Float64[]
+    end
+end

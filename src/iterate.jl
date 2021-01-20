@@ -219,11 +219,13 @@ function priorknotidx(iter::KnotIterator{T,ET}, x) where {T, ET}
     end
 end
 
-function nextknotidx(::Type{<:BoundaryCondition}, knots::Vector, start)
-    knots[end] <= start ? length(knots)+1 : findfirst(start .< knots)
+
+# priorknotidx and nextknotidx for non-repeating knots
+function nextknotidx(::Type{<:BoundaryCondition}, knots::Vector, x)
+    knots[end] <= x ? nothing : findfirst(x .< knots)
 end
-function priorknotidx(::Type{<:BoundaryCondition}, knots::Vector, stop)
-    stop <= knots[1] ? 0 : findlast(knots .< stop)
+function priorknotidx(::Type{<:BoundaryCondition}, knots::Vector, x)
+    x <= knots[1] ? nothing : findlast(knots .< x)
 end
 
 # Starting iterator state for a periodic knots
@@ -283,10 +285,13 @@ end
 function KnotRange(iter::KnotIterator, start, stop)
     # Get the index of the first knot larger than start or firstindex(iter) iff
     # start is missing
-    sdx::Int = start === nothing ? firstindex(iter) : nextknotidx(iter, start)
+    sdx = start === nothing ? firstindex(iter) : nextknotidx(iter, start)
 
-    # Generate knot index range from provided stop
-    if stop === nothing
+    # Generate knot index range from provided stop / start
+    if sdx === nothing
+        # Empty Iterator
+        range = 1:0
+    elseif stop === nothing
         if IteratorSize(iter) === IsInfinite()
             # Stop is missing and iter generates infinite knots
             range = Iterators.countfrom(sdx)
@@ -296,8 +301,8 @@ function KnotRange(iter::KnotIterator, start, stop)
         end
     else
         # Stop is provided -> Iterate from start to stop
-        edx = priorknotidx(iter, stop)::Int
-        range = sdx:edx
+        edx = priorknotidx(iter, stop)
+        range = edx === nothing ? (1:0) : sdx:edx
     end
     KnotRange(iter, range)
 end
