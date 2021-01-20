@@ -113,18 +113,26 @@ end
 Dumb but correct construction of a reference knot iterator for a boundary condition
 of etp.
 
-If start and/or stop is specified, will wrap an dropwhile / takewhile around
-the resulting iterator
+If `start` is specified, will skip knots until `start < k` using Iterator.filter
+If `stop` is specified, will iterate until `stop <= k` and return an array
 """
 knot_ref(seq, etp; start=nothing, stop=nothing) = knot_ref(seq, etp, start, stop)
 function knot_ref(seq, etp, start::Number, ::Nothing)
     # Drop items less than start -> Dispatch to generate sequence
-    Iterators.dropwhile(<=(start), knot_ref(seq, etp))
+    Iterators.filter(x -> start < x, knot_ref(seq, etp))
 end
 function knot_ref(seq, etp, start, stop::Number)
-    # Drop items after stop + collect items (Better IteratorSize /Eltype results)
+    # Collect items until `k < stop` is false -> Then return ref
     # Dispatch to handle remaining arguments
-    Iterators.takewhile(<(stop), knot_ref(seq, etp, start, nothing)) |> collect
+    ref = Vector{eltype(seq)}()
+    for k ∈ knot_ref(seq, etp, start, nothing)
+        if k < stop
+            push!(ref, k)
+        else
+            break
+        end
+    end
+    ref
 end
 
 knot_ref(seq, etp, ::Nothing, ::Nothing) = knot_ref(seq, etp)
@@ -134,14 +142,28 @@ knot_ref(seq, ::Interpolations.BoundaryCondition) = seq
 function knot_ref(seq, ::Periodic)
     Δ = diff(seq)
     iter = Iterators.flatten((first(seq), Iterators.cycle(Δ)))
-    Iterators.accumulate(+, iter)
+    @static if VERSION >= v"1.5"
+        Iterators.accumulate(+, iter)
+    else
+        # Generate 200 samples (2x factor on testing done by @test_knots)
+        # Then wrap with cycle to get IteratorSize === IsInfinite
+        # TODO: Remove when Julia v1 is no longer supported
+        ref = Iterators.take(iter, 200) |> cumsum |> Iterators.cycle
+    end
 end
 
 function knot_ref(seq, ::Reflect)
     Δ = diff(seq)
     Δ = vcat(Δ, reverse(Δ))
     iter = Iterators.flatten((first(seq), Iterators.cycle(Δ)))
-    Iterators.accumulate(+, iter)
+    @static if VERSION >= v"1.5"
+        Iterators.accumulate(+, iter)
+    else
+        # Generate 200 samples (2x factor on testing done by @test_knots)
+        # Then wrap with cycle to get IteratorSize === IsInfinite
+        # TODO: Remove when Julia v1 is no longer supported
+        ref = Iterators.take(iter, 200) |> cumsum |> Iterators.cycle
+    end
 end
 
 @testset "knot_ref" begin
@@ -160,7 +182,7 @@ end
             5.0, 5.5, 5.75, 6.0, 6.5, 6.75, 7.0, 7.5, 7.75, 8.0, 8.5, 8.75,
             9.0, 9.5, 9.75, 10.0, 10.5, 10.75, 11.0, 11.5, 11.75, 12.0
         ]
-        @test knot_ref(x, Periodic(), start=2) |> typeof <: Iterators.DropWhile
+        @test knot_ref(x, Periodic(), start=2) |> x -> Iterators.take(x, 10) |> collect == ref[5:14]
         @test knot_ref(x, Periodic(); start=1.0, stop=12.0) == ref[2:end-1]
         @test knot_ref(x, Periodic(); start=2.3, stop=11.0) == ref[2.3 .< ref .< 11.0]
    end
@@ -171,7 +193,7 @@ end
             5.0, 5.5, 5.75, 6.0, 6.25, 6.5, 7.0, 7.5, 7.75, 8.0, 8.25, 8.5,
             9.0, 9.5, 9.75, 10.0, 10.25, 10.5, 11.0, 11.5, 11.75, 12.0
         ]
-        @test knot_ref(x, Reflect(), start=2) |> typeof <: Iterators.DropWhile
+        @test knot_ref(x, Reflect(), start=2) |> x -> Iterators.take(x, 10) |> collect == ref[5:14]
         @test knot_ref(x, Reflect(); start=1.0, stop=12.0) == ref[2:end-1]
         @test knot_ref(x, Reflect(); start=2.3, stop=11.0) == ref[2.3 .< ref .< 11.0]
     end
