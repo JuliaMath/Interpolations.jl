@@ -41,7 +41,7 @@ using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
 using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
     SizeUnknown
 import Base: convert, size, axes, promote_rule, ndims, eltype, checkbounds, axes1,
-    iterate, length, IteratorEltype, IteratorSize
+    iterate, length, IteratorEltype, IteratorSize, firstindex, getindex
 
 abstract type Flag end
 abstract type InterpolationType <: Flag end

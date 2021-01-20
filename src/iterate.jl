@@ -1,10 +1,10 @@
 # Similar to ExtrapDimSpec but for only a single dimension
 const ExtrapSpec = Union{BoundaryCondition,Tuple{BoundaryCondition,BoundaryCondition}}
 
-# Type Alias to get Boundary Condition or forward boundary conditions if
-# directional
-const FwdExtrapSpec{FwdBC} = Union{FwdBC, Tuple{BoundaryCondition, FwdBC}}
-const RevExtrapSpec{RevBC} = Union{RevBC, Tuple{RevBC, BoundaryCondition}}
+# Union over all BoundaryCondition that yield an infinite sequence of knots
+# Note: Extrapolation must result in extrapolated knots, simply evaluating
+# outside of the interpolation's bounds is not sufficient
+const RepeatKnots = Union{Periodic,Reflect}
 
 """
     KnotIterator{T,ET}(k::AbstractArray{T}, bc::ET)
@@ -41,6 +41,27 @@ moving in the forward direction along the axis.
 Iteration over the knots of a multi-dimensional interpolant is done by wrapping
 multiple KnotIterator within `Iterators.product`.
 
+# Indexing
+`KnotIterator` provides limited support for accessing knots via indexing
+- `getindex` is provided for `KnotIterator` but does not support Multidimensional
+  interpolations (As wrapped by `ProductIterator`) or non-Int indexes.
+- A `BoundsError` will be raised if out of bounds and `checkbounds` has been
+  implemented for `KnotIterator`
+
+```jldoctest
+julia> using Interpolations;
+
+julia> etp = LinearInterpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
+
+julia> kiter = knots(etp);
+
+julia> kiter[4]
+3.0
+
+julia> kiter[36]
+24.3
+```
+
 """
 struct KnotIterator{T,ET <: ExtrapSpec}
     knots::Vector{T}
@@ -64,7 +85,6 @@ function KnotIterator(k::AbstractArray{T}, bc::ET) where {T,ET <: ExtrapDimSpec}
     KnotIterator{T,ET}(k, bc)
 end
 
-const RepeatKnots = Union{Periodic,Reflect}
 IteratorSize(::Type{KnotIterator}) = SizeUnknown()
 IteratorSize(::Type{KnotIterator{T}}) where {T} = SizeUnknown()
 
@@ -131,9 +151,12 @@ function knots(etp::AbstractExtrapolation)
     length(iter) == 1 ? iter[1] : Iterators.product(iter...)
 end
 
-# For non-repeating ET's iterate through once
+# By default start iteration from the first knot, to start at a different index
+# use knotsbetween
 firstindex(::KnotIterator) = 1
 iterate(iter::KnotIterator) = iterate(iter, firstindex(iter))
+
+# Iterate over knots while checkbounds indicates the idx is still valid
 function iterate(iter::KnotIterator{T,ET}, idx) where {T, ET}
     if checkbounds(Bool, iter, idx)
         iter[idx], idx+1
@@ -142,26 +165,31 @@ function iterate(iter::KnotIterator{T,ET}, idx) where {T, ET}
     end
 end
 
+# Split the ExtrapDimSpec into a tuple of left and right boundary conditions
 splitExtrapDimSpec(::Type{ET}) where {ET <: BoundaryCondition} = (ET, ET)
 splitExtrapDimSpec(::Type{<:Tuple{L,R}}) where {L,R} = (L,R)
 
+# Checks if idx is a valid for the KnotIterator given it's boundary conditions
 function checkbounds(::Type{Bool}, iter::KnotIterator{T,ET}, idx::Int) where {T,ET<:ExtrapDimSpec}
     # Get Left/Right Extrapolation Boundary Conditions for the KnotIterator
     left, right = splitExtrapDimSpec(ET)
 
-    # Check Left/Right Boundary Limits
+    # Check Left/Right Boundary Limits -> If Left/Right is a repeating knot, the
+    # checks is true as repeated knots generates an infinite sequence of knots
     leftcheck = left <: RepeatKnots ? true : 1 <= idx
     rightcheck = right <: RepeatKnots ? true : idx <= iter.nknots
     leftcheck && rightcheck
 end
 
-# Raise BoundsError if knots are not extrapolated
+# Returns the knot given by idx, or raise a BoundsError
+# Despatches to getknotindex(ET, iter, idx) if idx is an extrapolated knot,
+# where ET is the boundary conditions for the relevant side
 function getindex(iter::KnotIterator{T, ET}, idx::Int) where {T, ET <: ExtrapDimSpec}
     # Get Left/Right Extrapolation Boundary Conditions for the KnotIterator
     left, right = splitExtrapDimSpec(ET)
 
-    # Construct function to call the correct getknotindex if idx is to the left,
-    # inside, or right of the interpolated knots
+    # Dispatch to getknotindex if idx is an extrapolated knot, otherwise pull
+    # from iter.knots
     if idx < 1
         getknotindex(left, iter, idx)::T
     elseif idx <= iter.nknots
@@ -197,6 +225,20 @@ end
     end
 end
 
+"""
+    nextknotidx(iter::KnotIterator, x)
+
+Returns the index of the first knot such that `x < k` or `nothing` if no such
+knot exists.
+
+New boundary conditions should define:
+
+    nextknotidx(::Type{<:NewBoundaryCondition}, knots::Vector, x)
+
+Where `knots` is `iter.knots` and `NewBoundaryCondition` is the new boundary
+conditions. This method is expected to handle values of `x` that are both inbounds
+or extrapolated.
+"""
 function nextknotidx(iter::KnotIterator{T,ET}, x) where {T, ET}
     left, right = splitExtrapDimSpec(ET)
     if x < iter.knots[end]
@@ -208,6 +250,20 @@ function nextknotidx(iter::KnotIterator{T,ET}, x) where {T, ET}
     end
 end
 
+"""
+    priorknotidx(iter::KnotIterator, x)
+
+Returns the index of the last knot such that `k < x` or `nothing` ig not such
+knot exists.
+
+New boundary conditions should define
+
+    priorknotidx(::Type{<:NewBoundaryCondition}, knots::Vector, x)
+
+Where knots is `iter.knots` and `NewBoundaryCondition` is the new boundary
+condition. This method is expected to handle values of `x` that are both inbounds
+or extrapolated.
+"""
 function priorknotidx(iter::KnotIterator{T,ET}, x) where {T, ET}
     left, right = splitExtrapDimSpec(ET)
     if x <= iter.knots[1]
@@ -276,7 +332,35 @@ function priorknotidx(::Type{<:Reflect}, knots::Vector, stop)
     priorknotidx(Periodic, knots, stop)
 end
 
-struct KnotRange{T, R}
+"""
+    KnotRange(iter::KnotIterator{T}, start, stop)
+
+Defines an iterator over a range of knots such that `start < k < stop`.
+
+# Fields
+- `iter::KnotIterator{T}` Underlying `KnotIterator` providing the knots iterated
+- `range::R` Iterator defining the range of knot indices iterated. Where
+  `R <: Union{Iterators.Count, UnitRange}`
+
+# Iterator Interface
+The following methods defining the Julia's iterator interface have been defined
+
+`Base.IteratorSize` -> Will return one of the following:
+- `Base.HasLength` if `range` is of finite length
+- `Base.IsInfinite` if `range` is of infinite length
+- `Base.SizeUnknown` if the type of `range` is unspecified
+
+`Base.IteratorEltype` -> Returns `Base.EltypeUnknown` if type parameter not
+provided, otherwise `Base.HasEltype`
+
+`length` and `size` -> Returns the number of knots to be iterated if
+`IteratorSize !== IsInfinite`, otherwise will raise `MethodError`
+
+# Multidimensional Interpolants
+Iteration over the knots of a multi-dimensional interpolant is done by wrapping
+multiple `KnotRange` iterators within `Iterators.product`.
+"""
+struct KnotRange{T, R <: Union{Iterators.Count, UnitRange}}
     iter::KnotIterator{T}
     range::R
     KnotRange(iter::KnotIterator{T}, range::R) where {T,R} = new{T,R}(iter, range)
@@ -322,6 +406,37 @@ eltype(::Type{<:KnotRange{T}}) where {T} = T
 length(iter::KnotRange) = length(iter.range)
 size(iter::KnotRange) = size(iter.range)
 
+"""
+    knotsbetween(iter; start, stop)
+    knotsbetween(iter, start, stop)
+
+Iterate over all knots of `iter` such that `start < k < stop`.
+
+`iter` can be an `AbstractInterpolation`, or the output of `knots`
+(ie. a `KnotIterator` or `ProductIterator` wrapping `KnotIterator`)
+
+If `start` is not provided, iteration will start from the first knot. An
+`ArgumentError` will be raised if both `start` and `stop` are not provided.
+
+If no such knots exists will return a KnotIterator with length 0
+
+# Example
+```jldoctest
+julia> using Interpolations;
+
+julia> etp = LinearInterpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
+
+julia> knotsbetween(etp; start=38, stop=42) |> collect
+6-element Array{Float64,1}:
+ 38.3
+ 39.0
+ 39.2
+ 40.3
+ 41.0
+ 41.2
+
+```
+"""
 knotsbetween(itp; start=nothing, stop=nothing) = knotsbetween(itp, start, stop)
 
 # If AbstractInterpolation -> Get Knots -> Then Convert to Knot Range
