@@ -25,6 +25,9 @@ macro test_knots(itersym, type, expect...)
 
         # Expect HasShape{N} for ND Iterators
         IteratorSizeExpr = :( Base.HasShape{$(length(expect))}() )
+
+        # Content Check for 1D array of tuples
+        IterEqCheck = :( all(map( (x,y) -> (all∘map)(≈, x, y), kiter, kref )))
     else
         refExpr = expect[1]
         knotTypeExpr = :( eltype($refExpr) )
@@ -36,6 +39,28 @@ macro test_knots(itersym, type, expect...)
 
         # Expect a IteratorSize of HasLength for 1D iterators
         IteratorSizeExpr = :( Base.HasLength() )
+
+        # Content Check for 1D arrays
+        IterEqCheck = :( kiter ≈ kref )
+    end
+
+    # Check Type-stability if v > 1.2
+    @static if VERSION >= v"1.2"
+        # Check Type-stability using inferred
+        type_stability_checks = quote
+            @testset "type stability" begin
+                iteratetype = Union{Nothing, knotType}
+                y = @inferred iteratetype iterate($itersym)
+                if y !== nothing
+                    @test_nowarn @inferred iteratetype iterate($itersym, y[2])
+                end
+                isBounded && @test_nowarn @inferred Integer length($itersym)
+                @test_nowarn @inferred Type eltype($itersym)
+            end
+        end
+    else
+        # Skip Type-stability checks as @inferred AllowedTypes is Undefined
+        type_stability_checks = :()
     end
 
     # Build test_knots tests
@@ -90,19 +115,11 @@ macro test_knots(itersym, type, expect...)
             @test eltype(kiter) == eltype(kref)
             @test length(kiter) == length(kref)
             @test size(kiter) == size(kref)
-            @test map((x,y) -> all(x .≈ y), kiter, kref) |> all
+            @test $IterEqCheck
         end
 
         # Type stability -> Check that methods are type suitable
-        @testset "type stability" begin
-            iteratetype = Union{Nothing, knotType}
-            y = @inferred iteratetype iterate($itersym)
-            if y !== nothing
-                @test_nowarn @inferred iteratetype iterate($itersym, y[2])
-            end
-            isBounded && @test_nowarn @inferred Integer length($itersym)
-            @test_nowarn @inferred Type eltype($itersym)
-        end
+        $type_stability_checks
     end
 end
 
@@ -148,7 +165,7 @@ function knot_ref(seq, ::Periodic)
         # Generate 200 samples (2x factor on testing done by @test_knots)
         # Then wrap with cycle to get IteratorSize === IsInfinite
         # TODO: Remove when Julia v1 is no longer supported
-        ref = Iterators.take(iter, 200) |> cumsum |> Iterators.cycle
+        ref = Iterators.take(iter, 200) |> collect |> cumsum |> Iterators.cycle
     end
 end
 
@@ -162,7 +179,7 @@ function knot_ref(seq, ::Reflect)
         # Generate 200 samples (2x factor on testing done by @test_knots)
         # Then wrap with cycle to get IteratorSize === IsInfinite
         # TODO: Remove when Julia v1 is no longer supported
-        ref = Iterators.take(iter, 200) |> cumsum |> Iterators.cycle
+        ref = Iterators.take(iter, 200) |> collect |> cumsum |> Iterators.cycle
     end
 end
 
