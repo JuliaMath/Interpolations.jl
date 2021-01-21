@@ -449,8 +449,12 @@ knotsbetween(iter::KnotIterator, start, stop) = KnotRange(iter, start, stop)
 
 # Expand Nothing on Start/Stop if tuples
 function knotsbetween(iter::Iterators.ProductIterator, start::Union{Nothing, Tuple}, stop::Union{Nothing, Tuple})
-    kiter = map_ranges(iter.iterators, start, stop)
-    Iterators.product(kiter...)
+    if start === stop === nothing
+        throw(ArgumentError("At least one of `start` or `stop` must be specified"))
+    else
+        kiter = map_ranges(iter.iterators, start, stop)
+        Iterators.product(kiter...)
+    end
 end
 
 # Map iter, start and stop to N KnotRanges, handling start/stop being nothing

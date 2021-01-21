@@ -221,8 +221,11 @@ end
     import Interpolations.KnotIterator
     # Eletype is known iff type parameter is provided
     @test Base.IteratorEltype(KnotIterator) == Base.EltypeUnknown()
+    @test eltype(KnotIterator) == Any
     @test Base.IteratorEltype(KnotIterator{Int}) == Base.HasEltype()
+    @test eltype(KnotIterator{Int}) == Int
     @test Base.IteratorEltype(KnotIterator{Int,Flat}) == Base.HasEltype()
+    @test eltype(KnotIterator{Int}) == Int
 
     # If missing ET type parameter -> SizeUnknown, as could be HasLength or
     # IsInfinite
@@ -236,9 +239,13 @@ end
     import Interpolations.KnotRange
     # Eletype is known iff type parameter is provided
     @test Base.IteratorEltype(KnotRange) == Base.EltypeUnknown()
+    @test eltype(KnotRange) == Any
     @test Base.IteratorEltype(KnotRange{Int}) == Base.HasEltype()
+    @test eltype(KnotRange{Int}) == Int
     @test Base.IteratorEltype(KnotRange{Int,Base.UnitRange}) == Base.HasEltype()
+    @test eltype(KnotRange{Int,Base.UnitRange}) == Int
     @test Base.IteratorEltype(KnotRange{Int,Iterators.Count}) == Base.HasEltype()
+    @test eltype(KnotRange{Int,Iterators.Count}) == Int
 
     # If missing Range type parameter -> SizeUnknown, as could be HasLength or
     # IsInfinite
@@ -624,5 +631,43 @@ end
     @testset "stop is less than start" begin
         krange = knotsbetween(etp; start=1.8, stop=1.1)
         @test_knots krange KnotRange Float64[]
+    end
+end
+
+@testset "knotsbetween - missing start and stop" begin
+    @testset "1D Case" begin
+        x = [1.0, 1.5, 1.75, 2.0]
+        etp = LinearInterpolation(x, x.^2)
+        @test_throws ArgumentError knotsbetween(etp)
+        @test_throws ArgumentError knotsbetween(etp; start=nothing, stop=nothing)
+    end
+    @testset "2D case" begin
+        etp = LinearInterpolation((1:3, 1:3), rand(3,3))
+        @test_throws ArgumentError knotsbetween(etp)
+        @test_throws ArgumentError knotsbetween(etp; start=(nothing, 1), stop=(nothing, 2))
+    end
+end
+
+@testset "KnotIterator - Out of Bound Knots" begin
+    x = [1.0, 1.5, 1.75, 2.0]
+    @testset "NonRepeating Knots - $etp}" for etp ∈ [Flat(), Line(), Throw()]
+        etp = LinearInterpolation(x, x.^2, extrapolation_bc=etp)
+        kiter = knots(etp)
+
+        # Check that Bounds errors are thrown
+        @test_throws BoundsError kiter[0]
+        @test kiter[1] == x[1]
+        @test kiter[kiter.nknots] == x[end]
+        @test_throws BoundsError kiter[kiter.nknots+1]
+    end
+    @testset "Repeating Knots - $etp" for etp ∈ [Periodic(), Reflect()]
+        etp = LinearInterpolation(x, x.^2, extrapolation_bc=etp)
+        kiter = knots(etp)
+
+        # Check that Bounds errors are not thrown
+        @test_nowarn kiter[0]
+        @test kiter[1] == x[1]
+        @test kiter[kiter.nknots] == x[end]
+        @test_nowarn kiter[kiter.nknots+1]
     end
 end
