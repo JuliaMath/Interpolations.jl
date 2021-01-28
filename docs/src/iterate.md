@@ -254,3 +254,80 @@ julia> size(kiter)
 (4,)
 
 ```
+
+## `knotsbetween`
+
+Given an `AbstractInterpolation` `itp` or results of `knots(itp)` get an iterator
+over knots between `start` and `stop`.
+
+```julia
+using Interpolations
+itp = interpolate(rand(4), options...)
+krange = knotsbetween(itp; start=1.2, stop=3.0)
+collect(kiter) # Array of knots between 1.2 and 3.0
+
+```
+
+We can iterate over all knots greater than `start` by omitting `stop`
+
+```jldoctest knotsbetween-usage; setup = :(using Interpolations)
+julia> x = [1.0, 1.5, 1.75, 2.0];
+
+julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic());
+
+julia> krange = knotsbetween(etp; start=4.0);
+
+julia> Iterators.take(krange, 5) |> collect
+5-element Array{Float64,1}:
+ 4.5
+ 4.75
+ 5.0
+ 5.5
+ 5.75
+
+```
+
+If we omit `start`, iteration will range from the first knot to `stop`
+
+```jldoctest knotsbetween-usage
+julia> krange = knotsbetween(etp; stop=4.0);
+
+julia> collect(krange)
+9-element Array{Float64,1}:
+ 1.0
+ 1.5
+ 1.75
+ 2.0
+ 2.5
+ 2.75
+ 3.0
+ 3.5
+ 3.75
+
+```
+
+It is an error to not provided `start` and `stop`
+
+```jldoctest knotsbetween-usage
+julia> knotsbetween(etp)
+ERROR: ArgumentError: At least one of `start` or `stop` must be specified
+[...]
+```
+
+### Multiple Dimensions
+
+When used with a multi-dimensional interpolant, `knotsbetween` can be used to
+iterate overall knots such that: `start[i] < k[i] stop[i]` where `i` indexes
+dimensions.
+
+```jldoctest; setup = :(using Interpolations)
+julia> x = [1.0, 1.5, 1.75, 2.0];
+
+julia> etp = LinearInterpolation((x, x), x.*x');
+
+julia> knotsbetween(etp; start=(1.2, 1.5), stop=(1.8, 3.0)) |> collect
+2×2 Array{Tuple{Float64,Float64},2}:
+ (1.5, 1.75)   (1.5, 2.0)
+ (1.75, 1.75)  (1.75, 2.0)
+
+```

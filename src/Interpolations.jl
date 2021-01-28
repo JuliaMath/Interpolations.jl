@@ -26,7 +26,8 @@ export
     LinearInterpolation,
     CubicSplineInterpolation,
 
-    knots
+    knots,
+    knotsbetween
 
     # see the following files for further exports:
     # b-splines/b-splines.jl
@@ -37,9 +38,10 @@ export
 using LinearAlgebra, SparseArrays
 using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
 
-using Base: @propagate_inbounds, HasEltype, HasLength, IsInfinite, SizeUnknown
+using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
+    SizeUnknown
 import Base: convert, size, axes, promote_rule, ndims, eltype, checkbounds, axes1,
-    iterate, length, IteratorEltype, IteratorSize
+    iterate, length, IteratorEltype, IteratorSize, firstindex, getindex
 
 abstract type Flag end
 abstract type InterpolationType <: Flag end
