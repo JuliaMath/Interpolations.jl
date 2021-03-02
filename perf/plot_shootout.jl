@@ -9,7 +9,7 @@ dim = ones(Int,size(tconstr,1))*(1:size(tconstr,2))'
 namelist = collect(take(cycle(testnames), length(dim)))
 ordlist =  collect(take(cycle(testord), length(dim)))
 dfconstr = DataFrame(t = vec(tconstr), name = namelist, ord = ordlist, dim = vec(dim))
-dfeval   = DataFrame(rate = vec(10^6./teval), name = namelist, ord = ordlist, dim = vec(dim))
+dfeval   = DataFrame(rate = vec((10^6) ./ teval), name = namelist, ord = ordlist, dim = vec(dim))
 
 flagBspline = (dfconstr[:name] .== "IBSpline") | (dfconstr[:name] .== "Grid")
 dfBconstr = dfconstr[flagBspline, :]
