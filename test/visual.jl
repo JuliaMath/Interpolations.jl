@@ -45,7 +45,7 @@ zg = f2.(xg, yg')
 xf = -1:.1:nx+1
 yf = -1:.1:ny+1
 
-itp2 = extrapolate(interpolate(zg, BSpline(Quadratic(Flat(OnCell()))), Line())
+itp2 = extrapolate(interpolate(zg, BSpline(Quadratic(Flat(OnCell())))), Line())
 
 display(plot(
     layer(x=xf,y=yf,z=[itp2[x,y] for x in xf, y in yf], Geom.contour),
