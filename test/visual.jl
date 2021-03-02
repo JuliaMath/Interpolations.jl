@@ -29,7 +29,7 @@ for deg in degrees, ET in Etypes
 
     push!(stuff, layer(x=xg,y=y1,Geom.point,Theme(default_color=colorant"green")))
     push!(stuff, layer(x=xf,y=[itp[x] for x in xf],Geom.path,Theme(point_size=2px)))
-    title = "$deg, $(ET.name.name)"
+    title = "$deg, $(nameof(ET))"
     push!(stuff, Guide.title(title))
     display(plot(stuff...))
 end
