@@ -222,6 +222,7 @@ tcoef(A::AbstractArray{Float32}) = Float32
 tcoef(A::AbstractArray{Rational{Int}}) = Rational{Int}
 tcoef(A::AbstractArray{T}) where {T<:Integer} = typeof(float(zero(T)))
 
+"In-place version of `interpolate`. It destroys input `A` and may trim the domain at the endpoints."
 function interpolate!(::Type{TWeights}, A::AbstractArray, it::IT) where {TWeights,IT<:DimSpec{BSpline}}
     # Set the bounds of the interpolant inward, if necessary
     axsA = axes(A)
