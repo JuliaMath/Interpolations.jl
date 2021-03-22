@@ -83,6 +83,24 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         @test_throws BoundsError interp(xmin - ΔX / 2)
         @test_throws BoundsError interp(xmax + ΔX / 2)
     end
+    
+    @testset "1d-irregular-grids-constant" begin
+        xs = [x^2 for x in XMIN:ΔX:XMAX]
+        xmin = xs[1]
+        xmax = xs[XLEN]
+        f(x) = log(x)
+        A = [f(x) for x in xs]
+        interp = ConstantInterpolation(xs, A)
+        interp_full = extrapolate(interpolate((xs, ), A, Gridded(Constant())), Throw())
+
+        @test typeof(interp) == typeof(interp_full)
+        @test interp(xmin) ≈ f(xmin)
+        @test interp(xmax) ≈ f(xmax)
+        @test interp(xs[2]) ≈ f(xs[2])
+        @test interp(xmin + ΔX / 2) ≈ f(xmin + ΔX / 2) atol=.1
+        @test_throws BoundsError interp(xmin - ΔX / 2)
+        @test_throws BoundsError interp(xmax + ΔX / 2)
+    end
 
     @testset "1d-handling-extrapolation" begin
         xs = XMIN:ΔX:XMAX
@@ -183,6 +201,33 @@ end
         A = [f(x,y) for x in xs, y in ys]
         interp = LinearInterpolation((xs, ys), A)
         interp_full = extrapolate(interpolate((xs, ys), A, Gridded(Linear())), Throw())
+
+        @test typeof(interp) == typeof(interp_full)
+        @test interp(xmin,ymin) ≈ f(xmin,ymin)
+        @test interp(xmin,ymax) ≈ f(xmin,ymax)
+        @test interp(xmax,ymin) ≈ f(xmax,ymin)
+        @test interp(xmax,ymax) ≈ f(xmax,ymax)
+        @test interp(xs[2],ymin) ≈ f(xs[2],ymin)
+        @test interp(xmin,ys[2]) ≈ f(xmin,ys[2])
+        @test interp(xs[2],ys[2]) ≈ f(xs[2],ys[2])
+        @test interp(xmin + ΔX / 2,ymin + ΔY / 2) ≈ f(xmin + ΔX / 2,ymin + ΔY / 2) atol=.1
+        @test_throws BoundsError interp(xmin - ΔX / 2,ymin - ΔY / 2)
+        @test_throws BoundsError interp(xmin - ΔX / 2,ymin + ΔY / 2)
+        @test_throws BoundsError interp(xmin + ΔX / 2,ymin - ΔY / 2)
+        @test_throws BoundsError interp(xmax + ΔX / 2,ymax + ΔY / 2)
+    end
+    
+    @testset "2d-irregular-grids-constant" begin
+        xs = [x^2 for x in XMIN:ΔX:XMAX]
+        ys = [y^2 for y in YMIN:ΔY:YMAX]
+        xmin = xs[1]
+        xmax = xs[XLEN]
+        ymin = ys[1]
+        ymax = ys[YLEN]
+        f(x, y) = log(x+y)
+        A = [f(x,y) for x in xs, y in ys]
+        interp = ConstantInterpolation((xs, ys), A)
+        interp_full = extrapolate(interpolate((xs, ys), A, Gridded(Constant())), Throw())
 
         @test typeof(interp) == typeof(interp_full)
         @test interp(xmin,ymin) ≈ f(xmin,ymin)
