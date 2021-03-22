@@ -31,6 +31,23 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         @test_throws BoundsError interp(XMIN - ΔX / 2)
         @test_throws BoundsError interp(XMAX + ΔX / 2)
     end
+    
+    @testset "1d-regular-grids-constant" begin
+        xs = XMIN:ΔX:XMAX
+        f(x) = log(x)
+        A = [f(x) for x in xs]
+        interp = ConstantInterpolation(xs, A) # using convenience constructor
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Constant())), xs), Throw()) # using full constructor
+
+        @test typeof(interp) == typeof(interp_full)
+        @test interp(XMIN) ≈ f(XMIN)
+        @test interp(XMAX) ≈ f(XMAX)
+        @test interp(XMIN + ΔX) ≈ f(XMIN + ΔX)
+        @test interp(XMAX - ΔX) ≈ f(XMAX - ΔX)
+        @test interp(XMIN + ΔX / 2) ≈ f(XMIN + ΔX / 2) atol=.1
+        @test_throws BoundsError interp(XMIN - ΔX / 2)
+        @test_throws BoundsError interp(XMAX + ΔX / 2)
+    end
 
     @testset "1d-regular-grids-cubic" begin
         xs = XMIN:ΔX:XMAX
@@ -93,6 +110,29 @@ end
         A = [f(x,y) for x in xs, y in ys]
         interp = LinearInterpolation((xs, ys), A)
         interp_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs, ys), Throw())
+
+        @test typeof(interp) == typeof(interp_full)
+        @test interp(XMIN,YMIN) ≈ f(XMIN,YMIN)
+        @test interp(XMIN,YMAX) ≈ f(XMIN,YMAX)
+        @test interp(XMAX,YMIN) ≈ f(XMAX,YMIN)
+        @test interp(XMAX,YMAX) ≈ f(XMAX,YMAX)
+        @test interp(XMIN + ΔX,YMIN) ≈ f(XMIN + ΔX,YMIN)
+        @test interp(XMIN,YMIN + ΔY) ≈ f(XMIN,YMIN + ΔY)
+        @test interp(XMIN + ΔX,YMIN + ΔY) ≈ f(XMIN + ΔX,YMIN + ΔY)
+        @test interp(XMIN + ΔX / 2,YMIN + ΔY / 2) ≈ f(XMIN + ΔX / 2,YMIN + ΔY / 2) atol=.1
+        @test_throws BoundsError interp(XMIN - ΔX / 2,YMIN - ΔY / 2)
+        @test_throws BoundsError interp(XMIN - ΔX / 2,YMIN + ΔY / 2)
+        @test_throws BoundsError interp(XMIN + ΔX / 2,YMIN - ΔY / 2)
+        @test_throws BoundsError interp(XMAX + ΔX / 2,YMAX + ΔY / 2)
+    end
+    
+    @testset "2d-regular-grids-constant" begin
+        xs = XMIN:ΔX:XMAX
+        ys = YMIN:ΔY:YMAX
+        f(x, y) = log(x+y)
+        A = [f(x,y) for x in xs, y in ys]
+        interp = ConstantInterpolation((xs, ys), A)
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Constant())), xs, ys), Throw())
 
         @test typeof(interp) == typeof(interp_full)
         @test interp(XMIN,YMIN) ≈ f(XMIN,YMIN)
