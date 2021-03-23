@@ -1,8 +1,22 @@
 
 ## Convenience notation
 
-For linear and cubic spline interpolations, `LinearInterpolation` and `CubicSplineInterpolation`
-can be used to create interpolating and extrapolating objects handily:
+For constant, linear, and cubic spline interpolations, `ConstantInterpolation`, `LinearInterpolation`, and `CubicSplineInterpolation`
+can be used to create interpolating and extrapolating objects handily.
+
+### Motivating Example
+By using the convenience constructor one can simplify expressions. For example, the creation of an interpolation object 
+```julia
+extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs), Line())
+```
+can be written as the more readable
+```julia
+extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
+ ```
+ by using the convenience constructor.
+ 
+ ### Usage
+
 ```julia
 f(x) = log(x)
 xs = 1:0.2:5
@@ -55,7 +69,7 @@ extrap = LinearInterpolation(xs, A, extrapolation_bc = NaN)
 @test isnan(extrap(5.2))
 ```
 
-Irregular grids are supported as well; note that presently only `LinearInterpolation` supports irregular grids.
+Irregular grids are supported as well; note that presently only `ConstantInterpolation` and `LinearInterpolation` supports irregular grids.
 ```julia
 xs = [x^2 for x = 1:0.2:5]
 A = [f(x) for x in xs]
