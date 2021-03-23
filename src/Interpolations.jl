@@ -23,6 +23,7 @@ export
     InPlaceQ,
     Throw,
 
+    ConstantInterpolation,
     LinearInterpolation,
     CubicSplineInterpolation,
 
