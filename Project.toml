@@ -4,6 +4,7 @@ version = "0.13.1"
 
 [deps]
 AxisAlgorithms = "13072b0f-2c55-5437-9ae7-d433b7a33950"
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
