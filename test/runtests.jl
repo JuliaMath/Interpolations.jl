@@ -51,4 +51,6 @@ const isci = get(ENV, "CI", "") in ("true", "True")
     include("readme-examples.jl")
     include("iterate.jl")
 
+    # Chain rules interaction
+    include("chainrules.jl")
 end
