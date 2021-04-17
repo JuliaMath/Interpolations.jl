@@ -43,8 +43,25 @@ Pkg.add("Interpolations")
 from the Julia REPL.
 
 
-
-
+## Example Usage
+Create a grid `xs` and an array `A` of values to be interpolated
+```
+xs = 1:0.2:5
+f(x) = log(x)
+A = [f(x) for x in xs]
+```
+Create linear interpolation object without extrapolation
+```
+interp_linear = LinearInterpolation(xs, A)
+interp_linear(3) # exactly log(3)
+interp_linear(3.1) # approximately log(3.1)
+interp_linear(0.9) # outside grid: error
+```
+Create linear interpolation object with extrapolation
+```
+interp_linear_extrap = LinearInterpolation(xs, A,extrapolation_bc=Line()) 
+interp_linear_extrap(0.9) # outside grid: linear extrapolation
+```
 
 ## Performance shootout
 
