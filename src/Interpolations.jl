@@ -38,6 +38,7 @@ export
 
 using LinearAlgebra, SparseArrays
 using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
+using ChainRulesCore
 
 using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
     SizeUnknown
@@ -481,5 +482,6 @@ include("convenience-constructors.jl")
 include("deprecations.jl")
 include("lanczos/lanczos.jl")
 include("iterate.jl")
+include("chainrules/chainrules.jl")
 
 end # module
