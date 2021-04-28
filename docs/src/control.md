@@ -150,3 +150,36 @@ scatter(x, y, label="knots")
 plot!(xs, ys, label="spline")
 ```
 ![parametric spline](doc/images/parametric_spline.png)
+
+## Monotonic interpolation
+
+When you have some one-dimensional data that is monotonic, many standard interpolation methods may give an interpolating function that it is not monotonic. Monotonic interpolation ensures that the interpolating function is also monotonic.
+
+Here is an example of making a cumulative distribution function for some data:
+
+```julia
+percentile_values = [0.0, 0.01, 0.1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 91.0, 92.0, 93.0, 94.0, 95.0, 96.0, 97.0, 98.0, 99.0, 99.9, 99.99, 100.0];
+
+y = sort(randn(length(percentile_values))); # some random data
+
+itp_cdf = extrapolate(interpolate(y, percentile_values, SteffenMonotonicInterpolation()), Flat());
+
+t = -3.0:0.01:3.0 # just a range for calculating values of the interpolating function
+
+interpolated_cdf = map(itp_cdf, t) # interpolating the CDF
+```
+
+There are a few different monotonic interpolation algorithms. Some guarantee that for non-monotonic data the interpolating function does not exceed the range of values between two successive points while other do not (this is called overshooting in the list below).
+
+* [`LinearMonotonicInterpolation`](@ref) -- simple linear interpolation. Does not overshoot.
+* [`FiniteDifferenceMonotonicInterpolation`](@ref) -- it may overshoot.
+* [`CardinalMonotonicInterpolation`](@ref) -- it may overshoot.
+* [`FritschCarlsonMonotonicInterpolation`](@ref) -- it may overshoot.
+* [`FritschButlandMonotonicInterpolation`](@ref) -- it does not overshoot.
+* [`SteffenMonotonicInterpolation`](@ref) -- it does not overshoot.
+
+You can read about monotonic interpolation in the following sources:
+
+* Fritsch & Carlson (1980), "Monotone Piecewise Cubic Interpolation", doi:10.1137/0717021.
+* Fritsch & Butland (1984), "A Method for Constructing Local Monotone Piecewise Cubic Interpolants", doi:10.1137/0905021.
+* Steffen (1990), "A Simple Method for Monotonic Interpolation in One Dimension", [URL](http://adsabs.harvard.edu/abs/1990A%26A...239..443S)
