@@ -34,8 +34,20 @@ When we derive boundary conditions we will use derivatives `y_0'(x)` and
 Cubic
 
 function positions(deg::Cubic, ax, x)
+    # floorbounds adds a half at the lower bound
     xf = floorbounds(x, ax)
     xf -= ifelse(xf > last(ax)-1, oneunit(xf), zero(xf))
+    δx = x - xf
+    expand_index(deg, fast_trunc(Int, xf), ax, δx), δx
+end
+
+# Issue 419: Incorrect results near boundary with BSpline(Cubic(Periodic(OnCell()))))
+# For Periodic positions, just use modrange. No bound-based modifications.
+function positions(deg::Cubic{<:Periodic}, ax, x)
+    # We do not use floorbounds because we do not want to add a half at
+    # the lowerbound to round up.
+    xf = floor(x)
+    # We do not subtract one at the highest position as for non-Periodic Cubic
     δx = x - xf
     expand_index(deg, fast_trunc(Int, xf), ax, δx), δx
 end

@@ -41,6 +41,13 @@
                 @test f2(x,y) ≈ itp2(x,y) atol=abs(0.1 * f2(x,y))
             end
         end
+        # Issue 419: Incorrect results with BSpline(Cubic(Periodic(OnCell()))))
+        let BC = Periodic, GT = OnCell
+            for (A, f) in ((A0, f0), (A1, f1))
+                itp1 = @inferred(constructor(copier(A), BSpline(Cubic(BC(GT())))))
+                @test itp1(Interpolations.lbounds(itp1)...) ≈ itp1(Interpolations.ubounds(itp1)...)
+            end
+        end
     end
 
     ix = 1:15
@@ -59,6 +66,11 @@
             for x in range(ix[5], stop=ix[end-4], length=100)
                 @test g(x) ≈ Interpolations.gradient1(itp,x) atol=cbrt(cbrt(eps(g(x))))
             end
+        end
+        # Issue 419: Incorrect results with BSpline(Cubic(Periodic(OnCell()))))
+        let BC = Periodic, GT = OnCell
+            itp = @inferred(constructor(A[1:end-1], BSpline(Cubic(BC(GT())))))
+            @test itp(Interpolations.lbounds(itp)...) ≈ itp(Interpolations.ubounds(itp)...)
         end
     end
     itp_flat_g = interpolate(A, BSpline(Cubic(Flat(OnGrid()))))
