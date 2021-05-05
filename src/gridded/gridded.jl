@@ -38,6 +38,11 @@ function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::A
     end
     GriddedInterpolation{T,N,TCoefs,IT,typeof(knots)}(knots, A, it)
 end
+function GriddedInterpolation(tw::Type{TWeights}, knots::NTuple{N,AbstractUnitRange}, A::AbstractArray{TCoefs,N}, it::IT) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}
+    # Fix Issue 398: Ensure that gridded_*bounds is used by converting
+    # AbstractUnitRange to a non-AbstractUnitRange AbstractVector
+    GriddedInterpolation(tw, collect.(knots), A, it)
+end
 
 @inline function check_gridded(itpflag, knots, axs)
     flag, ax1, k1 = getfirst(itpflag), axs[1], knots[1]
