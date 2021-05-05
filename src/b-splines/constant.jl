@@ -7,6 +7,7 @@ struct Next <: ConstantInterpType end
 
 struct Constant{T<:ConstantInterpType} <: Degree{0}
     Constant() = new{Nearest}()
+    Constant{Nearest}() = new{Nearest}()
     Constant{Previous}() = new{Previous}()
     Constant{Next}() = new{Next}()
 end
