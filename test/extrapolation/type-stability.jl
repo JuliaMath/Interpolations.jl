@@ -79,6 +79,6 @@ using Test, Interpolations, DualNumbers, Unitful
     # issues #370, #424
     itp = LinearInterpolation([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], extrapolation_bc=missing)
     @test ismissing(itp(4.0))
-    @test @inferred(eltype(itp),itp(3.0))
-    @test @inferred(eltype(itp),itp(4.0))
+    @test @inferred(eltype(itp),itp(3.0)) === 3.0
+    @test @inferred(eltype(itp),itp(4.0)) === missing
 end
