@@ -75,4 +75,10 @@ using Test, Interpolations, DualNumbers, Unitful
     itp = LinearInterpolation(t, y)
     @test itp(0.5u"m") == 1.5f0 * u
     @test itp([0.5, 0.75]u"m") == [1.5f0, 1.75f0] * u
+
+    # issues #370, #424
+    itp = LinearInterpolation([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], extrapolation_bc=missing)
+    @test ismissing(itp(4.0))
+    @test @inferred(eltype(itp),itp(3.0))
+    @test @inferred(eltype(itp),itp(4.0))
 end

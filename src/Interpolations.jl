@@ -38,7 +38,7 @@ export
 
 using LinearAlgebra, SparseArrays
 using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
-using ChainRulesCore
+using ChainRulesCore, Requires
 
 using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
     SizeUnknown
@@ -483,5 +483,9 @@ include("deprecations.jl")
 include("lanczos/lanczos.jl")
 include("iterate.jl")
 include("chainrules/chainrules.jl")
+
+function __init__()
+    @require Unitful="1986cc42-f94f-5a68-af5c-568840ba703d" include("requires/unitful.jl")
+end
 
 end # module
