@@ -5,6 +5,14 @@
     A2 = rand(Float64, N1, N1) * 100
     A3 = rand(Float64, N1, N1, N1) * 100
 
+    @testset "constructor" begin
+        @test Constant() == Constant{Nearest}()
+        for T in (Nearest, Previous, Next)
+            it = Constant{T}()
+            @test it isa Constant{T}
+        end
+    end
+
     @testset "Constant{Nearest}" begin
         for (constructor, copier) in ((interpolate, x -> x), (interpolate!, copy))
             isinplace = constructor == interpolate!

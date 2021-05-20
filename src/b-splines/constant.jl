@@ -5,12 +5,8 @@ struct Nearest <: ConstantInterpType end
 struct Previous <: ConstantInterpType end
 struct Next <: ConstantInterpType end
 
-struct Constant{T<:ConstantInterpType} <: Degree{0}
-    Constant() = new{Nearest}()
-    Constant{Nearest}() = new{Nearest}()
-    Constant{Previous}() = new{Previous}()
-    Constant{Next}() = new{Next}()
-end
+struct Constant{T<:ConstantInterpType} <: Degree{0} end
+Constant() = Constant{Nearest}()
 
 """
 Constant b-splines are *nearest-neighbor* interpolations, and effectively
