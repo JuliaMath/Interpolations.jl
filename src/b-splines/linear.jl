@@ -1,4 +1,9 @@
-struct Linear <: Degree{1} end  # boundary conditions not supported
+struct Linear{BC<:Union{Throw{OnGrid},Periodic{OnCell}}} <: DegreeBC{1}
+    bc::BC
+end
+
+(deg::Linear)(gt::GridType) = Linear(deg.bc(gt))
+Linear() = Linear(Throw(OnGrid()))
 
 """
     Linear()
@@ -27,16 +32,19 @@ a piecewise linear function connecting each pair of neighboring data points.
 """
 Linear
 
-function positions(::Linear, ax::AbstractUnitRange{<:Integer}, x)
+function positions(deg::Linear, ax::AbstractUnitRange{<:Integer}, x)
     f = floor(x)
     # When x == last(ax) we want to use the x-1, x pair
     f = ifelse(x == last(ax), f - oneunit(f), f)
     fi = fast_trunc(Int, f)
-    return fi, x-f
+    expand_index(deg, fi, ax), x-f
 end
+expand_index(::Linear{Throw{OnGrid}}, fi::Number, ax::AbstractUnitRange) = fi
+expand_index(::Linear{Periodic{OnCell}}, fi::Number, ax::AbstractUnitRange) =
+    (modrange(fi, ax), modrange(fi+1, ax))
 
 value_weights(::Linear, δx) = (1-δx, δx)
 gradient_weights(::Linear, δx) = (-oneunit(δx), oneunit(δx))
 hessian_weights(::Linear, δx) = (zero(δx), zero(δx))
 
-padded_axis(ax::AbstractUnitRange, ::BSpline{Linear}) = ax
+padded_axis(ax::AbstractUnitRange, ::BSpline{<:Linear}) = ax

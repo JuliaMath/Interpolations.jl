@@ -8,24 +8,24 @@ using Test
         A = rand(8,20)
 
         itp = interpolate(A, BSpline(Constant()))
-        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Constant{Nearest}())) with element type Float64" ||
-              summary(itp) == "8×20 interpolate(::Array{Float64,2}, BSpline(Constant{Nearest}())) with element type Float64"
+        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Constant{Nearest}(Throw(OnGrid())))) with element type Float64" ||
+              summary(itp) == "8×20 interpolate(::Array{Float64,2}, BSpline(Constant{Nearest}(Throw(OnGrid())))) with element type Float64"
 
         itp = interpolate(A, BSpline(Constant()))
-        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Constant{Nearest}())) with element type Float64" ||
-              summary(itp) == "8×20 interpolate(::Array{Float64,2}, BSpline(Constant{Nearest}())) with element type Float64"
+        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Constant{Nearest}(Throw(OnGrid())))) with element type Float64" ||
+              summary(itp) == "8×20 interpolate(::Array{Float64,2}, BSpline(Constant{Nearest}(Throw(OnGrid())))) with element type Float64"
 
         itp = interpolate(A, BSpline(Linear()))
-        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Linear())) with element type Float64" ||
-              summary(itp) == "8×20 interpolate(::Array{Float64,2}, BSpline(Linear())) with element type Float64"
+        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Linear(Throw(OnGrid())))) with element type Float64" ||
+              summary(itp) == "8×20 interpolate(::Array{Float64,2}, BSpline(Linear(Throw(OnGrid())))) with element type Float64"
 
         itp = interpolate(A, BSpline(Quadratic(Reflect(OnCell()))))
         @test summary(itp) == "8×20 interpolate(OffsetArray(::Matrix{Float64}, 0:9, 0:21), BSpline(Quadratic(Reflect(OnCell())))) with element type Float64" ||
               summary(itp) == "8×20 interpolate(OffsetArray(::Array{Float64,2}, 0:9, 0:21), BSpline(Quadratic(Reflect(OnCell())))) with element type Float64"
 
         itp = interpolate(A, (BSpline(Linear()), NoInterp()))
-        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, (BSpline(Linear()), NoInterp())) with element type Float64" ||
-              summary(itp) == "8×20 interpolate(::Array{Float64,2}, (BSpline(Linear()), NoInterp())) with element type Float64"
+        @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, (BSpline(Linear(Throw(OnGrid()))), NoInterp())) with element type Float64" ||
+              summary(itp) == "8×20 interpolate(::Array{Float64,2}, (BSpline(Linear(Throw(OnGrid()))), NoInterp())) with element type Float64"
 
         itp = interpolate!(copy(A), BSpline(Quadratic(InPlace(OnCell()))))
         @test summary(itp) == "8×20 interpolate(::Matrix{Float64}, BSpline(Quadratic(InPlace(OnCell())))) with element type Float64" ||
@@ -37,18 +37,18 @@ using Test
         A_x = collect(1.0:2.0:40.0)
         knots = (A_x,)
         itp = interpolate(knots, A, Gridded(Linear()))
-        @test summary(itp) == "20-element interpolate((::Vector{Float64},), ::Vector{Float64}, Gridded(Linear())) with element type Float64" ||
-              summary(itp) == "20-element interpolate((::Array{Float64,1},), ::Array{Float64,1}, Gridded(Linear())) with element type Float64"
+        @test summary(itp) == "20-element interpolate((::Vector{Float64},), ::Vector{Float64}, Gridded(Linear(Throw(OnGrid())))) with element type Float64" ||
+              summary(itp) == "20-element interpolate((::Array{Float64,1},), ::Array{Float64,1}, Gridded(Linear(Throw(OnGrid())))) with element type Float64"
 
         A = rand(8,20)
         knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
         itp = interpolate(knots, A, Gridded(Linear()))
-        @test summary(itp) == "8×20 interpolate((::Vector{Int64},::Vector{Float64}), ::Matrix{Float64}, Gridded(Linear())) with element type Float64" ||
-              summary(itp) == "8×20 interpolate((::Array{Int64,1},::Array{Float64,1}), ::Array{Float64,2}, Gridded(Linear())) with element type Float64"
+        @test summary(itp) == "8×20 interpolate((::Vector{Int64},::Vector{Float64}), ::Matrix{Float64}, Gridded(Linear(Throw(OnGrid())))) with element type Float64" ||
+              summary(itp) == "8×20 interpolate((::Array{Int64,1},::Array{Float64,1}), ::Array{Float64,2}, Gridded(Linear(Throw(OnGrid())))) with element type Float64"
 
         itp = interpolate(knots, A, (Gridded(Linear()),Gridded(Constant())))
-        @test summary(itp) == "8×20 interpolate((::Vector{Int64},::Vector{Float64}), ::Matrix{Float64}, (Gridded(Linear()), Gridded(Constant{Nearest}()))) with element type Float64" ||
-              summary(itp) == "8×20 interpolate((::Array{Int64,1},::Array{Float64,1}), ::Array{Float64,2}, (Gridded(Linear()), Gridded(Constant{Nearest}()))) with element type Float64"
+        @test summary(itp) == "8×20 interpolate((::Vector{Int64},::Vector{Float64}), ::Matrix{Float64}, (Gridded(Linear(Throw(OnGrid()))), Gridded(Constant{Nearest}(Throw(OnGrid()))))) with element type Float64" ||
+              summary(itp) == "8×20 interpolate((::Array{Int64,1},::Array{Float64,1}), ::Array{Float64,2}, (Gridded(Linear(Throw(OnGrid()))), Gridded(Constant{Nearest}(Throw(OnGrid()))))) with element type Float64"
 
         # issue #260
         A = (1:4)/4
@@ -56,15 +56,15 @@ using Test
         io = IOBuffer()
         show(io, MIME("text/plain"), itp)
         str1 = String(take!(io))
-        str2 = "4-element interpolate((0.0:0.1:0.3,), ::Array{Float64,1}, Gridded(Linear())) with element type Float64:\n 0.25\n 0.5 \n 0.75\n 1.0"
-        str3 = "4-elementinterpolate((0.0:0.1:0.3,),::Vector{Float64},Gridded(Linear()))withelementtypeFloat64:\n 0.25 \n 0.5 \n 0.75\n 1.0"
+        str2 = "4-element interpolate((0.0:0.1:0.3,), ::Array{Float64,1}, Gridded(Linear(Throw(OnGrid())))) with element type Float64:\n 0.25\n 0.5 \n 0.75\n 1.0"
+        str3 = "4-elementinterpolate((0.0:0.1:0.3,),::Vector{Float64},Gridded(Linear(Throw(OnGrid()))))withelementtypeFloat64:\n 0.25 \n 0.5 \n 0.75\n 1.0"
         @test filter(!isspace, str1) == filter(!isspace, str3) ||
               filter(!isspace, str1) == filter(!isspace, str2)
         io2 = IOBuffer()
         show(io2, itp)
         str1 = String(take!(io2))
-        str2 = "4-element interpolate((0.0:0.1:0.3,), ::Array{Float64,1}, Gridded(Linear())) with element type Float64:\n 0.25\n 0.5 \n 0.75\n 1.0"
-        str3 = "4-elementinterpolate((0.0:0.1:0.3,),::Vector{Float64},Gridded(Linear()))withelementtypeFloat64:\n 0.25\n 0.5\n 0.75\n 1.0"
+        str2 = "4-element interpolate((0.0:0.1:0.3,), ::Array{Float64,1}, Gridded(Linear(Throw(OnGrid())))) with element type Float64:\n 0.25\n 0.5 \n 0.75\n 1.0"
+        str3 = "4-elementinterpolate((0.0:0.1:0.3,),::Vector{Float64},Gridded(Linear(Throw(OnGrid()))))withelementtypeFloat64:\n 0.25\n 0.5\n 0.75\n 1.0"
         @test filter(!isspace, str1) == filter(!isspace, str3) ||
               filter(!isspace, str1) == filter(!isspace, str2)
     end
@@ -72,18 +72,18 @@ using Test
     @testset "scaled" begin
         itp = interpolate(1:1.0:10, BSpline(Linear()))
         sitp = scale(itp, -3:.5:1.5)
-        @test summary(sitp) == "10-element scale(interpolate(::Vector{Float64}, BSpline(Linear())), (-3.0:0.5:1.5,)) with element type Float64" ||
-              summary(sitp) == "10-element scale(interpolate(::Array{Float64,1}, BSpline(Linear())), (-3.0:0.5:1.5,)) with element type Float64"
+        @test summary(sitp) == "10-element scale(interpolate(::Vector{Float64}, BSpline(Linear(Throw(OnGrid())))), (-3.0:0.5:1.5,)) with element type Float64" ||
+              summary(sitp) == "10-element scale(interpolate(::Array{Float64,1}, BSpline(Linear(Throw(OnGrid())))), (-3.0:0.5:1.5,)) with element type Float64"
         io = IOBuffer()
         show(io, MIME("text/plain"), sitp)
         str = String(take!(io))
-        @test str == "10-element scale(interpolate(::Vector{Float64}, BSpline(Linear())), (-3.0:0.5:1.5,)) with element type Float64:\n  1.0\n  2.0\n  3.0\n  4.0\n  5.0\n  6.0\n  7.0\n  8.0\n  9.0\n 10.0" ||
-              str == "10-element scale(interpolate(::Array{Float64,1}, BSpline(Linear())), (-3.0:0.5:1.5,)) with element type Float64:\n  1.0\n  2.0\n  3.0\n  4.0\n  5.0\n  6.0\n  7.0\n  8.0\n  9.0\n 10.0"
+        @test str == "10-element scale(interpolate(::Vector{Float64}, BSpline(Linear(Throw(OnGrid())))), (-3.0:0.5:1.5,)) with element type Float64:\n  1.0\n  2.0\n  3.0\n  4.0\n  5.0\n  6.0\n  7.0\n  8.0\n  9.0\n 10.0" ||
+              str == "10-element scale(interpolate(::Array{Float64,1}, BSpline(Linear(Throw(OnGrid())))), (-3.0:0.5:1.5,)) with element type Float64:\n  1.0\n  2.0\n  3.0\n  4.0\n  5.0\n  6.0\n  7.0\n  8.0\n  9.0\n 10.0"
         io2 = IOBuffer()
         show(io2, sitp)
         str2 = String(take!(io2))
-        @test str2 == "10-element scale(interpolate(::Vector{Float64}, BSpline(Linear())), (-3.0:0.5:1.5,)) with element type Float64:\n  1.0\n  2.0\n  3.0\n  4.0\n  5.0\n  6.0\n  7.0\n  8.0\n  9.0\n 10.0" ||
-              str2 == "10-element scale(interpolate(::Array{Float64,1}, BSpline(Linear())), (-3.0:0.5:1.5,)) with element type Float64:\n  1.0\n  2.0\n  3.0\n  4.0\n  5.0\n  6.0\n  7.0\n  8.0\n  9.0\n 10.0"
+        @test str2 == "10-element scale(interpolate(::Vector{Float64}, BSpline(Linear(Throw(OnGrid())))), (-3.0:0.5:1.5,)) with element type Float64:\n  1.0\n  2.0\n  3.0\n  4.0\n  5.0\n  6.0\n  7.0\n  8.0\n  9.0\n 10.0" ||
+              str2 == "10-element scale(interpolate(::Array{Float64,1}, BSpline(Linear(Throw(OnGrid())))), (-3.0:0.5:1.5,)) with element type Float64:\n  1.0\n  2.0\n  3.0\n  4.0\n  5.0\n  6.0\n  7.0\n  8.0\n  9.0\n 10.0"
 
         gauss(phi, mu, sigma) = exp(-(phi-mu)^2 / (2sigma)^2)
         testfunction(x,y) = gauss(x, 0.5, 4) * gauss(y, -.5, 2)
@@ -126,8 +126,8 @@ using Test
 
         itpg = interpolate(A, BSpline(Linear()))
         etpg = extrapolate(itpg, Flat())
-        teststring = "8×20 extrapolate(interpolate(::Array{Float64,2}, BSpline(Linear())), Flat()) with element type Float64"
-        teststring16 = "8×20 extrapolate(interpolate(::Matrix{Float64}, BSpline(Linear())), Flat()) with element type Float64"
+        teststring = "8×20 extrapolate(interpolate(::Array{Float64,2}, BSpline(Linear(Throw(OnGrid())))), Flat()) with element type Float64"
+        teststring16 = "8×20 extrapolate(interpolate(::Matrix{Float64}, BSpline(Linear(Throw(OnGrid())))), Flat()) with element type Float64"
         @test summary(etpg) == teststring16 || summary(etpg) == teststring
         io = IOBuffer()
         show(io, etpg)
@@ -135,8 +135,8 @@ using Test
         @test occursin(teststring16, str) || occursin(teststring, str)
 
         etpf = extrapolate(itpg, NaN)
-        teststring2 = "8×20 extrapolate(interpolate(::Array{Float64,2}, BSpline(Linear())), NaN) with element type Float64"
-        teststring16 = "8×20 extrapolate(interpolate(::Matrix{Float64}, BSpline(Linear())), NaN) with element type Float64"
+        teststring2 = "8×20 extrapolate(interpolate(::Array{Float64,2}, BSpline(Linear(Throw(OnGrid())))), NaN) with element type Float64"
+        teststring16 = "8×20 extrapolate(interpolate(::Matrix{Float64}, BSpline(Linear(Throw(OnGrid())))), NaN) with element type Float64"
         @test summary(etpf) == teststring16 || summary(etpf) == teststring2
         io2 = IOBuffer()
         show(io2, etpf)
