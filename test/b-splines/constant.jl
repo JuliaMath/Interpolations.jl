@@ -116,5 +116,53 @@
             end
         end
     end
-end
 
+    @testset "Constant periodic" begin
+        # Constructors
+        @test Constant() === Constant(Throw(OnGrid()))
+        @test Constant() isa Constant{Nearest,Throw{OnGrid}}
+        @test Constant(Periodic()) === Constant(Periodic(OnCell()))
+        @test Constant(Periodic()) isa Constant{Nearest,Periodic{OnCell}}
+        for T in (Nearest, Previous, Next)
+            it = Constant{T}()
+            @test it isa Constant{T, Throw{OnGrid}}
+            it = Constant{T}(Periodic())
+            @test it isa Constant{T, Periodic{OnCell}}
+        end
+
+        for (constructor, copier) in ((interpolate, x -> x), (interpolate!, copy))
+            isinplace = constructor == interpolate!
+            itp_periodic = @inferred(constructor(copier(A1), BSpline(Constant(Periodic()))))
+            itp_previous = @inferred(constructor(copier(A1), BSpline(Constant{Previous}(Periodic()))))
+            itp_next = @inferred(constructor(copier(A1), BSpline(Constant{Next}(Periodic()))))
+
+            for itp in (itp_periodic, itp_previous, itp_next)
+                @test parent(itp) === itp.coefs
+                @test all(Interpolations.lbounds(itp) .≈ (0.5,))
+                @test all(Interpolations.ubounds(itp) .≈ (N1 + 0.5,))
+
+                check_axes(itp, A1, isinplace)
+                check_inbounds_values(itp, A1)
+                check_oob(itp)
+                can_eval_near_boundaries(itp)
+            end
+
+            # Evaluation between data points (tests constancy)
+            for i in 2:N1-1
+                @test A1[i] == itp_periodic(i + .3) == itp_periodic(i - .3)
+                @test A1[i] == itp_previous(i + .3) == itp_previous(i + .6)
+                @test A1[i - 1] == itp_previous(i - .3) == itp_previous(i - .6)
+                @test A1[i + 1] == itp_next(i + .3) == itp_next(i + .6)
+                @test A1[i] == itp_next(i - .3) == itp_next(i - .6)
+            end
+
+            # Evaluation between data points in [0.5, 1.5], [N1 - 0.5, N1 + 0.5].
+            @test A1[1] == itp_periodic(1 - .3) == itp_periodic(1 + .3)
+            @test A1[N1] == itp_periodic(N1 - .3) == itp_periodic(N1 + .3)
+            @test A1[1] == itp_previous(1 + .3)
+            @test A1[N1] == itp_previous(N1 + .3) == itp_previous(1 - .3)
+            @test A1[1] == itp_next(1 - .3) == itp_next(N1 + .3)
+            @test A1[N1] == itp_next(N1 - .3)
+        end
+    end
+end
