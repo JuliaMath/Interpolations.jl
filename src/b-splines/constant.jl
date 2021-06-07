@@ -10,10 +10,10 @@ struct Constant{T<:ConstantInterpType,BC<:Union{Throw{OnGrid},Periodic{OnCell}}}
 end
 
 # Default to Nearest and Throw{OnGrid}
-Constant() = Constant{Nearest}()
-Constant(bc::BoundaryCondition) = Constant{Nearest}(bc)
+Constant(args...) = Constant{Nearest}(args...)
 Constant{T}() where {T<:ConstantInterpType} = Constant{T,Throw{OnGrid}}(Throw(OnGrid()))
 Constant{T}(bc::BC) where {T<:ConstantInterpType,BC<:BoundaryCondition} = Constant{T,BC}(bc)
+Constant{T}(::Periodic{Nothing}) where {T<:ConstantInterpType} = Constant{T,Periodic{OnCell}}(Periodic(OnCell()))
 
 function Base.show(io::IO, deg::Constant)
     print(io, nameof(typeof(deg)), '{', typeof(deg).parameters[1], '}', '(')

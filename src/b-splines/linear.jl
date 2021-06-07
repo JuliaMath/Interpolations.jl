@@ -4,6 +4,7 @@ end
 
 (deg::Linear)(gt::GridType) = Linear(deg.bc(gt))
 Linear() = Linear(Throw(OnGrid()))
+Linear(::Periodic{Nothing}) = Linear(Periodic(OnCell()))
 
 """
     Linear()
