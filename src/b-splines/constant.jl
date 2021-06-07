@@ -5,9 +5,6 @@ struct Nearest <: ConstantInterpType end
 struct Previous <: ConstantInterpType end
 struct Next <: ConstantInterpType end
 
-# struct Constant{T<:ConstantInterpType} <: Degree{0} end
-# Constant() = Constant{Nearest}()
-
 struct Constant{T<:ConstantInterpType,BC<:Union{Throw{OnGrid},Periodic{OnCell}}} <: DegreeBC{0}
     bc::BC
 end
