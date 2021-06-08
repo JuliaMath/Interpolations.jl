@@ -52,8 +52,11 @@ count_interp_dims(::Type{<:Extrapolation{T,N,ITPT}}, n) where {T,N,ITPT} = count
     extrapolate_value(eflag, skip_flagged_nointerp(itp, x), skip_flagged_nointerp(itp, xs), Tuple(g), itpval)
 end
 @inline function (etp::Extrapolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
-    itp = parent(etp)
-    ret = zeros(T, shape(x...))
+    # The eltype of the args may change the return type
+    Tret = promote_type(T, eltype.(x)...)
+    # Only allow concrete return types
+    Tret = isconcretetype(Tret) ? Tret : T
+    ret = zeros(Tret, shape(x...))
     for (i, y) in zip(eachindex(ret), Iterators.product(x...))
         ret[i] = etp(y...)
     end

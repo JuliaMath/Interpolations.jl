@@ -145,5 +145,14 @@ using Interpolations, Test, ForwardDiff
         @test ForwardDiff.gradient(itp_test, [1.0]) ≈ Interpolations.gradient(build_itp(), 1.0)
         @test ForwardDiff.gradient(itp_test, [5.0]) ≈ Interpolations.gradient(build_itp(), 5.0)
     end
+    @testset "issue 430" begin
+        mat1 = rand(Float64, 64, 64)
+        itp = LinearInterpolation((1:64, 1:64,), mat1)
+        function itp_test(x::AbstractVector)
+            return itp(x...)
+        end
+        @test ForwardDiff.gradient(itp_test, [1.0, 1.0]) ≈ Interpolations.gradient(itp, 1.0, 1.0)
+        @test ForwardDiff.gradient(itp_test, [3.0, 2.0]) ≈ Interpolations.gradient(itp, 3.0, 2.0)
+    end
 
 end
