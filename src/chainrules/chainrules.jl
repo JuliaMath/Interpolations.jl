@@ -6,7 +6,7 @@ ChainRulesCore.jl `rrule` for integration with automatic differentiation librari
 function ChainRulesCore.rrule(itp::AbstractInterpolation, x...)
     y = itp(x...)
     function pullback(Δy)
-        (ChainRulesCore.DoesNotExist(), Δy * Interpolations.gradient(itp, x...))
+        (ChainRulesCore.NoTangent(), Δy * Interpolations.gradient(itp, x...))
     end
     y, pullback
 end

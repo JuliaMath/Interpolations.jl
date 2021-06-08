@@ -17,7 +17,7 @@ WoodburyMatrices = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
 
 [compat]
 AxisAlgorithms = "0.3, 1"
-ChainRulesCore = "0.9, 0.10"
+ChainRulesCore = "0.10"
 OffsetArrays = "0.10, 0.11, 1.0.1"
 Ratios = "0.3, 0.4"
 Requires = "1.1"
