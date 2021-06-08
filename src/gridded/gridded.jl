@@ -72,11 +72,56 @@ end
     end
     degree(flag) isa Union{NoInterp,Constant,Linear} || error("only Linear, Constant, and NoInterp supported, got $flag")
     length(k1) == 1 && error("dimensions of length 1 not yet supported")  # FIXME
-    issorted(k1) && allunique(k1) || error("knot-vectors must be unique and sorted in increasing order")
+    if issorted(k1) 
+        if !allunique(k1)
+            @warn "Duplicated knots were deduplicated. Use Interpolations.deduplicate_knots!(knots) explicitly to avoid this warning." k1
+            deduplicate_knots!(k1)
+        end
+    else
+        error("knot-vectors must be unique and sorted in increasing order")
+    end
     check_gridded(getrest(itpflag), Base.tail(knots), Base.tail(axs))
 end
 check_gridded(::Any, ::Tuple{}, ::Tuple{}) = nothing
 degree(flag::Gridded) = flag.degree
+
+"""
+    Interpolations.deduplicate_knots!(knots)
+
+    Makes knots unique by incrementing repeated but otherwise sorted knots using `nextfloat`.
+
+    # Example
+
+    ```jldoctest
+    julia> knots = [-8.0, 0.0, 20.0, 20.0]
+    4-element Vector{Float64}:
+    -8.0
+    0.0
+    20.0
+    20.0
+
+    julia> Interpolations.deduplicate_knots!(knots)
+    4-element Vector{Float64}:
+    -8.0
+    0.0
+    20.0
+    20.000000000000004
+    ```
+"""
+function deduplicate_knots!(knots)
+    last_knot = first(knots)
+    for i = eachindex(knots)
+        if i == 1
+            continue
+        end
+        if knots[i] == last_knot
+            @inbounds knots[i] = nextfloat(knots[i-1])
+        else
+            last_knot = @inbounds knots[i]
+        end
+    end
+    knots
+end
 
 Base.parent(A::GriddedInterpolation) = A.coefs
 coefficients(A::GriddedInterpolation) = A.coefs

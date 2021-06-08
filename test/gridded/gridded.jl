@@ -91,5 +91,8 @@ using Interpolations, Test
 
     # issue #395
     knots = ([0.0,0.0,1.0],) # not unique
-    @test_throws ErrorException interpolate(knots, [1.0, 1.0, 2.0], Gridded(Linear()))
+    # Further discussion determined this should be a warning rather than an error
+    # https://github.com/JuliaMath/Interpolations.jl/commit/318ebc88ca1fc084754f3c741266537f901a3310
+    knots_not_unique_warning = "Duplicated knots were deduplicated. Use Interpolations.deduplicate_knots!(knots) explicitly to avoid this warning."
+    @test_logs (:warn, knots_not_unique_warning) interpolate(knots, [1.0, 1.1, 2.0], Gridded(Linear()))
 end
