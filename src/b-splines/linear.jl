@@ -6,6 +6,10 @@ end
 Linear() = Linear(Throw(OnGrid()))
 Linear(::Periodic{Nothing}) = Linear(Periodic(OnCell()))
 
+function Base.show(io::IO, deg::Linear{Throw{OnGrid}})
+    print(io, nameof(typeof(deg)), '(', ')')
+end
+
 """
     Linear()
 

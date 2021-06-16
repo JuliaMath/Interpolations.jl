@@ -21,6 +21,10 @@ function Base.show(io::IO, deg::Constant)
     print(io, ')')
 end
 
+function Base.show(io::IO, deg::Constant{T,Throw{OnGrid}}) where {T <: ConstantInterpType}
+    print(io, nameof(typeof(deg)), '{', typeof(deg).parameters[1], '}', '(', ')')
+end
+
 """
 Constant b-splines are *nearest-neighbor* interpolations, and effectively
 return `A[round(Int,x)]` when interpolating.
