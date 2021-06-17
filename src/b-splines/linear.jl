@@ -2,7 +2,6 @@ struct Linear{BC<:Union{Throw{OnGrid},Periodic{OnCell}}} <: DegreeBC{1}
     bc::BC
 end
 
-(deg::Linear)(gt::GridType) = Linear(deg.bc(gt))
 Linear() = Linear(Throw(OnGrid()))
 Linear(::Periodic{Nothing}) = Linear(Periodic(OnCell()))
 

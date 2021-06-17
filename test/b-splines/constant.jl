@@ -126,8 +126,10 @@
         for T in (Nearest, Previous, Next)
             it = Constant{T}()
             @test it isa Constant{T, Throw{OnGrid}}
+            @test "$it" == "Constant{$T}()"
             it = Constant{T}(Periodic())
             @test it isa Constant{T, Periodic{OnCell}}
+            @test "$it" == "Constant{$T}(Periodic(OnCell()))"
         end
 
         for (constructor, copier) in ((interpolate, x -> x), (interpolate!, copy))
