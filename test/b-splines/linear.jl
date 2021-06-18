@@ -61,4 +61,39 @@
         etp = extrapolate(itp, Flat())
         @test sum(isnan.(etp)) == 0
     end
+
+    @testset "Linear periodic" begin
+        # Constructors
+        @test Linear() === Linear(Throw(OnGrid()))
+        @test Linear() isa Linear{Throw{OnGrid}}
+        @test Linear(Periodic()) === Linear(Periodic(OnCell()))
+        @test Linear(Periodic()) isa Linear{Periodic{OnCell}}
+
+        xmax = 10
+        f2(x) = sin((x-3)*2pi/xmax - 1) # Periodicity is xmax, not xmax-1
+        A1 = Float64[f2(x) for x in 1:xmax]
+
+        for (constructor, copier) in ((interpolate, identity), (interpolate!, copy))
+            isinplace = constructor == interpolate!
+            itp = @inferred(constructor(copier(A1), BSpline(Linear())))
+            itp_periodic = @inferred(constructor(copier(A1), BSpline(Linear(Periodic()))))
+
+            @test all(Interpolations.lbounds(itp_periodic) .≈ (0.5,))
+            @test all(Interpolations.ubounds(itp_periodic) .≈ (10.5,))
+
+            for x in 1:.2:xmax
+                @test itp(x) ≈ itp_periodic(x)
+            end
+
+            # Interpolation range for periodic should be [0.5, xmax + 0.5]
+            for x in 0.5:.1:0.9
+                @test f2(x) ≈ itp_periodic(x) atol=abs(0.1 * f2(x))
+                @test_throws BoundsError itp(x)
+            end
+            for x in xmax+0.1:.1:xmax+0.5
+                @test f2(x) ≈ itp_periodic(x) atol=abs(0.1 * f2(x))
+                @test_throws BoundsError itp(x)
+            end
+        end
+    end
 end
