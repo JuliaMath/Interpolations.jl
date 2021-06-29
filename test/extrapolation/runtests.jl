@@ -107,4 +107,5 @@ using Test
 
     include("type-stability.jl")
     include("non1.jl")
+    include("periodic.jl")
 end
