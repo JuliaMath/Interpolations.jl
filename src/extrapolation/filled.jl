@@ -55,10 +55,11 @@ end
 end
 
 @inline function Interpolations.gradient(etp::FilledExtrapolation{T}, x::Vararg{Number,N}) where {T,N}
-    if checkbounds(Bool, etp.itp, x...)
-        gradient(etp.itp, x...)
+    itp = parent(etp)
+    if checkbounds(Bool, itp, x...)
+        gradient(itp, x...)
     else
-        e = eltype(etp.itp)
+        e = eltype(itp)
         ptype = promote_type(e, typeof(etp.fillvalue))
         return SVector{ndims(etp), ptype}(zeros(ptype, ndims(etp)))
     end
