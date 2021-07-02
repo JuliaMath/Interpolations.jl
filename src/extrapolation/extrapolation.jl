@@ -1,3 +1,5 @@
+include("filled.jl")
+
 struct Extrapolation{T,N,ITPT,IT,ET} <: AbstractExtrapolation{T,N,ITPT,IT}
     itp::ITPT
     et::ET
@@ -73,6 +75,16 @@ end
         g = @inbounds gradient(itp, xs...)
         skipni = t->skip_flagged_nointerp(itp, t)
         SVector(extrapolate_gradient.(skipni(eflag), skipni(x), skipni(xs), Tuple(g)))
+    end
+end
+
+@inline function Interpolations.gradient(etp::FilledExtrapolation{T}, x::Vararg{Number,N}) where {T,N}
+    if checkbounds(Bool, etp.itp, x...)
+        gradient(etp.itp, x...)
+    else
+        e = eltype(etp.itp)
+        ptype = promote_type(e, typeof(etp.fillvalue))
+        return SVector{ndims(etp), ptype}(zeros(ptype, ndims(etp)))
     end
 end
 
@@ -178,5 +190,3 @@ extrapolate_axis((flagl,flagu)::Tuple{Nothing, Line}, x, xs, g, val) =
 
 extrapolate_gradient(::Flat, x, xs, g) = ifelse(x==xs, g, zero(g))
 extrapolate_gradient(::Flag, x, xs, g) = g
-
-include("filled.jl")
