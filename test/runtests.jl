@@ -1,3 +1,4 @@
+using Base: Float64, Float32
 if !isdefined(Main, :InterpolationTestUtils)
     include("InterpolationTestUtils.jl")
     @eval using Main.InterpolationTestUtils

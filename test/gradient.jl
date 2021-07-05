@@ -199,4 +199,20 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
             end
         end
     end
+
+    @testset "Extrapolations" begin
+        # out of bounds extrapolation check where fillvalue=constant
+        dtypes = [Float32, Float64]
+        dims = [1, 2, 3]
+        for dt in dtypes
+            for dm in dims
+                itp = interpolate(rand(dt, ntuple(_ -> 5, dm)...), BSpline(Linear()))
+                etp = extrapolate(itp, rand(dt))
+                @test all(iszero, @inferred(Interpolations.gradient(etp, 6., 6.)))
+                @test all(iszero, @inferred(Interpolations.gradient(etp, -6., 6.)))
+                @test all(iszero, @inferred(Interpolations.gradient(etp, 6., -6.)))
+                @test all(iszero, @inferred(Interpolations.gradient(etp, -6., -6.)))
+            end
+        end
+    end
 end
