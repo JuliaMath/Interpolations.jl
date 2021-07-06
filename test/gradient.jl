@@ -206,25 +206,11 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
         dims = [1, 2, 3]
         for dt in dtypes
             for dm in dims
-                itp_n = interpolate(rand(dt, ntuple(_ -> 5, dm)...), BSpline(Linear()))
-                etp_n = extrapolate(itp_n, rand(dt))
-                if dm==2
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, 6., 6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, -6., 6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, 6., -6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, -6., -6.)))
-                elseif dm==1
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, 6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, -6.)))
-                else
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, 6., 6., 6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, -6., 6., 6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, 6., -6., 6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, -6., -6., 6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, 6., 6., -6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, -6., 6., -6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, 6., -6., -6.)))
-                    @test all(iszero, @inferred(Interpolations.gradient(etp_n, -6., -6., -6.)))
+                itp = interpolate(rand(dt, ntuple(_ -> 5, dm)...), BSpline(Linear()))
+                etp = extrapolate(itp_n, rand(dt))
+                for ds in [ntuple(_->-0.5, dm), ntuple(_->5.5, dm), ntuple(_->6, dm)]
+                    @test all(iszero, @inferred(Interpolations.gradient(etp, ds...)))
+                    @test @inferred(Interpolations.gradient(etp, ntuple(_->3, dm)...)) == @inferred(Interpolations.gradient(itp, ntuple(_->3, dm)...))
                 end
             end
         end
