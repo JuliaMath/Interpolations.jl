@@ -59,9 +59,8 @@ end
     if checkbounds(Bool, itp, x...)
         gradient(itp, x...)
     else
-        e = eltype(itp)
-        ptype = promote_type(e, mapreduce(typeof, promote_type, x))
-        return SVector{ndims(etp), ptype}(zeros(ptype, ndims(etp)))
+        ptype = promote_type(eltype(itp), map(typeof, x)...)
+        return zeros(SVector{ndims(etp), ptype})
     end
 end
 
