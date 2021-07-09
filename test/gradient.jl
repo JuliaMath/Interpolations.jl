@@ -207,10 +207,11 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
         for dt in dtypes
             for dm in dims
                 itp = interpolate(rand(dt, ntuple(_ -> 5, dm)...), BSpline(Linear()))
-                etp = extrapolate(itp_n, rand(dt))
+                etp = extrapolate(itp, rand(dt))
+                cs = ntuple(_->3, dm)
+                @test @inferred(Interpolations.gradient(etp, cs...)) == @inferred(Interpolations.gradient(itp, cs...))
                 for ds in [ntuple(_->-0.5, dm), ntuple(_->5.5, dm), ntuple(_->6, dm)]
                     @test all(iszero, @inferred(Interpolations.gradient(etp, ds...)))
-                    @test @inferred(Interpolations.gradient(etp, ntuple(_->3, dm)...)) == @inferred(Interpolations.gradient(itp, ntuple(_->3, dm)...))
                 end
             end
         end
