@@ -60,7 +60,7 @@ end
         gradient(itp, x...)
     else
         e = eltype(itp)
-        ptype = promote_type(e, typeof(etp.fillvalue))
+        ptype = promote_type(e, mapreduce(typeof, promote_type, x))
         return SVector{ndims(etp), ptype}(zeros(ptype, ndims(etp)))
     end
 end
