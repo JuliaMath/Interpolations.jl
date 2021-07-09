@@ -202,16 +202,32 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
 
     @testset "Extrapolations" begin
         # out of bounds extrapolation check where fillvalue=constant
-        dtypes = [Float32, Float64]
         dims = [1, 2, 3]
-        for dt in dtypes
+        @testset "Constant Fillvalue" begin
+            dtypes = [Float32, Float64]
+            for dt in dtypes
+                for dm in dims
+                    itp = interpolate(rand(dt, ntuple(_ -> 5, dm)...), BSpline(Linear()))
+                    etp = extrapolate(itp, rand(dt)) # TODO: Add tests for different boundary conditions in extrapolate
+                    cs = ntuple(_->3, dm)
+                    @test @inferred(Interpolations.gradient(etp, cs...)) == @inferred(Interpolations.gradient(itp, cs...))
+                    for ds in [ntuple(_->-0.5, dm), ntuple(_->5.5, dm), ntuple(_->6, dm)]
+                        @test all(iszero, @inferred(Interpolations.gradient(etp, ds...)))
+                    end
+                end
+            end
+        end
+        @testset "Boundary Conditions" begin
+            BC = (Flat, Line, Periodic, Reflect, Natural)
             for dm in dims
-                itp = interpolate(rand(dt, ntuple(_ -> 5, dm)...), BSpline(Linear()))
-                etp = extrapolate(itp, rand(dt))
-                cs = ntuple(_->3, dm)
-                @test @inferred(Interpolations.gradient(etp, cs...)) == @inferred(Interpolations.gradient(itp, cs...))
-                for ds in [ntuple(_->-0.5, dm), ntuple(_->5.5, dm), ntuple(_->6, dm)]
-                    @test all(iszero, @inferred(Interpolations.gradient(etp, ds...)))
+                for bc in BC
+                    itp = interpolate(rand(5, 5), BSpline(Linear()))
+                    etp = extrapolate(itp, bc()) # TODO: Add tests for different boundary conditions in extrapolate
+                    cs = ntuple(_->3, 2)
+                    @test @inferred(Interpolations.gradient(etp, cs...)) == @inferred(Interpolations.gradient(itp, cs...))
+                    for ds in [ntuple(_->-0.5, 2), ntuple(_->5.5, 2), ntuple(_->6, 2)]
+                        @test size(@inferred(Interpolations.gradient(etp, ds...))) == (2,)
+                    end
                 end
             end
         end
