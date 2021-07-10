@@ -54,6 +54,16 @@ end
     return ret
 end
 
+@inline function Interpolations.gradient(etp::FilledExtrapolation{T}, x::Vararg{Number,N}) where {T,N}
+    itp = parent(etp)
+    if checkbounds(Bool, itp, x...)
+        gradient(itp, x...)
+    else
+        ptype = promote_type(eltype(itp), map(typeof, x)...)
+        return zeros(SVector{ndims(etp), ptype})
+    end
+end
+
 expand_index_resid_etp(deg, fillvalue, (l, u), x, etp::FilledExtrapolation, xN) =
     (l <= x <= u || Base.throw_boundserror(etp, xN))
 
