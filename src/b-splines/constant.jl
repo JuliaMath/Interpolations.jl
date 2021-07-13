@@ -7,6 +7,9 @@ struct Next <: ConstantInterpType end
 
 struct Constant{T<:ConstantInterpType,BC<:Union{Throw{OnGrid},Periodic{OnCell}}} <: DegreeBC{0}
     bc::BC
+    function Constant{T, BC}(bc::BC=BC()) where {T<:ConstantInterpType, BC<:Union{Throw{OnGrid},Periodic{OnCell}}}
+        new{T, BC}(bc)
+    end
 end
 
 # Default to Nearest and Throw{OnGrid}

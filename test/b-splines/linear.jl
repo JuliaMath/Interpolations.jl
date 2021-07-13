@@ -64,9 +64,9 @@
 
     @testset "Linear periodic" begin
         # Constructors
-        @test Linear() === Linear(Throw(OnGrid()))
+        @test Linear() === Linear(Throw(OnGrid())) === Linear{Throw{OnGrid}}()
         @test Linear() isa Linear{Throw{OnGrid}}
-        @test Linear(Periodic()) === Linear(Periodic(OnCell()))
+        @test Linear(Periodic()) === Linear(Periodic(OnCell())) == Linear{Periodic{OnCell}}()
         @test Linear(Periodic()) isa Linear{Periodic{OnCell}}
 
         xmax = 10

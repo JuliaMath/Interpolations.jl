@@ -119,9 +119,9 @@
 
     @testset "Constant periodic" begin
         # Constructors
-        @test Constant() === Constant(Throw(OnGrid()))
+        @test Constant() === Constant(Throw(OnGrid())) === Constant{Nearest,Throw{OnGrid}}()
         @test Constant() isa Constant{Nearest,Throw{OnGrid}}
-        @test Constant(Periodic()) === Constant(Periodic(OnCell()))
+        @test Constant(Periodic()) === Constant(Periodic(OnCell())) === Constant{Nearest,Periodic{OnCell}}()
         @test Constant(Periodic()) isa Constant{Nearest,Periodic{OnCell}}
         for T in (Nearest, Previous, Next)
             it = Constant{T}()
