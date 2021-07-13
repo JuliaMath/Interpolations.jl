@@ -1,9 +1,13 @@
 struct Linear{BC<:Union{Throw{OnGrid},Periodic{OnCell}}} <: DegreeBC{1}
     bc::BC
+    function Linear{BC}(bc::BC=BC()) where BC<:Union{Throw{OnGrid},Periodic{OnCell}}
+        new{BC}(bc)
+    end
 end
 
 Linear() = Linear(Throw(OnGrid()))
 Linear(::Periodic{Nothing}) = Linear(Periodic(OnCell()))
+Linear(bc::BC) where BC<:Union{Throw{OnGrid},Periodic{OnCell}} = Linear{BC}(bc)
 
 function Base.show(io::IO, deg::Linear{Throw{OnGrid}})
     print(io, nameof(typeof(deg)), '(', ')')
