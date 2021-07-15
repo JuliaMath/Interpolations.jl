@@ -96,16 +96,16 @@ Aside from details such as bounds-checking, the key call is to [`Interpolations.
 
 ```jldoctest derivs
 julia> wis = Interpolations.weightedindexes((Interpolations.value_weights,), Interpolations.itpinfo(itp)..., x)
-(Interpolations.WeightedAdjIndex{2,Float64}(1, (0.8, 0.19999999999999996)), Interpolations.WeightedAdjIndex{2,Float64}(1, (0.6000000000000001, 0.3999999999999999)), Interpolations.WeightedAdjIndex{2,Float64}(1, (0.30000000000000004, 0.7)))
+(Interpolations.WeightedAdjIndex{2, Float64}(1, (0.8, 0.19999999999999996)), Interpolations.WeightedAdjIndex{2, Float64}(1, (0.6000000000000001, 0.3999999999999999)), Interpolations.WeightedAdjIndex{2, Float64}(1, (0.30000000000000004, 0.7)))
 
 julia> wis[1]
-Interpolations.WeightedAdjIndex{2,Float64}(1, (0.8, 0.19999999999999996))
+Interpolations.WeightedAdjIndex{2, Float64}(1, (0.8, 0.19999999999999996))
 
 julia> wis[2]
-Interpolations.WeightedAdjIndex{2,Float64}(1, (0.6000000000000001, 0.3999999999999999))
+Interpolations.WeightedAdjIndex{2, Float64}(1, (0.6000000000000001, 0.3999999999999999))
 
 julia> wis[3]
-Interpolations.WeightedAdjIndex{2,Float64}(1, (0.30000000000000004, 0.7))
+Interpolations.WeightedAdjIndex{2, Float64}(1, (0.30000000000000004, 0.7))
 
 julia> A[wis...]
 8.7
