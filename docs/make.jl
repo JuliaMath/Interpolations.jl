@@ -13,5 +13,5 @@ pages=["Home" => "index.md",
         "Library" => "api.md"]
 )
 
-deploydocs(repo="github.com/JuliaMath/Interpolations.jl",
+deploydocs(repo="github.com/JuliaMath/Interpolations.jl.git",
             push_preview=true)
