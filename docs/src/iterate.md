@@ -20,7 +20,7 @@ julia> itp = interpolate(ones(3,3), BSpline(Linear()));
 julia> kiter = knots(itp);
 
 julia> collect(kiter)
-3×3 Array{Tuple{Int64,Int64},2}:
+3×3 Matrix{Tuple{Int64, Int64}}:
  (1, 1)  (1, 2)  (1, 3)
  (2, 1)  (2, 2)  (2, 3)
  (3, 1)  (3, 2)  (3, 3)
@@ -65,7 +65,7 @@ julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic());
 julia> kiter = knots(etp);
 
 julia> k = Iterators.take(kiter, 6) |> collect
-6-element Array{Float64,1}:
+6-element Vector{Float64}:
  1.0
  1.5
  1.75
@@ -80,7 +80,7 @@ knots do map back to the correct inbound knots (ie. `etp(k[1]) == etp(k[4])`).
 
 ```jldoctest periodic-demo
 julia> etp.(k)
-6-element Array{Float64,1}:
+6-element Vector{Float64}:
  1.0
  2.25
  3.0625
@@ -107,7 +107,7 @@ julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=Reflect());
 julia> kiter = knots(etp);
 
 julia> k = Iterators.take(kiter, 6) |> collect
-6-element Array{Float64,1}:
+6-element Vector{Float64}:
  1.0
  1.5
  1.75
@@ -122,7 +122,7 @@ correspond to the correct inbound knots.
 
 ```jldoctest reflect-demo
 julia> etp.(k)
-6-element Array{Float64,1}:
+6-element Vector{Float64}:
  1.0
  2.25
  3.0625
@@ -143,7 +143,7 @@ julia> x = [1.0, 1.5, 1.75, 2.0];
 julia> etp = LinearInterpolation((x, x), x.*x');
 
 julia> knots(etp) |> collect
-4×4 Array{Tuple{Float64,Float64},2}:
+4×4 Matrix{Tuple{Float64, Float64}}:
  (1.0, 1.0)   (1.0, 1.5)   (1.0, 1.75)   (1.0, 2.0)
  (1.5, 1.0)   (1.5, 1.5)   (1.5, 1.75)   (1.5, 2.0)
  (1.75, 1.0)  (1.75, 1.5)  (1.75, 1.75)  (1.75, 2.0)
@@ -160,7 +160,7 @@ julia> x = [1.0, 1.5, 1.75, 2.0];
 julia> etp = LinearInterpolation((x, x), x.*x', extrapolation_bc=(Periodic(), Throw()));
 
 julia> knots(etp) |> k -> Iterators.take(k, 6) |> collect
-6-element Array{Tuple{Float64,Float64},1}:
+6-element Vector{Tuple{Float64, Float64}}:
  (1.0, 1.0)
  (1.5, 1.0)
  (1.75, 1.0)
@@ -178,7 +178,7 @@ julia> x = [1.0, 1.5, 1.75, 2.0];
 julia> etp = LinearInterpolation((x, x), x.*x', extrapolation_bc=(Throw(), Periodic()));
 
 julia> knots(etp) |> k -> Iterators.take(k, 6) |> collect
-6-element Array{Tuple{Float64,Float64},1}:
+6-element Vector{Tuple{Float64, Float64}}:
  (1.0, 1.0)
  (1.5, 1.0)
  (1.75, 1.0)
@@ -205,7 +205,7 @@ julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=((Throw(), Periodic()
 julia> kiter = knots(etp);
 
 julia> kiter |> k -> Iterators.take(k, 5) |> collect
-5-element Array{Float64,1}:
+5-element Vector{Float64}:
  1.0
  1.2
  1.3
@@ -233,7 +233,7 @@ julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=((Periodic(), Throw()
 julia> kiter = knots(etp);
 
 julia> collect(kiter)
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  1.0
  1.2
  1.3
@@ -278,7 +278,7 @@ julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic());
 julia> krange = knotsbetween(etp; start=4.0);
 
 julia> Iterators.take(krange, 5) |> collect
-5-element Array{Float64,1}:
+5-element Vector{Float64}:
  4.5
  4.75
  5.0
@@ -293,7 +293,7 @@ If we omit `start`, iteration will range from the first knot to `stop`
 julia> krange = knotsbetween(etp; stop=4.0);
 
 julia> collect(krange)
-9-element Array{Float64,1}:
+9-element Vector{Float64}:
  1.0
  1.5
  1.75
@@ -326,7 +326,7 @@ julia> x = [1.0, 1.5, 1.75, 2.0];
 julia> etp = LinearInterpolation((x, x), x.*x');
 
 julia> knotsbetween(etp; start=(1.2, 1.5), stop=(1.8, 3.0)) |> collect
-2×2 Array{Tuple{Float64,Float64},2}:
+2×2 Matrix{Tuple{Float64, Float64}}:
  (1.5, 1.75)   (1.5, 2.0)
  (1.75, 1.75)  (1.75, 2.0)
 
