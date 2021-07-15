@@ -124,7 +124,7 @@ julia> using Interpolations;
 julia> etp = LinearInterpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
 
 julia> Iterators.take(knots(etp), 5) |> collect
-5-element Array{Float64,1}:
+5-element $(Array{typeof(1.0),1}):
  1.0
  1.2
  2.3
@@ -427,7 +427,7 @@ julia> using Interpolations;
 julia> etp = LinearInterpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
 
 julia> knotsbetween(etp; start=38, stop=42) |> collect
-6-element Array{Float64,1}:
+6-element $(Array{typeof(1.0),1}):
  38.3
  39.0
  39.2
