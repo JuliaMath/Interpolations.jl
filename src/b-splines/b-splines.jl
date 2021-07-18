@@ -244,7 +244,12 @@ function interpolate!(A::AbstractArray, it::IT, λ::Real, k::Int) where {IT<:Dim
     interpolate!(tweight(A), A, it, λ, k)
 end
 
-lut!(dl, d, du) = lu!(Tridiagonal(dl, d, du), Val(false))
+if VERSION >= v"1.7.0-beta1"
+    # https://github.com/JuliaLang/julia/pull/40623
+    lut!(dl, d, du) = lu!(Tridiagonal(dl, d, du), NoPivot())
+else
+    lut!(dl, d, du) = lu!(Tridiagonal(dl, d, du), Val(false))
+end
 
 include("constant.jl")
 include("linear.jl")
