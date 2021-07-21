@@ -204,7 +204,7 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
         # out of bounds extrapolation check where fillvalue=constant
         dims = [1, 2, 3]
         @testset "Constant Fillvalue" begin
-            dtypes = [Float32, Float64]
+            dtypes = [Float32, Float64, RGB{Float64}, RGB{Float32}, RGB{N0f8}]
             for dt in dtypes
                 for dm in dims
                     itp = interpolate(rand(dt, ntuple(_ -> 5, dm)...), BSpline(Linear()))
@@ -213,6 +213,11 @@ using Test, Interpolations, DualNumbers, LinearAlgebra
                     @test @inferred(Interpolations.gradient(etp, cs...)) == @inferred(Interpolations.gradient(itp, cs...))
                     for ds in [ntuple(_->-0.5, dm), ntuple(_->5.5, dm), ntuple(_->6, dm)]
                         @test all(iszero, @inferred(Interpolations.gradient(etp, ds...)))
+                        if dt <: Colorant
+                            @test eltype(Interpolations.gradient(etp, ds...)) <: Colorant
+                        else
+                            @test eltype(Interpolations.gradient(etp, ds...)) <: AbstractFloat
+                        end
                     end
                 end
             end
