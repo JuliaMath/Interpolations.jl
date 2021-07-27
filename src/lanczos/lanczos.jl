@@ -14,7 +14,7 @@ This form of interpolation is merely the discrete convolution of the samples wit
 """
 struct Lanczos{N} <: AbstractLanczos
     a::Int
-    
+
     function Lanczos{N}(a) where N
         N < a && @warn "Using a smaller support than scale for Lanczos window. Proceed with caution."
         new{N}(a)
@@ -103,7 +103,7 @@ struct Lanczos4OpenCV <: AbstractLanczos end
 
 degree(::Lanczos4OpenCV) = 4
 
-value_weights(::Lanczos4OpenCV, δx::S) where S = ifelse(isinteger(δx),ntuple(i->convert(float(S), i == 4 - δx), Val(8)) ,_lanczos4_opencv(δx))
+value_weights(::Lanczos4OpenCV, δx) = _lanczos4_opencv(δx)
 
 # s45 = sqrt(2)/2
 const s45 = 0.70710678118654752440084436210485
@@ -123,6 +123,9 @@ function _lanczos4_opencv(δx)
         # Numerator is the sin subtraction identity
         # It is equivalent to the following
         # f(δx,i) = sin( π/4*( 5*(i-1)-δx-3 ) )
+        if iszero(y)
+            y = eps(oneunit(y))
+        end
         (l4_2d_cs[i, 1] * s0 + l4_2d_cs[i, 2] * c0) / y^2
     end
     sum_cs = sum(cs)

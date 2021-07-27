@@ -53,6 +53,7 @@ end
 
     @test 1 < itp(1.5) < 2
     @test 99 < itp(99.5) < 100
+    @test itp(nextfloat(1.0)) ≈ itp(1.0)
 
 
     # symmetry check
