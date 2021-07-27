@@ -3,7 +3,7 @@ if !isdefined(Main, :InterpolationTestUtils)
     @eval using Main.InterpolationTestUtils
 end
 
-using Test, SharedArrays, Random
+using Test, SharedArrays, Random, ImageCore
 using StaticArrays, WoodburyMatrices
 ambs = detect_ambiguities(StaticArrays, WoodburyMatrices, Base, Core)
 

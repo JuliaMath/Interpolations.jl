@@ -56,7 +56,7 @@ end
 
 @inline function Interpolations.gradient(etp::FilledExtrapolation{T, N, ITP}, x::Vararg{Number, N}) where {T,N,ITP}
     itp = parent(etp)
-    check_type() = Base._return_type(gradient, Tuple{typeof(itp), map(typeof, x)...})
+    check_type() = Base._return_type(gradient, Tuple{ITP, map(typeof, x)...})
     if checkbounds(Bool, itp, x...)
         gradient(itp, x...)
     else

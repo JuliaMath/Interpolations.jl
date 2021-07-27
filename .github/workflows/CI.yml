@@ -39,6 +39,14 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
+      - name: "Compat fix for Julia < v1.3.0"
+        if: ${{ matrix.julia-version == '1.0' }}
+        run: |
+          using Pkg
+          Pkg.add([
+            PackageSpec(name="AbstractFFTs", version="1.0"),
+          ])
+        shell: julia --project=. --startup=no --color=yes {0}
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1

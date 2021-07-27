@@ -5,6 +5,7 @@ version = "0.13.3"
 [deps]
 AxisAlgorithms = "13072b0f-2c55-5437-9ae7-d433b7a33950"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+ImageCore = "a09fc81d-aa75-5fe9-8630-4744c3626534"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -26,6 +27,7 @@ WoodburyMatrices = "0.4, 0.5"
 julia = "1"
 
 [extras]
+ImageCore = "a09fc81d-aa75-5fe9-8630-4744c3626534"
 DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -37,4 +39,4 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["OffsetArrays", "Unitful", "SharedArrays", "ForwardDiff", "LinearAlgebra", "DualNumbers", "Random", "Test", "Zygote"]
+test = ["OffsetArrays", "Unitful", "SharedArrays", "ForwardDiff", "LinearAlgebra", "DualNumbers", "Random", "Test", "Zygote", "ImageCore"]
