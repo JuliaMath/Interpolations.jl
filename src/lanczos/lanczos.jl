@@ -124,7 +124,7 @@ function _lanczos4_opencv(δx)
         # It is equivalent to the following
         # f(δx,i) = sin( π/4*( 5*(i-1)-δx-3 ) )
         if iszero(y)
-            y = eps(oneunit(y))
+            y = eps(oneunit(y))/8
         end
         (l4_2d_cs[i, 1] * s0 + l4_2d_cs[i, 2] * c0) / y^2
     end
