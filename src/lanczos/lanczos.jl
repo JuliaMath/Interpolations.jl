@@ -120,12 +120,13 @@ function _lanczos4_opencv(δx)
     s0, c0 = sincos(y0)
     cs = ntuple(8) do i
         y = (δx + 4 - i) * p_4
-        # Numerator is the sin subtraction identity
-        # It is equivalent to the following
-        # f(δx,i) = sin( π/4*( 5*(i-1)-δx-3 ) )
+        # Improve precision of Lanczos OpenCV4 #451, avoid NaN
         if iszero(y)
             y = eps(oneunit(y))/8
         end
+        # Numerator is the sin subtraction identity
+        # It is equivalent to the following
+        # f(δx,i) = sin( π/4*( 5*(i-1)-δx-3 ) )
         (l4_2d_cs[i, 1] * s0 + l4_2d_cs[i, 2] * c0) / y^2
     end
     sum_cs = sum(cs)
