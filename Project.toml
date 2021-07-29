@@ -35,6 +35,7 @@ SharedArrays = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+ColorVectorSpace = "c3611d14-8923-5661-9e6a-0046d554d3a4"
 
 [targets]
-test = ["OffsetArrays", "Unitful", "SharedArrays", "ForwardDiff", "LinearAlgebra", "DualNumbers", "Random", "Test", "Zygote"]
+test = ["OffsetArrays", "Unitful", "SharedArrays", "ForwardDiff", "LinearAlgebra", "DualNumbers", "Random", "Test", "Zygote", "ColorVectorSpace"]
