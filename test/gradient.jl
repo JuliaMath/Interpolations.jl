@@ -209,6 +209,7 @@ using ColorVectorSpace: RGB, Gray, N0f8, Colorant
             for dt in dtypes
                 for dm in dims
                     itp = interpolate(rand(dt, ntuple(_ -> 5, dm)...), BSpline(Linear()))
+                    etp = extrapolate(itp, rand(dt))
                     cs = ntuple(_->3, dm)
                     @test @inferred(Interpolations.gradient(etp, cs...)) == @inferred(Interpolations.gradient(itp, cs...))
                     for ds in [ntuple(_->-0.5, dm), ntuple(_->5.5, dm), ntuple(_->6, dm)]
@@ -227,6 +228,7 @@ using ColorVectorSpace: RGB, Gray, N0f8, Colorant
             for dm in dims
                 for bc in BC
                     itp = interpolate(rand(5, 5), BSpline(Linear()))
+                    etp = extrapolate(itp, bc())
                     cs = ntuple(_->3, 2)
                     @test @inferred(Interpolations.gradient(etp, cs...)) == @inferred(Interpolations.gradient(itp, cs...))
                     for ds in [ntuple(_->-0.5, 2), ntuple(_->5.5, 2), ntuple(_->6, 2)]
