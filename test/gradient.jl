@@ -1,4 +1,5 @@
-using Test, Interpolations, DualNumbers, LinearAlgebra
+using Test, Interpolations, DualNumbers, LinearAlgebra, ColorVectorSpace
+using ColorVectorSpace: RGB, N0f8, Colorant
 
 @testset "Gradients" begin
     nx = 10
