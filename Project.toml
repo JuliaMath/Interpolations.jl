@@ -17,7 +17,7 @@ WoodburyMatrices = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
 
 [compat]
 AxisAlgorithms = "0.3, 1"
-ChainRulesCore = "0.10"
+ChainRulesCore = "0.10, 1.2"
 OffsetArrays = "0.10, 0.11, 1.0.1"
 Ratios = "0.3, 0.4"
 Requires = "1.1"
@@ -26,6 +26,7 @@ WoodburyMatrices = "0.4, 0.5"
 julia = "1"
 
 [extras]
+ColorVectorSpace = "c3611d14-8923-5661-9e6a-0046d554d3a4"
 DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -35,7 +36,6 @@ SharedArrays = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
-ColorVectorSpace = "c3611d14-8923-5661-9e6a-0046d554d3a4"
 
 [targets]
 test = ["OffsetArrays", "Unitful", "SharedArrays", "ForwardDiff", "LinearAlgebra", "DualNumbers", "Random", "Test", "Zygote", "ColorVectorSpace"]
