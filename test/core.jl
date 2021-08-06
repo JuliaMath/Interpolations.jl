@@ -51,3 +51,23 @@ end
     @test wi/2 === Interpolations.WeightedArbIndex((2, -1), (0.1, 0.4))
     @test Interpolations.indextuple(wi) == (2, -1)
 end
+
+@testset "Hash" begin
+    # Issue 339: Base.hash accesses out-of-bound indexes due to AbstractArray interface
+    # Relevant to Distributed computing
+    xr = collect(0.0:1.0:5.0)
+    yr = collect(1.0:1.0:6.0)
+    itp = interpolate((xr,),yr,Gridded(Linear()))
+    # using Distributed
+    # addprocs(2)
+    # @everywhere begin
+    #    using Interpolations
+    #    callitp(itp, x) = itp(x)
+    # end
+    # r = remotecall(callitp, 2, itp, 1.2)
+    # fetch(r) # 2.2
+    @test hash(itp) != 0
+    etp = LinearInterpolation([2, 3], [4, 5])
+    @test hash(etp.itp) != 0
+    @test hash(etp) != 0
+end
