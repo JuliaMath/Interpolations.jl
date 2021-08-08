@@ -5,10 +5,9 @@ end
 
 using Test, SharedArrays, Random, ColorVectorSpace
 using StaticArrays, WoodburyMatrices
-ambs = detect_ambiguities(StaticArrays, WoodburyMatrices, Base, Core)
-
 using Interpolations
-@test isempty(setdiff(detect_ambiguities(Interpolations, Base, Core), ambs))
+
+@test isempty(detect_ambiguities(Interpolations))
 
 const isci = get(ENV, "CI", "") in ("true", "True")
 
