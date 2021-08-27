@@ -5,16 +5,16 @@ For constant, linear, and cubic spline interpolations, `ConstantInterpolation`, 
 can be used to create interpolating and extrapolating objects handily.
 
 ### Motivating Example
-By using the convenience constructor one can simplify expressions. For example, the creation of an interpolation object 
+By using the convenience constructor one can simplify expressions. For example, the creation of an interpolation object
 ```julia
 extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs), Line())
 ```
 can be written as the more readable
 ```julia
 extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
- ```
+```
  by using the convenience constructor.
- 
+
  ### Usage
 
 ```julia
