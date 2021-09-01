@@ -43,7 +43,7 @@ using ChainRulesCore, Requires
 using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
     SizeUnknown
 import Base: convert, size, axes, promote_rule, ndims, eltype, checkbounds, axes1,
-    iterate, length, IteratorEltype, IteratorSize, firstindex, getindex
+    iterate, length, IteratorEltype, IteratorSize, firstindex, getindex, LogicalIndex
 
 abstract type Flag end
 abstract type InterpolationType <: Flag end
@@ -454,6 +454,12 @@ import Base: getindex
 end
 
 @inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::Vararg{ExpandedIndexTypes,N}) where N =
+    _checkbounds(BoundsCheckStyle(itp), itp, x)
+
+@inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::LogicalIndex) where N =
+    _checkbounds(BoundsCheckStyle(itp), itp, x)
+
+@inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::LogicalIndex{<:Any,<:AbstractArray{Bool,1}}) where N =
     _checkbounds(BoundsCheckStyle(itp), itp, x)
 
 _checkbounds(::CheckWillPass, itp, x) = true
