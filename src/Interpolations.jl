@@ -490,6 +490,7 @@ include("io.jl")
 include("convenience-constructors.jl")
 include("deprecations.jl")
 include("lanczos/lanczos.jl")
+include("lanczos/lanczos_opencv.jl")
 include("iterate.jl")
 include("chainrules/chainrules.jl")
 
