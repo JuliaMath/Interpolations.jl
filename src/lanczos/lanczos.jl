@@ -1,7 +1,4 @@
-using Base.Cartesian
-using StaticArrays
-
-export Lanczos, Lanczos4OpenCV
+export Lanczos
 
 abstract type AbstractLanczos <: InterpolationType end
 
