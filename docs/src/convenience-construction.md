@@ -79,3 +79,38 @@ interp_linear = LinearInterpolation(xs, A)
 interp_linear(1) # exactly log(1)
 interp_linear(1.05) # approximately log(1.05)
 ```
+
+### Example with Plots.jl
+
+An interpolated object is also easily capable of being plotted with [Plots.jl](https://github.com/JuliaPlots/Plots.jl). A simple example is as follows:
+
+```julia
+using Interpolations, Plots
+
+# Lower and higher bound of interval
+a = 1.0
+b = 10.0
+# Interval definition
+x = a:1.0:b
+# This can be any sort of array data, as long as
+# length(x) == length(y)
+y = @. cos(x^2 / 9.0) # Function application by broadcasting
+# Interpolations
+itp_linear = LinearInterpolation(x, y)
+itp_cubic = CubicSplineInterpolation(x, y)
+# Interpolation functions
+f_linear(x) = itp_linear(x)
+f_cubic(x) = itp_cubic(x)
+# Plots
+width, height = 1500, 800 # not strictly necessary
+x_new = a:0.1:b # smoother interval, necessary for cubic spline
+
+scatter(x, y, markersize=10,label="Data points")
+plot!(f_linear, x_new, w=3,label="Linear interpolation")
+plot!(f_cubic, x_new, linestyle=:dash, w=3, label="Cubic Spline interpolation")
+plot!(size = (width, height))
+plot!(legend = :bottomleft)
+```
+
+And the generated plot is:
+![interpolation plot example](assets/plotsjl_interpolation_example.png)
