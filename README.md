@@ -63,6 +63,8 @@ interp_linear_extrap = LinearInterpolation(xs, A,extrapolation_bc=Line())
 interp_linear_extrap(0.9) # outside grid: linear extrapolation
 ```
 
+More examples, such as plotting and cubic interpolation, can be found at the [convenience constructions](docs/src/convenience-construction.md) documentation.
+
 ## Performance shootout
 
 In the `perf` directory, you can find a script that tests
