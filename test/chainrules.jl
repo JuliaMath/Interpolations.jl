@@ -9,9 +9,9 @@ using Zygote
     itp = interpolate(y,BSpline(Linear()))
 
     if VERSION ≥ v"1.3"
-        @test Zygote.gradient(itp, 1)[1] == Interpolations.gradient(itp, 1)
+        @test Zygote.gradient(itp, 1) == Tuple(Interpolations.gradient(itp, 1))
     else
-        @test_skip Zygote.gradient(itp, 1)[1] == Interpolations.gradient(itp, 1)
+        @test_skip Zygote.gradient(itp, 1) == Tuple(Interpolations.gradient(itp, 1))
     end
 
     # 2D example
@@ -21,8 +21,8 @@ using Zygote
     itp2 = interpolate(y2, BSpline(Cubic(Line(OnGrid()))))
 
     if VERSION ≥ v"1.3"
-        @test Zygote.gradient(itp2,1,2)[1] == Interpolations.gradient(itp2,1,2)
+        @test Zygote.gradient(itp2,1,2) == Tuple(Interpolations.gradient(itp2,1,2))
     else
-        @test_skip Zygote.gradient(itp2,1,2)[1] == Interpolations.gradient(itp2,1,2)
+        @test_skip Zygote.gradient(itp2,1,2) == Tuple(Interpolations.gradient(itp2,1,2))
     end
 end
