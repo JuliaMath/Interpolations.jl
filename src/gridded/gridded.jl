@@ -114,7 +114,7 @@ function deduplicate_knots!(knots)
         if i == 1
             continue
         end
-        if knots[i] == last_knot
+        if knots[i] == last_knot || knots[i] <= knots[i-1]
             @inbounds knots[i] = nextfloat(knots[i-1])
         else
             last_knot = @inbounds knots[i]
