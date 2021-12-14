@@ -122,39 +122,25 @@ function weightedindexes(parts::Vararg{Union{Int,HessParts},N}) where N
     #    hc1 = coefs[hwi1, i2, wi3]
     #    hc2 = coefs[gwi1, i2, gwi3]
     #    hc3 = coefs[wi1,  i2, hwi3]
-    slot_substitute(parts, parts, map(positions, parts), map(valuecoefs, parts), map(gradcoefs, parts), map(hesscoefs, parts))
+    slot_substitute(parts, map(positions, parts), map(valuecoefs, parts), map(gradcoefs, parts), map(hesscoefs, parts))
 end
-
-# Skip over NoInterp dimensions
-function slot_substitute(kind1::Tuple{Int,Vararg{Any}}, kind2::Tuple{Int,Vararg{Any}}, p, v, g, h)
-    @assert(kind1 == kind2)
-    kind = Base.tail(kind1)
-    slot_substitute(kind, kind, p, v, g, h)
-end
-function slot_substitute(kind1, kind2::Tuple{Int,Vararg{Any}}, p, v, g, h)
-    kind = Base.tail(kind1)
-    slot_substitute(kind, kind, p, v, g, h)
-end
-slot_substitute(kind1::Tuple{Int,Vararg{Any}}, kind2, p, v, g, h) = slot_substitute(Base.tail(kind1), kind2, p, v, g, h)
-# Substitute the dth dimension's gradient coefs for the remaining coefs
-function slot_substitute(kind1::K, kind2::K, p, v, g, h) where K
+# Substitute the dth dimension's gradient coefs for the remaining coefs, column by column
+slot_substitute(kind::Tuple, p, v, g, h) = (_column(kind, kind, p, v, g, h)..., slot_substitute(Base.tail(kind), p, v, g, h)...)
+slot_substitute(::Tuple{}, p, v, g, h) = ()
+# inner: calulate a single column
+function _column(kind1::K, kind2::K, p, v, g, h) where {K<:Tuple}
     ss = substitute_ruled(v, kind1, h)
-    (map(maybe_weightedindex, p, ss), slot_substitute(Base.tail(kind1), kind2, p, v, g, h)...)
+    (map(maybe_weightedindex, p, ss), _column(Base.tail(kind1), kind2, p, v, g, h)...)
 end
-function slot_substitute(kind1, kind2, p, v, g, h)
+function _column(kind1::Tuple, kind2::Tuple, p, v, g, h)
     ss = substitute_ruled(substitute_ruled(v, kind1, g), kind2, g)
-    (map(maybe_weightedindex, p, ss), slot_substitute(Base.tail(kind1), kind2, p, v, g, h)...)
+    (map(maybe_weightedindex, p, ss), _column(Base.tail(kind1), kind2, p, v, g, h)...)
 end
-# Termination
-slot_substitute(kind1::Tuple{}, kind2::Tuple{Int,Vararg{Any}}, p, v, g, h) = _slot_substitute(kind1::Tuple{}, kind2, p, v, g, h)
-slot_substitute(kind1::Tuple{}, kind2, p, v, g, h) = _slot_substitute(kind1::Tuple{}, kind2, p, v, g, h)
-function _slot_substitute(kind1::Tuple{}, kind2, p, v, g, h)
-    # finish "column" and continue on to the next "column"
-    kind = Base.tail(kind2)
-    slot_substitute(kind, kind, p, v, g, h)
-end
-slot_substitute(kind1::Tuple{}, kind2::Tuple{}, p, v, g, h) = ()
-
+_column(::Tuple{}, ::Tuple, p, v, g, h) = ()
+# Skip over NoInterp dimensions
+slot_substitute(kind::Tuple{Int,Vararg{Any}}, p, v, g, h) = slot_substitute(Base.tail(kind), p, v, g, h)
+_column(kind1::Tuple{Int,Vararg{Any}}, kind2::Tuple, p, v, g, h) =
+    _column(Base.tail(kind1), kind2, p, v, g, h)
 
 weightedindex_parts(fs::F, itpflag::BSpline, ax, x) where F =
     weightedindex_parts(fs, degree(itpflag), ax, x)
@@ -214,10 +200,10 @@ half(x) = oneunit(x)/2
 symmatrix(h::NTuple{1,Any}) = SMatrix{1,1}(h)
 symmatrix(h::NTuple{3,Any}) = SMatrix{2,2}((h[1], h[2], h[2], h[3]))
 symmatrix(h::NTuple{6,Any}) = SMatrix{3,3}((h[1], h[2], h[3], h[2], h[4], h[5], h[3], h[5], h[6]))
-function symmatrix(h::Tuple{L,Any}) where L
-    @noinline incommensurate(L) = error("$L must be equal to N*(N+1)/2 for integer N")
-    N = ceil(Int, sqrt(L))
-    (N*(N+1))÷2 == L || incommensurate(L)
+function symmatrix(h::NTuple{L,Any}) where L
+    @noinline incommensurate(N,L) = error("$L must be equal to N*(N+1)/2 (N = $N)")
+    N = floor(Int, (2L)^(1//2))
+    (N*(N+1))÷2 == L || incommensurate(N,L)
     l = Matrix{Int}(undef, N, N)
     l[:,1] = 1:N
     idx = N
@@ -232,6 +218,6 @@ function symmatrix(h::Tuple{L,Any}) where L
         hexprs = [:(h[$i]) for i in vec(l)]
         :(SMatrix{$N,$N}($(hexprs...,)))
     else
-        SMatrix{N,N}([h[i] for i in vec(l)]...)
+        SMatrix{N,N}(h[i] for i in l)
     end
 end
