@@ -108,14 +108,18 @@ degree(flag::Gridded) = flag.degree
     20.000000000000004
     ```
 """
-function deduplicate_knots!(knots)
+function deduplicate_knots!(knots; move_knots::Bool = false)
     last_knot = first(knots)
     for i = eachindex(knots)
         if i == 1
             continue
         end
-        if knots[i] == last_knot || knots[i] <= knots[i-1]
+        if knots[i] == last_knot || (move_knots && (@inbounds knots[i] <= knots[i-1]))
             @inbounds knots[i] = nextfloat(knots[i-1])
+        elseif @inbounds knots[i] <= knots[i-1] 
+            @warn "Successive repeated knots detected. Consider using `move_knots` keyword to Interpolations.deduplicate_knots!" last_knot knots[i-1] knots[i]
+            @inbounds knots[i] = nextfloat(knots[i-1])
+            move_knots = true
         else
             last_knot = @inbounds knots[i]
         end
