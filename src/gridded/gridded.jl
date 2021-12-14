@@ -86,9 +86,11 @@ check_gridded(::Any, ::Tuple{}, ::Tuple{}) = nothing
 degree(flag::Gridded) = flag.degree
 
 """
-    Interpolations.deduplicate_knots!(knots)
+    Interpolations.deduplicate_knots!(knots; move_knots = false)
 
     Makes knots unique by incrementing repeated but otherwise sorted knots using `nextfloat`.
+    If keyword `move_knots` is true, then `nextfloat` will be applied successively until knots
+    are unique. Otherwise, a warning will be issued.
 
     # Example
 
@@ -106,6 +108,14 @@ degree(flag::Gridded) = flag.degree
     0.0
     20.0
     20.000000000000004
+
+    julia> Interpolations.deduplicate_knots!([1.0, 1.0, 1.0, nextfloat(1.0), nextfloat(1.0)]; move_knots = true)
+    5-element Vector{Float64}:
+    1.0
+    1.0000000000000002
+    1.0000000000000004
+    1.0000000000000007
+    1.0000000000000009
     ```
 """
 function deduplicate_knots!(knots; move_knots::Bool = false)
