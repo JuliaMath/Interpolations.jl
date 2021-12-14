@@ -95,4 +95,10 @@ using Interpolations, Test
     # https://github.com/JuliaMath/Interpolations.jl/commit/318ebc88ca1fc084754f3c741266537f901a3310
     knots_not_unique_warning = "Duplicated knots were deduplicated. Use Interpolations.deduplicate_knots!(knots) explicitly to avoid this warning."
     @test_logs (:warn, knots_not_unique_warning) interpolate(knots, [1.0, 1.1, 2.0], Gridded(Linear()))
+
+    # knot deduplication, issue #467, PR #468
+    duplicated_knots = [1.0, 1.0, 1.0, nextfloat(1.0), nextfloat(1.0)]
+    successive_knots_warning = "Successive repeated knots detected. Consider using `move_knots` keyword to Interpolations.deduplicate_knots!"
+    @test_logs (:warn, successive_knots_warning) Interpolations.deduplicate_knots!(duplicated_knots)
+    @test allunique(duplicated_knots)
 end
