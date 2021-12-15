@@ -71,3 +71,10 @@ end
     @test hash(etp.itp) != 0
     @test hash(etp) != 0
 end
+
+@testset "BasicInferability" begin
+    itp = CubicSplineInterpolation(1:3, randn(3))
+    @test (@inferred Interpolations.itptype(itp)) == BSpline{Cubic{Line{OnGrid}}}
+    @test (@inferred eltype(itp)) == Float64
+    @test (@inferred ndims(itp)) == 1
+end
