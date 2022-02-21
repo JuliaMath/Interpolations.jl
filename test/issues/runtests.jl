@@ -154,5 +154,11 @@ using Interpolations, Test, ForwardDiff
         @test ForwardDiff.gradient(itp_test, [1.0, 1.0]) ≈ Interpolations.gradient(itp, 1.0, 1.0)
         @test ForwardDiff.gradient(itp_test, [3.0, 2.0]) ≈ Interpolations.gradient(itp, 3.0, 2.0)
     end
+    @testset "issue 469" begin
+        dims = VERSION > v"1.7" ? 7 : 3 # symmatrix is unstable before 1.7, (^ was llvm based)
+        A = zeros(Float64, ntuple(_ -> 5, dims))
+        itp = interpolate(A, BSpline(Quadratic(Reflect(OnCell()))))
+        @test (@inferred Interpolations.hessian(itp, ntuple(_ -> 1.0, dims)...)) == zeros(dims,dims)
+    end
 
 end
