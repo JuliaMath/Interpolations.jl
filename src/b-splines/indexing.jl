@@ -201,9 +201,7 @@ symmatrix(h::NTuple{1,Any}) = SMatrix{1,1}(h)
 symmatrix(h::NTuple{3,Any}) = SMatrix{2,2}((h[1], h[2], h[2], h[3]))
 symmatrix(h::NTuple{6,Any}) = SMatrix{3,3}((h[1], h[2], h[3], h[2], h[4], h[5], h[3], h[5], h[6]))
 function symmatrix(h::NTuple{L,Any}) where L
-    @noinline incommensurate(N,L) = error("$L must be equal to N*(N+1)/2 (N = $N)")
-    N = floor(Int, (2L)^(1//2))
-    (N*(N+1))÷2 == L || incommensurate(N,L)
+    N = symsize(Val(L))
     l = Matrix{Int}(undef, N, N)
     l[:,1] = 1:N
     idx = N
@@ -221,3 +219,17 @@ function symmatrix(h::NTuple{L,Any}) where L
         SMatrix{N,N}(h[i] for i in l)
     end
 end
+
+# Hardcode the output size.
+for N in 4:7
+    L = N*(N+1)÷2
+    @eval symsize(::Val{$L}) = $N
+end
+# When hit the following, L must >= 36 if it's valid.
+# This means we touch the inference limitation (32) of Tuple.
+function symsize(::Val{L}) where L
+    N = floor(Int, sqrt(2L))
+    (N*(N+1))÷2 == L || incommensurate(N,L)
+    N
+end
+@noinline incommensurate(N,L) = error("$L must be equal to N*(N+1)/2 (N = $N)")
