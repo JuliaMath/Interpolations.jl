@@ -155,7 +155,9 @@ using Interpolations, Test, ForwardDiff
         @test ForwardDiff.gradient(itp_test, [3.0, 2.0]) ≈ Interpolations.gradient(itp, 3.0, 2.0)
     end
     @testset "issue 469" begin
-        for dims in 3:7
+        # We have different inference result on different version.
+        max_dim = VERSION < v"1.3" ? 3 : isdefined(Base, :Any32) ? 7 : 5
+        for dims in 3:max_dim
             A = zeros(Float64, ntuple(_ -> 5, dims))
             itp = interpolate(A, BSpline(Quadratic(Reflect(OnCell()))))
             @test (@inferred Interpolations.hessian(itp, ntuple(_ -> 1.0, dims)...)) == zeros(dims,dims)

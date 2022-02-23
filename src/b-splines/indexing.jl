@@ -202,7 +202,7 @@ symmatrix(h::NTuple{3,Any}) = SMatrix{2,2}((h[1], h[2], h[2], h[3]))
 symmatrix(h::NTuple{6,Any}) = SMatrix{3,3}((h[1], h[2], h[3], h[2], h[4], h[5], h[3], h[5], h[6]))
 function symmatrix(h::NTuple{L,Any}) where L
     N = symsize(Val(L))
-    l = Matrix{Int}(undef, N, N)
+    l = MMatrix{N,N,Int}(undef)
     l[:,1] = 1:N
     idx = N
     for j = 2:N, i = 1:N
