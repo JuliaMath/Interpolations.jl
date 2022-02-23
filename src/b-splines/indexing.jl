@@ -220,16 +220,9 @@ function symmatrix(h::NTuple{L,Any}) where L
     end
 end
 
-# Hardcode the output size.
-for N in 4:7
-    L = N*(N+1)÷2
-    @eval symsize(::Val{$L}) = $N
-end
-# When hit the following, L must >= 36 if it's valid.
-# This means we touch the inference limitation (32) of Tuple.
-function symsize(::Val{L}) where L
+# Use @generated to force const propagation
+@generated function symsize(::Val{L}) where L
     N = floor(Int, sqrt(2L))
-    (N*(N+1))÷2 == L || incommensurate(N,L)
-    N
+    (N*(N+1))÷2 == L || error("$L must be equal to N*(N+1)/2 (N = $N)")
+    return :($N)
 end
-@noinline incommensurate(N,L) = error("$L must be equal to N*(N+1)/2 (N = $N)")
