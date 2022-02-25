@@ -201,10 +201,8 @@ symmatrix(h::NTuple{1,Any}) = SMatrix{1,1}(h)
 symmatrix(h::NTuple{3,Any}) = SMatrix{2,2}((h[1], h[2], h[2], h[3]))
 symmatrix(h::NTuple{6,Any}) = SMatrix{3,3}((h[1], h[2], h[3], h[2], h[4], h[5], h[3], h[5], h[6]))
 function symmatrix(h::NTuple{L,Any}) where L
-    @noinline incommensurate(N,L) = error("$L must be equal to N*(N+1)/2 (N = $N)")
-    N = floor(Int, (2L)^(1//2))
-    (N*(N+1))÷2 == L || incommensurate(N,L)
-    l = Matrix{Int}(undef, N, N)
+    N = symsize(Val(L))
+    l = MMatrix{N,N,Int}(undef)
     l[:,1] = 1:N
     idx = N
     for j = 2:N, i = 1:N
@@ -220,4 +218,11 @@ function symmatrix(h::NTuple{L,Any}) where L
     else
         SMatrix{N,N}(h[i] for i in l)
     end
+end
+
+# Use @generated to force const propagation
+@generated function symsize(::Val{L}) where L
+    N = floor(Int, sqrt(2L))
+    (N*(N+1))÷2 == L || error("$L must be equal to N*(N+1)/2 (N = $N)")
+    return :($N)
 end
