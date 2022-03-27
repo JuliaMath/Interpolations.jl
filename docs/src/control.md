@@ -4,7 +4,7 @@
 
 The interpolation type is described in terms of *degree* and, if necessary, *boundary conditions*. There are currently four degrees available: `Constant`, `Linear`, `Quadratic`,  and `Cubic` corresponding to B-splines of degree 0, 1, 2, and 3 respectively.
 
-B-splines of quadratic or higher degree require solving an equation system to obtain the interpolation coefficients, and for that you must specify a *boundary condition* that is applied to close the system. The following boundary conditions are implemented: `Flat`, `Line` (alternatively, `Natural`), `Free`, `Periodic` and `Reflect`; their mathematical implications are described in detail in the pdf document under `/doc/latex`.
+B-splines of quadratic or higher degree require solving an equation system to obtain the interpolation coefficients, and for that you must specify a *boundary condition* that is applied to close the system. The following boundary conditions are implemented: `Flat`, `Line` (alternatively, `Natural`), `Free`, `Periodic` and `Reflect`; their mathematical implications are described in detail in their docstrings.
 When specifying these boundary conditions you also have to specify whether they apply at the edge grid point (`OnGrid()`)
 or beyond the edge point halfway to the next (fictitious) grid point (`OnCell()`).
 
