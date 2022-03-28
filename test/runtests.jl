@@ -13,7 +13,8 @@ const isci = get(ENV, "CI", "") in ("true", "True")
 
 @testset "Interpolations" begin
     include("core.jl")
-
+    # Hermite interpolation tests
+    include("cubic_hermite.jl")
     # b-spline interpolation tests
     include("b-splines/runtests.jl")
     isci && println("finished b-spline")

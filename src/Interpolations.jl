@@ -148,18 +148,13 @@ julia> bounds(itp)
 bounds(itp::AbstractInterpolation) = map(twotuple, lbounds(itp), ubounds(itp))
 bounds(itp::AbstractInterpolation, d) = bounds(itp)[d]
 
-itptype(::Type{AbstractInterpolation{T,N,IT}}) where {T,N,IT<:DimSpec{InterpolationType}} = IT
-itptype(::Type{ITP}) where {ITP<:AbstractInterpolation} = itptype(supertype(ITP))
+itptype(::Type{<:AbstractInterpolation{T,N,IT}}) where {T,N,IT<:DimSpec{InterpolationType}} = IT
 itptype(itp::AbstractInterpolation) = itptype(typeof(itp))
-gridtype(::Type{AbstractInterpolation{T,N,IT}}) where {T,N,IT<:DimSpec{InterpolationType}} = GT
-gridtype(::Type{ITP}) where {ITP<:AbstractInterpolation} = gridtype(supertype(ITP))
-gridtype(itp::AbstractInterpolation) = gridtype(typeof(itp))
-ndims(::Type{AbstractInterpolation{T,N,IT}}) where {T,N,IT<:DimSpec{InterpolationType}} = N
-ndims(::Type{ITP}) where {ITP<:AbstractInterpolation} = ndims(supertype(ITP))
-ndims(itp::AbstractInterpolation) = ndims(typeof(itp))
-eltype(::Type{AbstractInterpolation{T,N,IT}}) where {T,N,IT<:DimSpec{InterpolationType}} = T
-eltype(::Type{ITP}) where {ITP<:AbstractInterpolation} = eltype(supertype(ITP))
-eltype(itp::AbstractInterpolation) = eltype(typeof(itp))
+# The following have been defined by AbstractArray
+# ndims(::Type{<:AbstractInterpolation{T,N,<:DimSpec{InterpolationType}}}) where {T,N} = N
+# ndims(itp::AbstractInterpolation) = ndims(typeof(itp))
+# eltype(::Type{<:AbstractInterpolation{T,N,<:DimSpec{InterpolationType}}}) where {T,N} = T
+# eltype(itp::AbstractInterpolation) = eltype(typeof(itp))
 
 """
     n = count_interp_dims(ITP)
@@ -494,6 +489,7 @@ include("lanczos/lanczos.jl")
 include("lanczos/lanczos_opencv.jl")
 include("iterate.jl")
 include("chainrules/chainrules.jl")
+include("hermite/cubic.jl")
 include("weno/weno.jl")
 
 function __init__()

@@ -45,7 +45,7 @@ function interpolate(A::AbstractArray{T}, it::AbstractLanczos) where T
     return LanczosInterpolation(Apad, axes(A), it)
 end
 
-@inline function (itp::LanczosInterpolation{T,N})(x::Vararg{<:Number,N}) where {T,N}
+@inline function (itp::LanczosInterpolation{T,N})(x::Vararg{Number,N}) where {T,N}
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
     itp.coefs[wis...]
