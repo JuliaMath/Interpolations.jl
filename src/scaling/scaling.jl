@@ -99,11 +99,11 @@ coordslookup(::Any, ::Tuple{}, ::Tuple{}) = ()
 coordlookup(::NoInterp, r, i) = i
 coordlookup(::Flag, r, x) = coordlookup(r, x)
 
-coordlookup(r::AbstractUnitRange, x) = x - first(r) + oneunit(eltype(r))
+coordlookup(r::AbstractUnitRange, x) = (x - first(r))/oneunit(eltype(r)) + one(eltype(r))
 # coordlookup(i::Bool, r::AbstractRange, x) = i ? coordlookup(r, x) : convert(typeof(coordlookup(r,x)), x)
-coordlookup(r::StepRange, x) = (x - r.start) / r.step + oneunit(eltype(r))
+coordlookup(r::StepRange, x) = (x - r.start) / r.step + one(eltype(r))
 
-coordlookup(r::AbstractRange, x) = (x - first(r)) / step(r) + oneunit(eltype(r))
+coordlookup(r::AbstractRange, x) = (x - first(r)) / step(r) + one(eltype(r))
 boundstep(r::AbstractRange) = 0.5*step(r)
 rescale_gradient(r::AbstractRange, g) = g / step(r)
 
