@@ -23,7 +23,7 @@ Other interpolation packages for Julia include:
 - [GridInterpolations.jl](https://github.com/sisl/GridInterpolations.jl)
 - [ApproXD.jl](https://github.com/floswald/ApproXD.jl)
 - [PCHIPInterpolation.jl](https://github.com/gerlero/PCHIPInterpolation.jl) for monotonic interpolation
-- [DIVAnd.jl](https://github.com/gher/DIVAnd.jl) for N-dimensional smoothing interpolation 
+- [DIVAnd.jl](https://github.com/gher-ulg/DIVAnd.jl) for N-dimensional smoothing interpolation 
 
 Some of these packages support methods that `Interpolations` does not,
 so if you can't find what you need here, check one of them or submit a
