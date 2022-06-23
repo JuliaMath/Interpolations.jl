@@ -123,6 +123,15 @@ Af = [a for a in A if !ismissing(a)]
 itp = interpolate((xf, ), Af, Gridded(Linear()))
 ```
 
+In-place gridded interpolation is also possible:
+```julia
+x = 1:4
+y = view(rand(4), :)
+itp = interpolate!((x,), y, Gridded(Linear()))
+y .= 0
+@show itp(2.5) # 0
+```
+
 ## Parametric splines
 
 Given a set a knots with coordinates `x(t)` and `y(t)`, a parametric spline `S(t) = (x(t),y(t))` parametrized by `t in [0,1]` can be constructed with the following code adapted from a [post](http://julia-programming-language.2336112.n4.nabble.com/Parametric-splines-td37794.html#a37818) by Tomas Lycken:

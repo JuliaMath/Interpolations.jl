@@ -51,7 +51,7 @@ using Test
               summary(itp) == "8×20 interpolate((::Array{Int64,1},::Array{Float64,1}), ::Array{Float64,2}, (Gridded(Linear()), Gridded(Constant{Nearest}()))) with element type Float64"
 
         # issue #260
-        A = (1:4)/4
+        A = collect((1:4)/4)
         itp = interpolate((range(0.0, stop=0.3, length=4),), A, Gridded(Linear()))
         io = IOBuffer()
         show(io, MIME("text/plain"), itp)
