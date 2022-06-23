@@ -16,7 +16,7 @@ const GridIndex{T} = Union{AbstractVector{T}, Tuple}
 
 struct GriddedInterpolation{T,N,TCoefs,IT<:DimSpec{Gridded},K<:Tuple{Vararg{AbstractVector}}} <: AbstractInterpolation{T,N,IT}
     knots::K
-    coefs::Array{TCoefs,N}
+    coefs::TCoefs
     it::IT
 end
 
@@ -29,12 +29,12 @@ end
 """
     GriddedInterpolation(typeOfWeights::Type{<:Real},
                          knots::NTuple{N, Union{ AbstractVector{T}, Tuple } },
-                         array::AbstractArray{TCoefs,N},
+                         array::AbstractArray{Tel,N},
                          interpolationType::DimSpec{<:Gridded})
 
     Construct a GriddedInterpolation for generic knots from an AbstractArray
 """
-function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{TCoefs,N}, it::IT) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}
+function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {N,Tel,TWeights<:Real,IT<:DimSpec{Gridded},pad}
     isconcretetype(IT) || error("The b-spline type must be a leaf type (was $IT)")
 
     check_gridded(it, knots, axes(A))
@@ -44,7 +44,7 @@ function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::A
     else
         T = typeof(c * first(A))
     end
-    GriddedInterpolation{T,N,TCoefs,IT,typeof(knots)}(knots, A, it)
+    GriddedInterpolation{T,N,typeof(A),IT,typeof(knots)}(knots, A, it)
 end
 
 """
@@ -146,7 +146,7 @@ axes(A::GriddedInterpolation) = axes(A.coefs)
 itpflag(A::GriddedInterpolation) = A.it
 
 function interpolate(::Type{TWeights}, ::Type{TCoefs}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {TWeights,TCoefs,Tel,N,IT<:DimSpec{Gridded}}
-    GriddedInterpolation(TWeights, knots, A, it)
+    GriddedInterpolation(TWeights, knots, copy(A), it)
 end
 """
     itp = interpolate((nodes1, nodes2, ...), A, interpmode)
@@ -169,7 +169,7 @@ end
 interpolate!(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {TWeights,Tel,N,IT<:DimSpec{Gridded}} =
     GriddedInterpolation(TWeights, knots, A, it)
 function interpolate!(knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {Tel,N,IT<:DimSpec{Gridded}}
-    interpolate!(tweight(A), tcoef(A), knots, A, it)
+    interpolate!(tweight(A), knots, A, it)
 end
 
 lbounds(itp::GriddedInterpolation) = first.(itp.knots)
