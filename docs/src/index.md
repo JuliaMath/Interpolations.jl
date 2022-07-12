@@ -54,3 +54,29 @@ Create linear interpolation object with extrapolation
 interp_linear_extrap = LinearInterpolation(xs, A,extrapolation_bc=Line()) 
 interp_linear_extrap(0.9) # outside grid: linear extrapolation
 ```
+
+## Performant Example Usage
+
+The above use of `LinearInterpolation` is actually a short hand for a
+composition of `interpolate`, `scale`, and `extrapolate`. You may not need all
+of the the scaling and extrapolation features.
+
+```julia
+interp_linear = extrapolate(scale(interpolate(A, BSpline(Linear())), xs))
+```
+
+If we know we do not need the extrapolation portion, we can use the following.
+
+```julia
+scaled_itp = scale(interpolate(A, BSpline(Linear())), xs)
+```
+
+We can also remove the scaling for further performance if 1-based integer indexing is sufficient.
+
+```julia
+itp = interpolate(A, BSpline(Linear()))
+```
+
+Removing the scaling or extrapolation will help accelerate interpolation by
+removing unneeded operations and branches. This can permit the use of advanced
+processor Single Instruction/Multiple Data (SIMD) capabilities.
