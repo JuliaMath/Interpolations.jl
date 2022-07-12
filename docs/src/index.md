@@ -8,7 +8,8 @@
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](http://juliamath.github.io/Interpolations.jl/stable)
 [![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](http://juliamath.github.io/Interpolations.jl/latest)
 
-This package implements a variety of interpolation schemes for the
+The package [Interpolations.jl](https://github.com/JuliaMath/Interpolations.jl/)
+implements a variety of interpolation schemes for the
 Julia language.  It has the goals of ease-of-use, broad algorithmic
 support, and exceptional performance.
 
