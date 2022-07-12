@@ -54,21 +54,6 @@ More examples, such as plotting and cubic interpolation, can be found at the [co
 
 ![interpolation plot example](docs/src/assets/plotsjl_interpolation_example.png)
 
-## Development Status
-
-This package is being maintained but not actively developed. Maintenance is
-focused on fixing bugs and issues with the current code base. New features are
-welcome via pull requests and will be reviewed and released in a timely fashion.
-
-If you would like to become involved in maintenance or active development of
-the package please feel free to get in touch via a Github issue.
-
-This package follows semantic version in that documented features should not
-break without changing the minor version.
-
-See the [news](NEWS.md) for details on how to update between breaking releases,
-indicated by changes in minor versions.
-
 ## Other Interpolation Packages
 
 Other interpolation packages for Julia include:
@@ -168,6 +153,20 @@ they ran more than 20 seconds (far longer than any other test).  Both
 performed much better in 2d, interestingly.  You can see that
 Interpolations wins in every case, sometimes by a very large margin.
 
+## Development Status
+
+This package is being maintained but not actively developed. Maintenance is
+focused on fixing bugs and issues with the current code base. New features are
+welcome via pull requests and will be reviewed and released in a timely fashion.
+
+If you would like to become involved in maintenance or active development of
+the package please feel free to get in touch via a Github issue.
+
+This package follows semantic version in that documented features should not
+break without changing the minor version.
+
+See the [news](NEWS.md) for details on how to update between breaking releases,
+indicated by changes in minor versions.
 
 ## Contributing
 
