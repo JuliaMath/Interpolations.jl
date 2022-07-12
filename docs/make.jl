@@ -10,7 +10,9 @@ pages=["Home" => "index.md",
         "Convenience Constructors" => "convenience-construction.md",
         "Knot Iteration" => "iterate.md",
         "Developer documentation" => "devdocs.md",
-        "Library" => "api.md"],
+        "Library" => "api.md",
+        "Other Interpolation Packages" => "other_packages.md",
+],
 strict=true,
 )
 
