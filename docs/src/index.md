@@ -1,26 +1,25 @@
 
 # Interpolations
 
-[![Build Status](https://travis-ci.org/JuliaMath/Interpolations.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Interpolations.jl)
-[![PkgEval Status](http://pkg.julialang.org/badges/Interpolations_0.4.svg)](http://pkg.julialang.org/?pkg=Interpolations)
-[![Interpolations](http://pkg.julialang.org/badges/Interpolations_0.5.svg)](http://pkg.julialang.org/?pkg=Interpolations)
-
-**NEWS** v0.9 was a breaking release. See the [news](NEWS.md) for details on how to update.
+[![version](https://juliahub.com/docs/Interpolations/version.svg)](https://juliahub.com/ui/Packages/Interpolations/VpKVx)
+[![pkgeval](https://juliahub.com/docs/Interpolations/pkgeval.svg)](https://juliahub.com/ui/Packages/Interpolations/VpKVx)
+[![Build Status](https://github.com/JuliaMath/Interpolations.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/JuliaMath/Interpolations.jl/actions/workflows/CI.yml?query=branch%3Amaster)
+[![deps](https://juliahub.com/docs/Interpolations/deps.svg)](https://juliahub.com/ui/Packages/Interpolations/VpKVx?t=2)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](http://juliamath.github.io/Interpolations.jl/stable)
+[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](http://juliamath.github.io/Interpolations.jl/latest)
 
 This package implements a variety of interpolation schemes for the
 Julia language.  It has the goals of ease-of-use, broad algorithmic
 support, and exceptional performance.
 
-Currently this package's support is best
-for [B-splines](https://en.wikipedia.org/wiki/B-spline) and also
-supports irregular grids.  However, the API has been designed with
+Currently this package supports
+[B-splines](https://en.wikipedia.org/wiki/B-spline) and
+irregular grids.  The API has been designed with
 intent to support more options. Pull-requests are more than welcome!
 It should be noted that the API may continue to evolve over time.
 
-Other interpolation packages for Julia include:
-- [Dierckx.jl](https://github.com/kbarbary/Dierckx.jl)
-- [GridInterpolations.jl](https://github.com/sisl/GridInterpolations.jl)
-- [ApproXD.jl](https://github.com/floswald/ApproXD.jl)
+There are many other interpolation packages implemented in Julia.
+For a listing, see [Other Interpolation Packages](@ref).
 
 Some of these packages support methods that `Interpolations` does not,
 so if you can't find what you need here, check one of them or submit a
@@ -28,14 +27,13 @@ pull request here.
 
 ## Installation
 
-Just
+Interpolations.jl can be installed via the following invocation
+since it is a registered Julia package.
 
-```
+```julia
 using Pkg
 Pkg.add("Interpolations")
 ```
-
-from the Julia REPL.
 
 ## Example Usage
 Create a grid `xs` and an array `A` of values to be interpolated
