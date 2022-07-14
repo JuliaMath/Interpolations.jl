@@ -11,7 +11,7 @@ This package implements a variety of interpolation schemes for the
 Julia language.  It has the goals of ease-of-use, broad algorithmic
 support, and exceptional performance.
 
-Currently this package's supports
+Currently this package supports
 [B-splines](https://en.wikipedia.org/wiki/B-spline) and also
 irregular grids.  The API has been designed with
 intent to support more options. Initial support for Lanczos
