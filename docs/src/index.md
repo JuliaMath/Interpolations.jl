@@ -39,8 +39,7 @@ Pkg.add("Interpolations")
 Create a grid `xs` and an array `A` of values to be interpolated
 ```julia
 xs = 1:0.2:5
-f(x) = log(x)
-A = [f(x) for x in xs]
+A = log.(xs)
 ```
 Create linear interpolation object without extrapolation
 ```julia
