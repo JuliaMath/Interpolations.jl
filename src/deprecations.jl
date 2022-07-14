@@ -62,3 +62,8 @@ create_bcs(it::Flag, gt::Tuple) = map(t->it(t), gt)
 replace_linear_line(::Linear) = Line()
 replace_linear_line(bc::BoundaryCondition) = bc
 replace_linear_line(etpflag::Tuple) = replace_linear_line.(etpflag)
+
+# Old convenience constructors
+@deprecate LinearInterpolation linear_interpolation
+@deprecate ConstantInterpolation constant_interpolation
+@deprecate CubicSplineInterpolation cubic_spline_interpolation

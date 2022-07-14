@@ -135,7 +135,7 @@ using Interpolations, Test, ForwardDiff
             A_x = 1:5
             A = A_x
             knots = (A_x,)
-            LinearInterpolation(knots, A, extrapolation_bc=Line())
+            linear_interpolation(knots, A, extrapolation_bc=Line())
         end
         function itp_test(x::AbstractVector)
             itp = build_itp()
@@ -147,7 +147,7 @@ using Interpolations, Test, ForwardDiff
     end
     @testset "issue 430" begin
         mat1 = rand(Float64, 64, 64)
-        itp = LinearInterpolation((1:64, 1:64,), mat1)
+        itp = linear_interpolation((1:64, 1:64,), mat1)
         function itp_test(x::AbstractVector)
             return itp(x...)
         end

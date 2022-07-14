@@ -258,7 +258,7 @@ end
 # eltype units tests of KnotIterator / KnotRange
 @testset "iterate - eltype" for T ∈ [ Int, Float64, Any ]
     x = convert(Vector{T}, collect(1:5))
-    itp = LinearInterpolation(x, x.^2)
+    itp = linear_interpolation(x, x.^2)
     kiter = knots(itp)
     @test Base.IteratorEltype(typeof(kiter)) == Base.HasEltype()
     @test typeof(kiter) <: Interpolations.KnotIterator{T}
@@ -274,7 +274,7 @@ end
 @testset "iterate - size - directional"  begin
     ExtrapBC = [Throw(), Flat(), Periodic(), Reflect()]
     @testset "RevBC: $RevBC, FwdBC: $FwdBC" for FwdBC ∈ ExtrapBC, RevBC ∈ ExtrapBC
-        etp = LinearInterpolation(1:10, rand(10),
+        etp = linear_interpolation(1:10, rand(10),
             extrapolation_bc=((RevBC, FwdBC),)
         )
         kiter = knots(etp)
@@ -402,7 +402,7 @@ end
 # Knots should repeat indefinitely with the first and last knots being co-located
 @testset "iterate - uneven - Periodic" begin
     x = [1.0, 1.3, 2.4, 3.2, 4.0]
-    etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic())
+    etp = linear_interpolation(x, x.^2, extrapolation_bc=Periodic())
     kiter = knots(etp)
     @test_knots kiter KnotIterator knot_ref(x, Periodic())
 
@@ -415,7 +415,7 @@ end
 # Unit tests for iteration on an uneven grid - Reflect
 @testset "iterate - uneven - Reflect" begin
     x = [1.0, 1.3, 2.4, 3.2, 4.0]
-    etp = LinearInterpolation(x, x.^2, extrapolation_bc=Reflect())
+    etp = linear_interpolation(x, x.^2, extrapolation_bc=Reflect())
     kiter = knots(etp)
     @test_knots kiter KnotIterator knot_ref(x, Reflect())
 
@@ -428,7 +428,7 @@ end
 # Unit tests for 2D iteration with directional boundary conditions that are
 # bounded (ie. knots do not repeat indefinitely)
 @testset "2D - iteration - bounded - $bc" for bc ∈ [Line(), (Throw(), Line())]
-    etp = LinearInterpolation(([1, 2, 3], [1, 2, 3]), rand(3, 3);
+    etp = linear_interpolation(([1, 2, 3], [1, 2, 3]), rand(3, 3);
         extrapolation_bc=(Throw(), bc)
     )
     kiter = knots(etp)
@@ -438,7 +438,7 @@ end
 # Unit tests for 2D iteration with directional boundary conditions that are
 # unbounded (ie. knots do repeat indefinitely)
 @testset "2D - iteration - Unbounded - $bc" for bc ∈ [Periodic(), (Throw(), Periodic())]
-    etp = LinearInterpolation(([1, 2, 3], [1, 2, 3]), rand(3, 3);
+    etp = linear_interpolation(([1, 2, 3], [1, 2, 3]), rand(3, 3);
         extrapolation_bc=(Line(), bc)
     )
     kiter = knots(etp)
@@ -483,7 +483,7 @@ end
 
 @testset "knotsbetween - extrapolate - 1D - $etp" for etp ∈ [Throw(), Flat(), Line()]
     x = [1.0, 1.5, 1.75, 2.0]
-    etp = LinearInterpolation(x, x.^2, extrapolation_bc=etp)
+    etp = linear_interpolation(x, x.^2, extrapolation_bc=etp)
     @testset "start and stop" begin
         krange = knotsbetween(etp; start=0.0, stop=4.2)
         @test_knots krange KnotRange [1.0, 1.5, 1.75, 2.0]
@@ -523,7 +523,7 @@ end
 
 @testset "_knot_start/stop - Periodic" begin
     x = [1.0, 1.5, 1.75, 2.0]
-    etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic())
+    etp = linear_interpolation(x, x.^2, extrapolation_bc=Periodic())
     krange = knotsbetween(etp; stop = 10)
     using Interpolations: nextknotidx, priorknotidx
 
@@ -546,7 +546,7 @@ end
 
 @testset "_knot_start/stop - Reflect" begin
     x = [1.0, 1.5, 1.75, 2.0]
-    etp = LinearInterpolation(x, x.^2, extrapolation_bc=Reflect())
+    etp = linear_interpolation(x, x.^2, extrapolation_bc=Reflect())
     krange = knotsbetween(etp; stop = 10)
     using Interpolations: nextknotidx, priorknotidx
 
@@ -567,7 +567,7 @@ end
 
 @testset "knotsbetween - extrapolate - 1D - Periodic" begin
     x = [1.0, 1.5, 1.75, 2.0]
-    etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic())
+    etp = linear_interpolation(x, x.^2, extrapolation_bc=Periodic())
     @testset "start and stop" begin
         krange = knotsbetween(etp; start=0.0, stop=4.2)
         expect = knot_ref([0.5, 0.75, 1.0, 1.5], Periodic(); stop=4.2)
@@ -593,7 +593,7 @@ end
 
 @testset "knotsbetween - extrapolate - 1D - Reflect" begin
     x = [1.0, 1.5, 1.75, 2.0]
-    etp = LinearInterpolation(x, x.^2, extrapolation_bc=Reflect())
+    etp = linear_interpolation(x, x.^2, extrapolation_bc=Reflect())
     @testset "start and stop" begin
         krange = knotsbetween(etp; start=0.0, stop=4.2)
         expect = knot_ref([-1.0, -0.5, -0.25, 0.0], Reflect(); start=0.0, stop=4.2)
@@ -619,7 +619,7 @@ end
 
 @testset "knotsbetween - empty iterator" begin
     x = [1.0, 1.5, 1.75, 2.0]
-    etp = LinearInterpolation(x, x.^2)
+    etp = linear_interpolation(x, x.^2)
     @testset "start is out of bounds" begin
         krange = knotsbetween(etp; start=2.0)
         @test_knots krange KnotRange Float64[]
@@ -637,12 +637,12 @@ end
 @testset "knotsbetween - missing start and stop" begin
     @testset "1D Case" begin
         x = [1.0, 1.5, 1.75, 2.0]
-        etp = LinearInterpolation(x, x.^2)
+        etp = linear_interpolation(x, x.^2)
         @test_throws ArgumentError knotsbetween(etp)
         @test_throws ArgumentError knotsbetween(etp; start=nothing, stop=nothing)
     end
     @testset "2D case" begin
-        etp = LinearInterpolation((1:3, 1:3), rand(3,3))
+        etp = linear_interpolation((1:3, 1:3), rand(3,3))
         @test_throws ArgumentError knotsbetween(etp)
         @test_throws ArgumentError knotsbetween(etp; start=(nothing, 1), stop=(nothing, 2))
     end
@@ -651,7 +651,7 @@ end
 @testset "KnotIterator - Out of Bound Knots" begin
     x = [1.0, 1.5, 1.75, 2.0]
     @testset "NonRepeating Knots - $etp}" for etp ∈ [Flat(), Line(), Throw()]
-        etp = LinearInterpolation(x, x.^2, extrapolation_bc=etp)
+        etp = linear_interpolation(x, x.^2, extrapolation_bc=etp)
         kiter = knots(etp)
 
         # Check that Bounds errors are thrown
@@ -661,7 +661,7 @@ end
         @test_throws BoundsError kiter[kiter.nknots+1]
     end
     @testset "Repeating Knots - $etp" for etp ∈ [Periodic(), Reflect()]
-        etp = LinearInterpolation(x, x.^2, extrapolation_bc=etp)
+        etp = linear_interpolation(x, x.^2, extrapolation_bc=etp)
         kiter = knots(etp)
 
         # Check that Bounds errors are not thrown

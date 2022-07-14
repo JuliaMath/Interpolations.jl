@@ -1,7 +1,7 @@
 
 ## Convenience notation
 
-For constant, linear, and cubic spline interpolations, `ConstantInterpolation`, `LinearInterpolation`, and `CubicSplineInterpolation`
+For constant, linear, and cubic spline interpolations, `constant_interpolation`, `linear_interpolation`, and `cubic_spline_interpolation`
 can be used to create interpolating and extrapolating objects handily.
 
 ### Motivating Example
@@ -11,7 +11,7 @@ extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs), Line())
 ```
 can be written as the more readable
 ```julia
-extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
+extrap = linear_interpolation(xs, A, extrapolation_bc = Line())
 ```
  by using the convenience constructor.
 
@@ -23,12 +23,12 @@ xs = 1:0.2:5
 A = [f(x) for x in xs]
 
 # linear interpolation
-interp_linear = LinearInterpolation(xs, A)
+interp_linear = linear_interpolation(xs, A)
 interp_linear(3) # exactly log(3)
 interp_linear(3.1) # approximately log(3.1)
 
 # cubic spline interpolation
-interp_cubic = CubicSplineInterpolation(xs, A)
+interp_cubic = cubic_spline_interpolation(xs, A)
 interp_cubic(3) # exactly log(3)
 interp_cubic(3.1) # approximately log(3.1)
 ```
@@ -40,12 +40,12 @@ ys = 2:0.1:5
 A = [f(x,y) for x in xs, y in ys]
 
 # linear interpolation
-interp_linear = LinearInterpolation((xs, ys), A)
+interp_linear = linear_interpolation((xs, ys), A)
 interp_linear(3, 2) # exactly log(3 + 2)
 interp_linear(3.1, 2.1) # approximately log(3.1 + 2.1)
 
 # cubic spline interpolation
-interp_cubic = CubicSplineInterpolation((xs, ys), A)
+interp_cubic = cubic_spline_interpolation((xs, ys), A)
 interp_cubic(3, 2) # exactly log(3 + 2)
 interp_cubic(3.1, 2.1) # approximately log(3.1 + 2.1)
 ```
@@ -57,7 +57,7 @@ xs = 1:0.2:5
 A = [f(x) for x in xs]
 
 # extrapolation with linear boundary conditions
-extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
+extrap = linear_interpolation(xs, A, extrapolation_bc = Line())
 
 @test extrap(1 - 0.2) # ≈ f(1) - (f(1.2) - f(1))
 @test extrap(5 + 0.2) # ≈ f(5) + (f(5) - f(4.8))
@@ -65,17 +65,17 @@ extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
 You can also use a "fill" value, which gets returned whenever you ask for out-of-range values:
 
 ```julia
-extrap = LinearInterpolation(xs, A, extrapolation_bc = NaN)
+extrap = linear_interpolation(xs, A, extrapolation_bc = NaN)
 @test isnan(extrap(5.2))
 ```
 
-Irregular grids are supported as well; note that presently only `ConstantInterpolation` and `LinearInterpolation` supports irregular grids.
+Irregular grids are supported as well; note that presently only `constant_interpolation` and `linear_interpolation` supports irregular grids.
 ```julia
 xs = [x^2 for x = 1:0.2:5]
 A = [f(x) for x in xs]
 
 # linear interpolation
-interp_linear = LinearInterpolation(xs, A)
+interp_linear = linear_interpolation(xs, A)
 interp_linear(1) # exactly log(1)
 interp_linear(1.05) # approximately log(1.05)
 ```
@@ -96,8 +96,8 @@ x = a:1.0:b
 # length(x) == length(y)
 y = @. cos(x^2 / 9.0) # Function application by broadcasting
 # Interpolations
-itp_linear = LinearInterpolation(x, y)
-itp_cubic = CubicSplineInterpolation(x, y)
+itp_linear = linear_interpolation(x, y)
+itp_cubic = cubic_spline_interpolation(x, y)
 # Interpolation functions
 f_linear(x) = itp_linear(x)
 f_cubic(x) = itp_cubic(x)

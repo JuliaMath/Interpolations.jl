@@ -168,7 +168,7 @@ using ColorVectorSpace: RGB, Gray, N0f8, Colorant
     f(x) = log(x)
     xs = 1:0.2:5
     A = [f(x) for x in xs]
-    interp_linear = LinearInterpolation(xs, A)
+    interp_linear = linear_interpolation(xs, A)
     g = Interpolations.gradient(interp_linear, 1.5)
     dest = Vector{Float64}(undef, 1)
     Interpolations.gradient!(dest, interp_linear, 1.5)

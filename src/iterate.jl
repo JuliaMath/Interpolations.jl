@@ -51,7 +51,7 @@ multiple KnotIterator within `Iterators.product`.
 ```jldoctest
 julia> using Interpolations;
 
-julia> etp = LinearInterpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
+julia> etp = linear_interpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
 
 julia> kiter = knots(etp);
 
@@ -121,7 +121,7 @@ infinite sequence of knots.
 ```jldoctest
 julia> using Interpolations;
 
-julia> etp = LinearInterpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
+julia> etp = linear_interpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
 
 julia> Iterators.take(knots(etp), 5) |> collect
 5-element $(Array{typeof(1.0),1}):
@@ -424,7 +424,7 @@ If no such knots exists will return a KnotIterator with length 0
 ```jldoctest
 julia> using Interpolations;
 
-julia> etp = LinearInterpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
+julia> etp = linear_interpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
 
 julia> knotsbetween(etp; start=38, stop=42) |> collect
 6-element $(Array{typeof(1.0),1}):

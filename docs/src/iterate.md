@@ -60,7 +60,7 @@ last knot being co-located. (ie. in the example below `etp(2.0) = 1.0` not
 ```jldoctest periodic-demo; setup = :(using Interpolations)
 julia> x = [1.0, 1.5, 1.75, 2.0];
 
-julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic());
+julia> etp = linear_interpolation(x, x.^2, extrapolation_bc=Periodic());
 
 julia> kiter = knots(etp);
 
@@ -102,7 +102,7 @@ k[1], k[2], ..., k[end-1], k[end], k[end+1], ... k[2], k[1], k[2], ...
 ```jldoctest reflect-demo; setup = :(using Interpolations)
 julia> x = [1.0, 1.5, 1.75, 2.0];
 
-julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=Reflect());
+julia> etp = linear_interpolation(x, x.^2, extrapolation_bc=Reflect());
 
 julia> kiter = knots(etp);
 
@@ -140,7 +140,7 @@ multi-dimensional extrapolation also supported.
 ```jldoctest; setup = :(using Interpolations)
 julia> x = [1.0, 1.5, 1.75, 2.0];
 
-julia> etp = LinearInterpolation((x, x), x.*x');
+julia> etp = linear_interpolation((x, x), x.*x');
 
 julia> knots(etp) |> collect
 4×4 Matrix{Tuple{Float64, Float64}}:
@@ -157,7 +157,7 @@ iteration over knots can end up "stuck" iterating along a single axis:
 ```jldoctest; setup = :(using Interpolations)
 julia> x = [1.0, 1.5, 1.75, 2.0];
 
-julia> etp = LinearInterpolation((x, x), x.*x', extrapolation_bc=(Periodic(), Throw()));
+julia> etp = linear_interpolation((x, x), x.*x', extrapolation_bc=(Periodic(), Throw()));
 
 julia> knots(etp) |> k -> Iterators.take(k, 6) |> collect
 6-element Vector{Tuple{Float64, Float64}}:
@@ -175,7 +175,7 @@ Rearranging the axes so non-repeating knots are first can address this issue:
 ```jldoctest; setup = :(using Interpolations)
 julia> x = [1.0, 1.5, 1.75, 2.0];
 
-julia> etp = LinearInterpolation((x, x), x.*x', extrapolation_bc=(Throw(), Periodic()));
+julia> etp = linear_interpolation((x, x), x.*x', extrapolation_bc=(Throw(), Periodic()));
 
 julia> knots(etp) |> k -> Iterators.take(k, 6) |> collect
 6-element Vector{Tuple{Float64, Float64}}:
@@ -200,7 +200,7 @@ result, the iterator will generate an infinite sequence of knots starting at `1.
 ```jldoctest iterate-directional-unbounded; setup = :(using Interpolations)
 julia> x = [1.0, 1.2, 1.3, 2.0];
 
-julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=((Throw(), Periodic()),));
+julia> etp = linear_interpolation(x, x.^2, extrapolation_bc=((Throw(), Periodic()),));
 
 julia> kiter = knots(etp);
 
@@ -228,7 +228,7 @@ Swapping the boundary conditions, results in a finite sequence of knots from
 ```jldoctest iterate-directional-bounded; setup = :(using Interpolations)
 julia> x = [1.0, 1.2, 1.3, 2.0];
 
-julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=((Periodic(), Throw()),));
+julia> etp = linear_interpolation(x, x.^2, extrapolation_bc=((Periodic(), Throw()),));
 
 julia> kiter = knots(etp);
 
@@ -273,7 +273,7 @@ We can iterate over all knots greater than `start` by omitting `stop`
 ```jldoctest knotsbetween-usage; setup = :(using Interpolations)
 julia> x = [1.0, 1.5, 1.75, 2.0];
 
-julia> etp = LinearInterpolation(x, x.^2, extrapolation_bc=Periodic());
+julia> etp = linear_interpolation(x, x.^2, extrapolation_bc=Periodic());
 
 julia> krange = knotsbetween(etp; start=4.0);
 
@@ -323,7 +323,7 @@ dimensions.
 ```jldoctest; setup = :(using Interpolations)
 julia> x = [1.0, 1.5, 1.75, 2.0];
 
-julia> etp = LinearInterpolation((x, x), x.*x');
+julia> etp = linear_interpolation((x, x), x.*x');
 
 julia> knotsbetween(etp; start=(1.2, 1.5), stop=(1.8, 3.0)) |> collect
 2×2 Matrix{Tuple{Float64, Float64}}:
