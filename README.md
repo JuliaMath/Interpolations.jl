@@ -59,6 +59,7 @@ More examples, such as plotting and cubic interpolation, can be found at the [co
 ## Other Interpolation Packages
 
 Other interpolation packages for Julia include:
+
 - [ApproXD.jl](https://github.com/floswald/ApproXD.jl) implements B-spline and linear interpolation in Julia.
 - [BarycentricInterpolation.jl](https://github.com/dawbarton/BarycentricInterpolation.jl) implements the Barycentric formula for polynomial interpolation on equispaced points and Chebyshev points of the first and second kind.
 - [BasicInterpolators.jl](https://github.com/markmbaum/BasicInterpolators.jl) provides a collection of common interpolation recipes for basic applications.
@@ -67,18 +68,16 @@ Other interpolation packages for Julia include:
 - [DataInterpolations.jl](https://github.com/PumasAI/DataInterpolations.jl) is a library for performing interpolations of one-dimensional data.
 - [Dierckx.jl](https://github.com/kbarbary/Dierckx.jl) is a wrapper for the dierckx Fortran library, which also underlies `scipy.interpolate`.
 - [DIVAnd.jl](https://github.com/gher-ulg/DIVAnd.jl) for N-dimensional smoothing interpolation. 
-- [BasicInterpolators.jl](https://github.com/markmbaum/BasicInterpolators.jl) provides a collection of common interpolation recipes for basic applications.
 - [FastChebInterp.jl](https://github.com/stevengj/FastChebInterp.jl) does fast multidimensional Chebyshev interpolation on a hypercube using separable grid of interpolation points.
 - [FEMBasis.jl](https://github.com/JuliaFEM/FEMBasis.jl) contains interpolation routines for standard finite element function spaces.
 - [FineShift.jl](https://github.com/emmt/FineShift.jl) does fast sub-sample shifting of multidimensional arrays.
 - [FourierTools.jl](https://github.com/bionanoimaging/FourierTools.jl) includes sinc interpolation for up and down sampling.
 - [GridInterpolations.jl](https://github.com/sisl/GridInterpolations.jl) performs multivariate interpolation on a rectilinear grid.
-- [KissSmoothing.jl](https://github.com/francescoalemanno/KissSmoothing.jl) implements denoising and a Radial Basis Function estimation procedure.
-- [LinearInterpolators.jl](https://github.com/emmt/LinearInterpolators.jl) provides linear interpolation methods for Julia based on InterpolationKernels.jl, below.
-- [LinearInterpolations.jl](https://github.com/jw3126/LinearInterpolations.jl) allows for interpolation using weighted averages allowing probability distributions, rotations, and other Lie groups to be interpolated.
-- [LocalFunctionApproximation.jl](https://github.com/sisl/LocalFunctionApproximation.jl) provides local function approximators that interpolates a scalar-valued function across a vector space.
 - [InterpolationKernels.jl](https://github.com/emmt/InterpolationKernels.jl) provides a library of interpolation kernels.
-
+- [KissSmoothing.jl](https://github.com/francescoalemanno/KissSmoothing.jl) implements denoising and a Radial Basis Function estimation procedure.
+- [LinearInterpolations.jl](https://github.com/jw3126/LinearInterpolations.jl) allows for interpolation using weighted averages allowing probability distributions, rotations, and other Lie groups to be interpolated.
+- [LinearInterpolators.jl](https://github.com/emmt/LinearInterpolators.jl) provides linear interpolation methods for Julia based on InterpolationKernels.jl, above.
+- [LocalFunctionApproximation.jl](https://github.com/sisl/LocalFunctionApproximation.jl) provides local function approximators that interpolates a scalar-valued function across a vector space.
 - [PCHIPInterpolation.jl](https://github.com/gerlero/PCHIPInterpolation.jl) for monotonic interpolation.
 - [PiecewiseLinearApprox.jl](https://github.com/RJDennis/PiecewiseLinearApprox.jl) performs piecewise linear interpolation over an arbitrary number of dimensions.
 - [ScatteredInterpolation.jl](https://github.com/eljungsk/ScatteredInterpolation.jl) interpolates scattered data in arbitrary dimensions.
