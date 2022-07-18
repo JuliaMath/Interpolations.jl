@@ -4,7 +4,7 @@ Other interpolation packages for Julia include:
 - [ApproXD.jl](https://github.com/floswald/ApproXD.jl) implements B-spline and linear interpolation in Julia.
 - [BarycentricInterpolation.jl](https://github.com/dawbarton/BarycentricInterpolation.jl) implements the Barycentric formula for polynomial interpolation on equispaced points and Chebyshev points of the first and second kind.
 - [BasicInterpolators.jl](https://github.com/markmbaum/BasicInterpolators.jl) provides a collection of common interpolation recipes for basic applications.
-- [BSplineKit.jl](https://github.com/jipolanco/BSplineKit.jl) offers tools for B-spline based Galerkin and collcation methods, including for interpolation and approximation.
+- [BSplineKit.jl](https://github.com/jipolanco/BSplineKit.jl) offers tools for B-spline based Galerkin and collocation methods, including for interpolation and approximation.
 - [Curves.jl](https://github.com/lungben/Curves.jl) supports log-interpolation via immutable `Curve` objects.
 - [DataInterpolations.jl](https://github.com/PumasAI/DataInterpolations.jl) is a library for performing interpolations of one-dimensional data.
 - [Dierckx.jl](https://github.com/kbarbary/Dierckx.jl) is a wrapper for the dierckx Fortran library, which also underlies `scipy.interpolate`.
