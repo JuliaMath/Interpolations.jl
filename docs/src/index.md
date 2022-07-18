@@ -51,7 +51,7 @@ interp_linear(0.9) # outside grid: error
 ```
 Create linear interpolation object with extrapolation
 ```julia
-interp_linear_extrap = LinearInterpolation(xs, A,extrapolation_bc=Line()) 
+interp_linear_extrap = LinearInterpolation(xs, A, extrapolation_bc=Line()) 
 interp_linear_extrap(0.9) # outside grid: linear extrapolation
 ```
 
