@@ -95,17 +95,17 @@ assign the knots as a `UnitRange` starting at `1`.
 If the knots are not unit spaced or start at a distinct value other than `1`,
 then the `scale` function can be used. While this increases the flexibility of
 the interpolation, some performance penalty is acquired.
-See [`Scaled BSplines`](@ref) for further information.
+See [Scaled BSplines](@ref) for further information.
 
 ## Irregular Grids
 
 If the knots are irregularly spaced, then the ranges between knots will have to
-be scaled as in the `Gridded` interpolation type. See [`Gridded interpolation`](@ref)
+be scaled as in the `Gridded` interpolation type. See [Gridded interpolation](@ref)
 for additional details.
 
-## Extrapolation
+## Points outside the knots
 
 For points not between knots, extrapolation can be used. This introduces a
 branch into the code that checks whether the point to be queried is inside or
 outside of the knots. This branch can inhibit the use of vectorized SIMD
-computation, resulting in a reduction of performance. See [`Extapolation`](@ref).
+computation, resulting in a reduction of performance. See [Extrapolation](@ref).
