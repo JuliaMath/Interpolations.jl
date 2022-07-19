@@ -55,6 +55,7 @@ interp_linear_extrap = LinearInterpolation(xs, A, extrapolation_bc=Line())
 interp_linear_extrap(0.9) # outside grid: linear extrapolation
 ```
 
+
 ## Performant Example Usage
 
 The above use of `LinearInterpolation` is actually a short hand for a
@@ -71,7 +72,8 @@ If we know we do not need the extrapolation portion, we can use the following.
 scaled_itp = scale(interpolate(A, BSpline(Linear())), xs)
 ```
 
-We can also remove the scaling for further performance if 1-based integer indexing is sufficient.
+We can also remove the scaling for further performance if integer valued knots
+and regular grids are sufficient.
 
 ```julia
 itp = interpolate(A, BSpline(Linear()))
@@ -80,3 +82,30 @@ itp = interpolate(A, BSpline(Linear()))
 Removing the scaling or extrapolation will help accelerate interpolation by
 removing unneeded operations and branches. This can permit the use of advanced
 processor Single Instruction/Multiple Data (SIMD) capabilities.
+
+## Regular Grids
+
+Interpolations.jl is optimized for use with regular grids with uniform spacing.
+The highest performance is achieved when the knots are an `AbstractUnitRange`
+such as `2:5` or `Base.OneTo(9)`. The default case if no knots are specified is to
+assign the knots as a `UnitRange` starting at `1`.
+
+## Scaling
+
+If the knots are not unit spaced or start at a distinct value other than `1`,
+then the `scale` function can be used. While this increases the flexibility of
+the interpolation, some performance penalty is acquired.
+See [`Scaled BSplines`](@ref) for further information.
+
+## Irregular Grids
+
+If the knots are irregularly spaced, then the ranges between knots will have to
+be scaled as in the `Gridded` interpolation type. See [`Gridded interpolation`](@ref)
+for additional details.
+
+## Extrapolation
+
+For points not between knots, extrapolation can be used. This introduces a
+branch into the code that checks whether the point to be queried is inside or
+outside of the knots. This branch can inhibit the use of vectorized SIMD
+computation, resulting in a reduction of performance. See [`Extapolation`](@ref).
