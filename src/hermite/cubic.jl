@@ -25,7 +25,7 @@ struct CubicHermite
         if (length(xs) != length(ys) || length(ys) != length(dydxs))
             throw(
                 DomainError(
-                    "There must be exactly the same number of abscissasas ordinates and derivatives.",
+                    "There must be exactly the same number of abscissas as ordinates and derivatives.",
                 ),
             )
         end
