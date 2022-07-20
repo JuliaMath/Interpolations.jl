@@ -35,6 +35,7 @@ export
     # extrapolation/extrapolation.jl
     # monotonic/monotonic.jl
     # scaling/scaling.jl
+    # weno/weno.jl
 
 using LinearAlgebra, SparseArrays
 using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
@@ -489,6 +490,7 @@ include("lanczos/lanczos_opencv.jl")
 include("iterate.jl")
 include("chainrules/chainrules.jl")
 include("hermite/cubic.jl")
+include("weno/weno.jl")
 
 function __init__()
     @require Unitful="1986cc42-f94f-5a68-af5c-568840ba703d" include("requires/unitful.jl")
