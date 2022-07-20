@@ -1,56 +1,41 @@
-# Interpolations
+# Interpolations.jl
 
-[![Build Status](https://travis-ci.org/JuliaMath/Interpolations.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Interpolations.jl)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](http://juliamath.github.io/Interpolations.jl/latest)
-
-**NEWS** This package is currently under new maintainership. Please be patient while the new maintainer learns the new package. If you would like to volunteer, please mention this in an issue.
-
-**NEWS** v0.9 was a breaking release. See the [news](NEWS.md) for details on how to update.
+[![version](https://juliahub.com/docs/Interpolations/version.svg)](https://juliahub.com/ui/Packages/Interpolations/VpKVx)
+[![pkgeval](https://juliahub.com/docs/Interpolations/pkgeval.svg)](https://juliahub.com/ui/Packages/Interpolations/VpKVx)
+[![Build Status](https://github.com/JuliaMath/Interpolations.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/JuliaMath/Interpolations.jl/actions/workflows/CI.yml?query=branch%3Amaster)
+[![deps](https://juliahub.com/docs/Interpolations/deps.svg)](https://juliahub.com/ui/Packages/Interpolations/VpKVx?t=2)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](http://juliamath.github.io/Interpolations.jl/stable)
+[![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](http://juliamath.github.io/Interpolations.jl/latest)
 
 This package implements a variety of interpolation schemes for the
 Julia language.  It has the goals of ease-of-use, broad algorithmic
 support, and exceptional performance.
 
-Currently this package's support is best
-for [B-splines](https://en.wikipedia.org/wiki/B-spline) and also
-supports irregular grids.  However, the API has been designed with
+Currently this package supports
+[B-splines](https://en.wikipedia.org/wiki/B-spline) and also
+irregular grids.  The API has been designed with
 intent to support more options. Initial support for Lanczos
 interpolation was recently added. Pull-requests are more than welcome!
 It should be noted that the API may continue to evolve over time.
 
-Other interpolation packages for Julia include:
-- [Dierckx.jl](https://github.com/kbarbary/Dierckx.jl)
-- [GridInterpolations.jl](https://github.com/sisl/GridInterpolations.jl)
-- [ApproXD.jl](https://github.com/floswald/ApproXD.jl)
-- [PCHIPInterpolation.jl](https://github.com/gerlero/PCHIPInterpolation.jl) for monotonic interpolation
-- [DIVAnd.jl](https://github.com/gher-ulg/DIVAnd.jl) for N-dimensional smoothing interpolation 
-
-Some of these packages support methods that `Interpolations` does not,
-so if you can't find what you need here, check one of them or submit a
-pull request here.
-
 At the bottom of this page, you can find a "performance shootout"
 among these methods (as well as SciPy's `RegularGridInterpolator`).
 
-
 ## Installation
 
-Just
+Interpolations.jl can be installed via the following invocation
+since it is a registered Julia package.
 
 ```julia
 using Pkg
 Pkg.add("Interpolations")
 ```
 
-from the Julia REPL.
-
-
 ## Example Usage
 Create a grid `xs` and an array `A` of values to be interpolated
 ```julia
 xs = 1:0.2:5
-f(x) = log(x)
-A = [f(x) for x in xs]
+A = log.(xs)
 ```
 Create linear interpolation object without extrapolation
 ```julia
@@ -70,6 +55,39 @@ interp_linear_extrap(0.9) # outside grid: linear extrapolation
 More examples, such as plotting and cubic interpolation, can be found at the [convenience constructions](docs/src/convenience-construction.md#example-with-plotsjl) documentation.
 
 ![interpolation plot example](docs/src/assets/plotsjl_interpolation_example.png)
+
+## Other Interpolation Packages
+
+Other interpolation packages for Julia include:
+
+- [ApproXD.jl](https://github.com/floswald/ApproXD.jl) implements B-spline and linear interpolation in Julia.
+- [BarycentricInterpolation.jl](https://github.com/dawbarton/BarycentricInterpolation.jl) implements the Barycentric formula for polynomial interpolation on equispaced points and Chebyshev points of the first and second kind.
+- [BasicInterpolators.jl](https://github.com/markmbaum/BasicInterpolators.jl) provides a collection of common interpolation recipes for basic applications.
+- [BSplineKit.jl](https://github.com/jipolanco/BSplineKit.jl) offers tools for B-spline based Galerkin and collocation methods, including for interpolation and approximation.
+- [Curves.jl](https://github.com/lungben/Curves.jl) supports log-interpolation via immutable `Curve` objects.
+- [DataInterpolations.jl](https://github.com/PumasAI/DataInterpolations.jl) is a library for performing interpolations of one-dimensional data.
+- [Dierckx.jl](https://github.com/kbarbary/Dierckx.jl) is a wrapper for the dierckx Fortran library, which also underlies `scipy.interpolate`.
+- [DIVAnd.jl](https://github.com/gher-ulg/DIVAnd.jl) for N-dimensional smoothing interpolation. 
+- [FastChebInterp.jl](https://github.com/stevengj/FastChebInterp.jl) does fast multidimensional Chebyshev interpolation on a hypercube using separable grid of interpolation points.
+- [FEMBasis.jl](https://github.com/JuliaFEM/FEMBasis.jl) contains interpolation routines for standard finite element function spaces.
+- [FineShift.jl](https://github.com/emmt/FineShift.jl) does fast sub-sample shifting of multidimensional arrays.
+- [FourierTools.jl](https://github.com/bionanoimaging/FourierTools.jl) includes sinc interpolation for up and down sampling.
+- [GridInterpolations.jl](https://github.com/sisl/GridInterpolations.jl) performs multivariate interpolation on a rectilinear grid.
+- [InterpolationKernels.jl](https://github.com/emmt/InterpolationKernels.jl) provides a library of interpolation kernels.
+- [KissSmoothing.jl](https://github.com/francescoalemanno/KissSmoothing.jl) implements denoising and a Radial Basis Function estimation procedure.
+- [LinearInterpolations.jl](https://github.com/jw3126/LinearInterpolations.jl) allows for interpolation using weighted averages allowing probability distributions, rotations, and other Lie groups to be interpolated.
+- [LinearInterpolators.jl](https://github.com/emmt/LinearInterpolators.jl) provides linear interpolation methods for Julia based on InterpolationKernels.jl, above.
+- [LocalFunctionApproximation.jl](https://github.com/sisl/LocalFunctionApproximation.jl) provides local function approximators that interpolates a scalar-valued function across a vector space.
+- [PCHIPInterpolation.jl](https://github.com/gerlero/PCHIPInterpolation.jl) for monotonic interpolation.
+- [PiecewiseLinearApprox.jl](https://github.com/RJDennis/PiecewiseLinearApprox.jl) performs piecewise linear interpolation over an arbitrary number of dimensions.
+- [ScatteredInterpolation.jl](https://github.com/eljungsk/ScatteredInterpolation.jl) interpolates scattered data in arbitrary dimensions.
+
+Some of these packages support methods that `Interpolations` does not,
+so if you can't find what you need here, check one of them or submit a
+pull request here.
+
+If you would like to list a registered package that is related to interpolation, please create a Github issue.
+
 
 ## Performance shootout
 
@@ -136,6 +154,20 @@ they ran more than 20 seconds (far longer than any other test).  Both
 performed much better in 2d, interestingly.  You can see that
 Interpolations wins in every case, sometimes by a very large margin.
 
+## Development Status
+
+This package is being maintained but not actively developed. Maintenance is
+focused on fixing bugs and issues with the current code base. New features are
+welcome via pull requests and will be reviewed and released in a timely fashion.
+
+If you would like to become involved in maintenance or active development of
+the package please feel free to get in touch via a Github issue.
+
+This package follows semantic version in that documented features should not
+break without changing the minor version.
+
+See the [news](NEWS.md) for details on how to update between breaking releases,
+indicated by changes in minor versions.
 
 ## Contributing
 
