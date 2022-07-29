@@ -11,15 +11,9 @@ function update_eltype(T, coefs′, coefs)
     ET = eltype(coefs′)
     ET === eltype(coefs) && return T
     WT = tweight(coefs′)
-    if isempty(coefs)
-        T′ = Base.promote_op(*, WT, ET)
-    else
-        T′ = Base.promote_op(*, WT, ET)
-        if !isconcretetype(T′)
-            T′ = typeof(zero(WT) * convert(ET, first(coefs)))
-        end
-    end
-    return T′
+    T′ = Base.promote_op(*, WT, ET)
+    (isconcretetype(T′) || isempty(coefs)) && return T′
+    return typeof(zero(WT) * convert(ET, first(coefs)))
 end
 
 function adapt_structure(to, itp::LanczosInterpolation{T,N}) where {T,N}
