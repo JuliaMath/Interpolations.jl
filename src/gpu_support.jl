@@ -56,13 +56,19 @@ function broadcasted(itp::AbstractInterpolation, args...)
     broadcasted(style, itp, args′...)
 end
 
-root_storage_type(::Type{T}) where {T<:AbstractArray} = T
+"""
+    Interpolations.root_storage_type(::Type{<:AbstractInterpolation}) -> Type{<:AbstractArray}
+
+This function returns the type of the root cofficients array of an `AbstractInterpolation`.
+Some array wrappers, like `OffsetArray`, should be skipped.
+"""
 root_storage_type(::Type{T}) where {T<:Extrapolation} = root_storage_type(fieldtype(T, 1))
 root_storage_type(::Type{T}) where {T<:ScaledInterpolation} = root_storage_type(fieldtype(T, 1))
 root_storage_type(::Type{T}) where {T<:BSplineInterpolation} = root_storage_type(fieldtype(T, 1))
 root_storage_type(::Type{T}) where {T<:LanczosInterpolation} = root_storage_type(fieldtype(T, 1))
 root_storage_type(::Type{T}) where {T<:GriddedInterpolation} = root_storage_type(fieldtype(T, 2))
 root_storage_type(::Type{T}) where {T<:OffsetArray} = root_storage_type(fieldtype(T, 1))
+root_storage_type(::Type{T}) where {T<:AbstractArray} = T
 
 BroadcastStyle(::Type{<:Ref{T}}) where {T<:AbstractInterpolation} = _to_scalar_style(BroadcastStyle(T))
 BroadcastStyle(::Type{T}) where {T<:AbstractInterpolation} = BroadcastStyle(root_storage_type(T))
