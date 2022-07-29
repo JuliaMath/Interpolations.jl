@@ -269,25 +269,15 @@ Base.:(/)(wi::WeightedArbIndex, x::Number) = WeightedArbIndex(wi.indexes, wi.wei
 
 ### Indexing with WeightedIndex
 
+# We inject `WeightedIndex` as a non-exported indexing point with a `InterpGetindex` wrapper.
+# `InterpGetindex` is not a subtype of `AbstractArray`. This ensures that the overload applies to all array types.
 struct InterpGetindex{N,A<:AbstractArray{<:Any,N}}
     coeffs::A
     InterpGetindex(itp::AbstractInterpolation) = InterpGetindex(coefficients(itp))
     InterpGetindex(A::AbstractArray) = new{ndims(A),typeof(A)}(A)
 end
-Base.@propagate_inbounds Base.getindex(A::InterpGetindex{N}, I::Vararg{Union{Int,WeightedIndex},N}) where {N} =
+@inline Base.getindex(A::InterpGetindex{N}, I::Vararg{Union{Int,WeightedIndex},N}) where {N} =
     interp_getindex(A.coeffs, I, ntuple(d->0, Val(N))...)
-
-# TODO: should we drop the following injection?
-# We inject indexing with `WeightedIndex` at a non-exported point in the dispatch heirarchy.
-# This is to avoid ambiguities with methods that specialize on the array type rather than
-# the index type.
-Base.to_indices(A, I::Tuple{Vararg{Union{Int,WeightedIndex}}}) = I
-if VERSION < v"1.6.0-DEV.104"
-    @propagate_inbounds Base._getindex(::IndexLinear, A::AbstractVector, i::Int) = getindex(A, i)  # ambiguity resolution
-end
-@inline function Base._getindex(::IndexStyle, A::AbstractArray{T,N}, I::Vararg{Union{Int,WeightedIndex},N}) where {T,N}
-    InterpGetindex(A)[I...]
-end
 
 # The non-generated version is currently disabled due to https://github.com/JuliaLang/julia/issues/29117
 # # This follows a "move processed indexes to the back" strategy, so J contains the yet-to-be-processed
