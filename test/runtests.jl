@@ -53,4 +53,10 @@ const isci = get(ENV, "CI", "") in ("true", "True")
 
     # Chain rules interaction
     include("chainrules.jl")
+
+    if VERSION >= v"1.6"
+        import Pkg
+        Pkg.add("JLArrays")
+        include("gpu_support.jl")
+    end
 end

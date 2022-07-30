@@ -66,7 +66,7 @@ However, for customized control you may also construct them with
 where `T` gets computed from the product of `TWeights` and `eltype(coefs)`.
 (This is equivalent to indicating that you'll be evaluating at locations `itp(x::TWeights, y::TWeights, ...)`.)
 """
-struct BSplineInterpolation{T,N,TCoefs<:AbstractArray,IT<:DimSpec{BSpline},Axs<:Tuple{Vararg{AbstractUnitRange,N}}} <: AbstractInterpolation{T,N,IT}
+struct BSplineInterpolation{T,N,TCoefs<:AbstractArray,IT<:DimSpec{BSpline},Axs<:Indices{N}} <: AbstractInterpolation{T,N,IT}
     coefs::TCoefs
     parentaxes::Axs
     it::IT
@@ -77,6 +77,9 @@ function Base.:(==)(o1::BSplineInterpolation, o2::BSplineInterpolation)
     o1.parentaxes == o2.parentaxes &&
     o1.coefs == o2.coefs
 end
+
+BSplineInterpolation{T,N}(A::AbstractArray, axs::Indices{N}, it::IT) where {T,N,IT} =
+    BSplineInterpolation{T,N,typeof(A),IT,typeof(axs)}(A, axs, it)
 
 function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, it::IT, axs) where {N,Tel,TWeights<:Real,IT<:DimSpec{BSpline}}
     # String interpolation causes allocation, noinline avoids that unless they get called
@@ -98,7 +101,7 @@ function BSplineInterpolation(::Type{TWeights}, A::AbstractArray{Tel,N}, it::IT,
     else
         T = typeof(zero(TWeights) * first(A))
     end
-    BSplineInterpolation{T,N,typeof(A),IT,typeof(axs)}(A, fix_axis.(axs), it)
+    BSplineInterpolation{T,N}(A, fix_axis.(axs), it)
 end
 
 function BSplineInterpolation(A::AbstractArray{Tel,N}, it::IT, axs) where {N,Tel,IT<:DimSpec{BSpline}}

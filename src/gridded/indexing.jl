@@ -2,7 +2,7 @@
 @inline function (itp::GriddedInterpolation{T,N})(x::Vararg{Number,N}) where {T,N}
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
-    coefficients(itp)[wis...]
+    InterpGetindex(itp)[wis...]
 end
 @propagate_inbounds function (itp::GriddedInterpolation{T,N})(x::Vararg{Number,M}) where {T,M,N}
     inds, trailing = split_trailing(itp, x)
@@ -19,7 +19,7 @@ end
 @inline function gradient(itp::GriddedInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     wis = weightedindexes((value_weights, gradient_weights), itpinfo(itp)..., x)
-    SVector(map(inds->coefficients(itp)[inds...], wis))
+    SVector(map(inds->InterpGetindex(itp)[inds...], wis))
 end
 
 itpinfo(itp::GriddedInterpolation) = (tcollect(itpflag, itp), itp.knots)
@@ -87,7 +87,7 @@ rescale_gridded(::typeof(hessian_weights), coefs, Δx) = coefs./Δx.^2
     else
         wis = dimension_wis(value_weights, itps, itp.knots, x)
     end
-    coefs = coefficients(itp)
+    coefs = InterpGetindex(itp)
     ret = [coefs[i...] for i in Iterators.product(wis...)]
     reshape(ret, shape(wis...))
 end

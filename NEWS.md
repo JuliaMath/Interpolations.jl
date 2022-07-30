@@ -1,3 +1,14 @@
+For a comprehensive list of changes, see [Releases](https://github.com/JuliaMath/Interpolations.jl/releases).
+
+# v0.14.0
+
+Breaking changes:
+
+## Implement inplace `GriddedInterpolation` ([#496](https://github.com/JuliaMath/Interpolations.jl/pull/496), for [#495](https://github.com/JuliaMath/Interpolations.jl/issues/495))
+- `interpolate` now copies the coefficients for `GriddedInterpolation`.
+- `interpolate!` now does not copy the coefficients for `GriddedInterpolation`.
+- The third argument of `GriddedInterpolation` describes the array type of the coefficients rather than the element type of `Array`.
+
 # v0.9.0
 
 Breaking changes:

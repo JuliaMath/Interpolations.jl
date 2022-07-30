@@ -5,7 +5,7 @@ itpinfo(itp) = (tcollect(itpflag, itp), axes(itp))
 @inline function (itp::BSplineInterpolation{T,N})(x::Vararg{Number,N}) where {T,N}
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
-    itp.coefs[wis...]
+    InterpGetindex(itp)[wis...]
 end
 @propagate_inbounds function (itp::BSplineInterpolation{T,N})(x::Vararg{Number,M}) where {T,M,N}
     inds, trailing = split_trailing(itp, x)
@@ -17,7 +17,7 @@ end
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     itps = tcollect(itpflag, itp)
     wis = dimension_wis(value_weights, itps, axes(itp), x)
-    coefs = coefficients(itp)
+    coefs = InterpGetindex(itp)
     ret = [coefs[i...] for i in Iterators.product(wis...)]
     reshape(ret, shape(wis...))
 end
@@ -25,7 +25,7 @@ end
 @propagate_inbounds function gradient(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
     wis = weightedindexes((value_weights, gradient_weights), itpinfo(itp)..., x)
-    return SVector(_gradient(itp.coefs, wis...))   # work around #311
+    return SVector(_gradient(InterpGetindex(itp), wis...))   # work around #311
 end
 @inline _gradient(coefs, inds, moreinds...) = (coefs[inds...], _gradient(coefs, moreinds...)...)
 _gradient(coefs) = ()
@@ -37,7 +37,7 @@ end
 @propagate_inbounds function hessian(itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x)
     wis = weightedindexes((value_weights, gradient_weights, hessian_weights), itpinfo(itp)..., x)
-    symmatrix(map(inds->itp.coefs[inds...], wis))
+    symmatrix(map(inds->InterpGetindex(itp)[inds...], wis))
 end
 @propagate_inbounds function hessian!(dest, itp::BSplineInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     dest .= hessian(itp, x...)

@@ -71,8 +71,8 @@ end
         eflag = tcollect(etpflag, etp)
         xs = inbounds_position(eflag, bounds(itp), x, etp, x)
         g = @inbounds gradient(itp, xs...)
-        skipni = t->skip_flagged_nointerp(itp, t)
-        SVector(extrapolate_gradient.(skipni(eflag), skipni(x), skipni(xs), Tuple(g)))
+        skipni = Base.Fix1(skip_flagged_nointerp, itp)
+        SVector(map(extrapolate_gradient, skipni(eflag), skipni(x), skipni(xs), Tuple(g)))
     end
 end
 

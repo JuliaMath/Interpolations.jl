@@ -1,6 +1,6 @@
 # Knot Iteration
 
-Given an `AbstractInterpolation` `itp` get an iterator over it's knots using
+Given an `AbstractInterpolation` `itp` get an iterator over its knots using
 `knots(itp)`
 
 ```julia
@@ -40,8 +40,7 @@ julia> size(kiter)
 
 ## Extrapolated Knots
 
-Given an `AbstractExtrapolation` `etp`, `knots(etp)` will also iterate over the
-the knots with the following behavior.
+Given an `AbstractExtrapolation` `etp`, `knots(etp)` will also iterate over the knots with the following behavior.
 
 - For `Throw`, `Flat`, `Line` iterate the knots once
 - For `Periodic` and `Reflect` generate an infinite sequence of knots starting
@@ -151,7 +150,7 @@ julia> knots(etp) |> collect
 
 ```
 
-Because some boundary conditions generate an infinite sequences of knots,
+Because some boundary conditions generate an infinite sequence of knots,
 iteration over knots can end up "stuck" iterating along a single axis:
 
 ```jldoctest; setup = :(using Interpolations)

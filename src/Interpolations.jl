@@ -41,7 +41,7 @@ using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
 using ChainRulesCore, Requires
 
 using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
-    SizeUnknown
+    SizeUnknown, Indices
 import Base: convert, size, axes, promote_rule, ndims, eltype, checkbounds, axes1,
     iterate, length, IteratorEltype, IteratorSize, firstindex, getindex, LogicalIndex
 
@@ -269,76 +269,32 @@ Base.:(/)(wi::WeightedArbIndex, x::Number) = WeightedArbIndex(wi.indexes, wi.wei
 
 ### Indexing with WeightedIndex
 
-# We inject indexing with `WeightedIndex` at a non-exported point in the dispatch heirarchy.
-# This is to avoid ambiguities with methods that specialize on the array type rather than
-# the index type.
-Base.to_indices(A, I::Tuple{Vararg{Union{Int,WeightedIndex}}}) = I
-if VERSION < v"1.6.0-DEV.104"
-    @propagate_inbounds Base._getindex(::IndexLinear, A::AbstractVector, i::Int) = getindex(A, i)  # ambiguity resolution
+# We inject `WeightedIndex` as a non-exported indexing point with a `InterpGetindex` wrapper.
+# `InterpGetindex` is not a subtype of `AbstractArray`. This ensures that the overload applies to all array types.
+struct InterpGetindex{N,A<:AbstractArray{<:Any,N}}
+    coeffs::A
+    InterpGetindex(itp::AbstractInterpolation) = InterpGetindex(coefficients(itp))
+    InterpGetindex(A::AbstractArray) = new{ndims(A),typeof(A)}(A)
 end
-@inline function Base._getindex(::IndexStyle, A::AbstractArray{T,N}, I::Vararg{Union{Int,WeightedIndex},N}) where {T,N}
-    interp_getindex(A, I, ntuple(d->0, Val(N))...)
-end
+@inline Base.getindex(A::InterpGetindex{N}, I::Vararg{Union{Int,WeightedIndex},N}) where {N} =
+    interp_getindex(A.coeffs, ntuple(_ -> 0, Val(N)), map(indexflag, I)...)
+indexflag(I::Int) = I
+@inline indexflag(I::WeightedIndex) = indextuple(I), weights(I)
 
-# The non-generated version is currently disabled due to https://github.com/JuliaLang/julia/issues/29117
-# # This follows a "move processed indexes to the back" strategy, so J contains the yet-to-be-processed
-# # indexes and I all the processed indexes.
-# interp_getindex(A::AbstractArray{T,N}, J::Tuple{Int,Vararg{Any,L}}, I::Vararg{Int,M}) where {T,N,L,M} =
-#     interp_getindex(A, Base.tail(J), I..., J[1])
-# function interp_getindex(A::AbstractArray{T,N}, J::Tuple{WeightedIndex,Vararg{Any,L}}, I::Vararg{Int,M}) where {T,N,L,M}
-#     wi = J[1]
-#     interp_getindex1(A, indexes(wi), weights(wi), Base.tail(J), I...)
-# end
-# interp_getindex(A::AbstractArray{T,N}, ::Tuple{}, I::Vararg{Int,N}) where {T,N} =   # termination
-#     @inbounds A[I...]  # all bounds-checks have already happened
-#
-# ## Handle expansion of a single dimension
-# # version for WeightedAdjIndex
-# @inline interp_getindex1(A, i::Int, weights::NTuple{K,Any}, rest, I::Vararg{Int,M}) where {M,K} =
-#     weights[1] * interp_getindex(A, rest, I..., i) + interp_getindex1(A, i+1, Base.tail(weights), rest, I...)
-# @inline interp_getindex1(A, i::Int, weights::Tuple{Any}, rest, I::Vararg{Int,M}) where M =
-#     weights[1] * interp_getindex(A, rest, I..., i)
-# interp_getindex1(A, i::Int, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
-#     error("exhausted the weights, this should never happen")
-#
-# # version for WeightedArbIndex
-# @inline interp_getindex1(A, indexes::NTuple{K,Int}, weights::NTuple{K,Any}, rest, I::Vararg{Int,M}) where {M,K} =
-#     weights[1] * interp_getindex(A, rest, I..., indexes[1]) + interp_getindex1(A, Base.tail(indexes), Base.tail(weights), rest, I...)
-# @inline interp_getindex1(A, indexes::Tuple{Int}, weights::Tuple{Any}, rest, I::Vararg{Int,M}) where M =
-#     weights[1] * interp_getindex(A, rest, I..., indexes[1])
-# interp_getindex1(A, indexes::Tuple{}, weights::Tuple{}, rest, I::Vararg{Int,M}) where M =
-#     error("exhausted the weights and indexes, this should never happen")
-
-@inline interp_getindex(A::AbstractArray{T,N}, J::Tuple{Int,Vararg{Any,K}}, I::Vararg{Int,N}) where {T,N,K} =
-    interp_getindex(A, Base.tail(J), Base.tail(I)..., J[1])
-@generated function interp_getindex(A::AbstractArray{T,N}, J::Tuple{WeightedAdjIndex{L,W},Vararg{Any,K}}, I::Vararg{Int,N}) where {T,N,K,L,W}
-    ex = :(w[1]*interp_getindex(A, Jtail, Itail..., j))
-    for l = 2:L
-        ex = :(w[$l]*interp_getindex(A, Jtail, Itail..., j+$(l-1)) + $ex)
-    end
-    quote
-        $(Expr(:meta, :inline))
-        Jtail = Base.tail(J)
-        Itail = Base.tail(I)
-        j, w = J[1].istart, J[1].weights
-        $ex
-    end
-end
-@generated function interp_getindex(A::AbstractArray{T,N}, J::Tuple{WeightedArbIndex{L,W},Vararg{Any,K}}, I::Vararg{Int,N}) where {T,N,K,L,W}
-    ex = :(w[1]*interp_getindex(A, Jtail, Itail..., ij[1]))
-    for l = 2:L
-        ex = :(w[$l]*interp_getindex(A, Jtail, Itail..., ij[$l]) + $ex)
-    end
-    quote
-        $(Expr(:meta, :inline))
-        Jtail = Base.tail(J)
-        Itail = Base.tail(I)
-        ij, w = J[1].indexes, J[1].weights
-        $ex
-    end
-end
-@inline interp_getindex(A::AbstractArray{T,N}, ::Tuple{}, I::Vararg{Int,N}) where {T,N} =   # termination
-    @inbounds A[I...]  # all bounds-checks have already happened
+# A recursion-based `interp_getindex`, which follows a "move processed indexes to the back" strategy
+# `I` contains the processed index, and (wi1, wis...) contains the yet-to-be-processed indexes
+# Here we meet a no-interp dim, just append the index to `I`'s end.
+@inline interp_getindex(A, I, wi1::Int, wis...) =
+    interp_getindex(A, (Base.tail(I)..., wi1), wis...)
+# Here we handle the expansion of a single dimension.
+@inline interp_getindex(A, I, wi1::NTuple{2,Tuple{Any,Vararg{Any,N}}}, wis...) where {N} =
+    wi1[2][end] * interp_getindex(A, (Base.tail(I)..., wi1[1][end]), wis...) +
+    interp_getindex(A, I, map(Base.front, wi1), wis...)
+@inline interp_getindex(A, I, wi1::NTuple{2,Tuple{Any}}, wis...) =
+    wi1[2][1] * interp_getindex(A, (Base.tail(I)..., wi1[1][1]), wis...)
+# Termination
+@inline interp_getindex(A::AbstractArray{T,N}, I::Dims{N}) where {T,N} =
+    @inbounds A[I...] # all bounds-checks have already happened
 
 """
     w = value_weights(degree, δx)
@@ -489,6 +445,9 @@ include("lanczos/lanczos_opencv.jl")
 include("iterate.jl")
 include("chainrules/chainrules.jl")
 include("hermite/cubic.jl")
+if VERSION >= v"1.6"
+    include("gpu_support.jl")
+end
 
 function __init__()
     @require Unitful="1986cc42-f94f-5a68-af5c-568840ba703d" include("requires/unitful.jl")
