@@ -68,13 +68,13 @@ end
     # r = remotecall(callitp, 2, itp, 1.2)
     # fetch(r) # 2.2
     @test hash(itp) != 0
-    etp = LinearInterpolation([2, 3], [4, 5])
+    etp = linear_interpolation([2, 3], [4, 5])
     @test hash(etp.itp) != 0
     @test hash(etp) != 0
 end
 
 @testset "BasicInferability" begin
-    itp = CubicSplineInterpolation(1:3, randn(3))
+    itp = cubic_spline_interpolation(1:3, randn(3))
     @test (@inferred Interpolations.itptype(itp)) == BSpline{Cubic{Line{OnGrid}}}
     @test (@inferred eltype(itp)) == Float64
     @test (@inferred ndims(itp)) == 1

@@ -23,9 +23,9 @@ export
     InPlaceQ,
     Throw,
 
-    ConstantInterpolation,
-    LinearInterpolation,
-    CubicSplineInterpolation,
+    constant_interpolation,
+    linear_interpolation,
+    cubic_spline_interpolation,
 
     knots,
     knotsbetween

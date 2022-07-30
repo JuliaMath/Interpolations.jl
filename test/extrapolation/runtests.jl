@@ -98,7 +98,7 @@ using Test
     # Issue #244
     xs = range(1e-2, stop = 8.3, length = 3)
     ys = sort(rand(3))
-    itp = LinearInterpolation(xs, ys, extrapolation_bc = Flat())
+    itp = linear_interpolation(xs, ys, extrapolation_bc = Flat())
     @test itp(8.3) ≈ ys[end]
 
     # Issue #288

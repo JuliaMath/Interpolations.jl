@@ -19,7 +19,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         xs = XMIN:ΔX:XMAX
         f(x) = log(x)
         A = [f(x) for x in xs]
-        interp = LinearInterpolation(xs, A) # using convenience constructor
+        interp = linear_interpolation(xs, A) # using convenience constructor
         interp_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs), Throw()) # using full constructor
 
         @test typeof(interp) == typeof(interp_full)
@@ -36,7 +36,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         xs = XMIN:ΔX:XMAX
         f(x) = log(x)
         A = [f(x) for x in xs]
-        interp = ConstantInterpolation(xs, A) # using convenience constructor
+        interp = constant_interpolation(xs, A) # using convenience constructor
         interp_full = extrapolate(scale(interpolate(A, BSpline(Constant())), xs), Throw()) # using full constructor
 
         @test typeof(interp) == typeof(interp_full)
@@ -53,7 +53,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         xs = XMIN:ΔX:XMAX
         f(x) = log(x)
         A = [f(x) for x in xs]
-        interp = CubicSplineInterpolation(xs, A)
+        interp = cubic_spline_interpolation(xs, A)
         interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line(OnGrid())))), xs), Throw())
 
         @test typeof(interp) == typeof(interp_full)
@@ -72,7 +72,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         xmax = xs[XLEN]
         f(x) = log(x)
         A = [f(x) for x in xs]
-        interp = LinearInterpolation(xs, A)
+        interp = linear_interpolation(xs, A)
         interp_full = extrapolate(interpolate((xs, ), A, Gridded(Linear())), Throw())
 
         @test typeof(interp) == typeof(interp_full)
@@ -90,7 +90,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         xmax = xs[XLEN]
         f(x) = log(x)
         A = [f(x) for x in xs]
-        interp = ConstantInterpolation(xs, A)
+        interp = constant_interpolation(xs, A)
         interp_full = extrapolate(interpolate((xs, ), A, Gridded(Constant())), Throw())
 
         @test typeof(interp) == typeof(interp_full)
@@ -111,7 +111,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         x_lower = XMIN - ΔX
         x_higher = XMAX + ΔX
 
-        extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
+        extrap = linear_interpolation(xs, A, extrapolation_bc = Line())
         extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs), Line())
 
         @test typeof(extrap) == typeof(extrap_full)
@@ -126,7 +126,7 @@ end
         ys = YMIN:ΔY:YMAX
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
-        interp = LinearInterpolation((xs, ys), A)
+        interp = linear_interpolation((xs, ys), A)
         interp_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs, ys), Throw())
 
         @test typeof(interp) == typeof(interp_full)
@@ -149,7 +149,7 @@ end
         ys = YMIN:ΔY:YMAX
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
-        interp = ConstantInterpolation((xs, ys), A)
+        interp = constant_interpolation((xs, ys), A)
         interp_full = extrapolate(scale(interpolate(A, BSpline(Constant())), xs, ys), Throw())
 
         @test typeof(interp) == typeof(interp_full)
@@ -172,7 +172,7 @@ end
         ys = YMIN:ΔY:YMAX
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
-        interp = CubicSplineInterpolation((xs, ys), A)
+        interp = cubic_spline_interpolation((xs, ys), A)
         interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line(OnGrid())))), xs, ys), Throw())
 
         @test typeof(interp) == typeof(interp_full)
@@ -199,7 +199,7 @@ end
         ymax = ys[YLEN]
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
-        interp = LinearInterpolation((xs, ys), A)
+        interp = linear_interpolation((xs, ys), A)
         interp_full = extrapolate(interpolate((xs, ys), A, Gridded(Linear())), Throw())
 
         @test typeof(interp) == typeof(interp_full)
@@ -226,7 +226,7 @@ end
         ymax = ys[YLEN]
         f(x, y) = log(x+y)
         A = [f(x,y) for x in xs, y in ys]
-        interp = ConstantInterpolation((xs, ys), A)
+        interp = constant_interpolation((xs, ys), A)
         interp_full = extrapolate(interpolate((xs, ys), A, Gridded(Constant())), Throw())
 
         @test typeof(interp) == typeof(interp_full)
@@ -256,7 +256,7 @@ end
         y_lower = YMIN - ΔY
         y_higher = YMAX + ΔY
 
-        extrap = LinearInterpolation((xs, ys), A, extrapolation_bc = (Line(), Flat()))
+        extrap = linear_interpolation((xs, ys), A, extrapolation_bc = (Line(), Flat()))
         extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs, ys), (Line(), Flat()))
 
         @test typeof(extrap) == typeof(extrap_full)
@@ -269,7 +269,7 @@ end
         xs = 1:5
         ys = 2:0.1:5
         A = [f(x,y) for x in xs, y in ys]
-        itp = LinearInterpolation((xs, ys), A)
+        itp = linear_interpolation((xs, ys), A)
         for (i, j) in zip(Iterators.product(xs, ys), eachindex(A))
             @test itp(i...) ≈ A[j]
         end

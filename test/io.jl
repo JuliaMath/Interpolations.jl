@@ -147,7 +147,7 @@ using Test
     @testset "Combinations" begin
         xs = 1.0:0.5:2.0
         ys = xs.^3
-        interp_cubic = CubicSplineInterpolation(xs, ys)
+        interp_cubic = cubic_spline_interpolation(xs, ys)
         io = IOBuffer()
         show(io, MIME("text/plain"), interp_cubic)
         str = String(take!(io))
