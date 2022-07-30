@@ -29,6 +29,9 @@ struct LanczosInterpolation{T,N,IT <: DimSpec{AbstractLanczos},A <: AbstractArra
     it::IT
 end
 
+LanczosInterpolation{T,N}(coefs::AbstractArray{T,N}, parentaxes::NTuple{N,AbstractArray}, it::IT) where {T,N,IT} =
+    LanczosInterpolation{T,N,IT,typeof(coefs),typeof(parentaxes)}(coefs, parentaxes, it)
+
 @generated degree(::Lanczos{N}) where {N} = :($N)
 
 getknots(itp::LanczosInterpolation) = axes(itp)
@@ -48,7 +51,7 @@ end
 @inline function (itp::LanczosInterpolation{T,N})(x::Vararg{Number,N}) where {T,N}
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
-    itp.coefs[wis...]
+    InterpGetindex(itp)[wis...]
 end
 
 function weightedindex_parts(fs, it::AbstractLanczos, ax::AbstractUnitRange{<:Integer}, x)

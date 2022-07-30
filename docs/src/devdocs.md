@@ -55,6 +55,8 @@ concrete subtypes:
 General `AbstractArray`s may be indexed with `WeightedIndex` indices,
 and the result produces the interpolated value. In other words, the end result
 is just `itp.coefs[wis...]`, where `wis` is a tuple of `WeightedIndex` indices.
+To make sure this overloading is effective, we wrap the `coefs` with `InterpGetindex`，
+i.e. `InterpGetindex(itp.coefs)[wis...]`
 
 Derivatives along a particular axis can be computed just by substituting a component of `wis` for one that has been designed to compute derivatives rather than values.
 
@@ -107,7 +109,7 @@ Interpolations.WeightedAdjIndex{2, Float64}(1, (0.6000000000000001, 0.3999999999
 julia> wis[3]
 Interpolations.WeightedAdjIndex{2, Float64}(1, (0.30000000000000004, 0.7))
 
-julia> A[wis...]
+julia> Interpolations.InterpGetindex(A)[wis...]
 8.7
 ```
 
@@ -125,7 +127,7 @@ This computed the value of `itp` at `x...` because we called `weightedindexes` w
 
 !!! note
     Remember that prefiltering is not used for `Linear` interpolation.
-    In a case where prefiltering is used, we would substitute `itp.coefs[wis...]` for `A[wis...]` above.
+    In a case where prefiltering is used, we would substitute `InterpGetindex(itp.coefs)[wis...]` for `InterpGetindex(A)[wis...]` above.
 
 To compute derivatives, we *also* pass additional functions like [`Interpolations.gradient_weights`](@ref):
 
@@ -142,13 +144,13 @@ julia> wis[2]
 julia> wis[3]
 (Interpolations.WeightedAdjIndex{2,Float64}(1, (0.8, 0.19999999999999996)), Interpolations.WeightedAdjIndex{2,Float64}(1, (0.6000000000000001, 0.3999999999999999)), Interpolations.WeightedAdjIndex{2,Float64}(1, (-1.0, 1.0)))
 
-julia> A[wis[1]...]
+julia> Interpolations.InterpGetindex(A)[wis[1]...]
 1.0
 
-julia> A[wis[2]...]
+julia> Interpolations.InterpGetindex(A)[wis[2]...]
 3.000000000000001
 
-julia> A[wis[3]...]
+julia> Interpolations.InterpGetindex(A)[wis[3]...]
 9.0
 ```
 In this case you can see that `wis` is a 3-tuple-of-3-tuples. `A[wis[i]...]` can be used to compute the `i`th component of the gradient.
@@ -168,3 +170,29 @@ The code to do this replacement is a bit complicated due to the need to support 
 It makes good use of *tuple* manipulations, sometimes called "lispy tuple programming."
 You can search Julia's discourse forum for more tips about how to program this way.
 It could alternatively be done using generated functions, but this would increase compile time considerably and can lead to world-age problems.
+
+### GPU Support
+At present, `Interpolations.jl` supports interpolant usage on GPU via broadcasting.
+
+A basic work flow looks like:
+```julia
+julia> using Interpolations, Adapt, CUDA # Or any other GPU package
+
+julia > itp = Interpolations.interpolate([1, 2, 3], (BSpline(Linear()))); # construct the interpolant object on CPU
+
+julia> cuitp = adapt(CuArray{Float32}, itp); # adapt it to GPU memory
+
+julia > cuitp.(1:0.5:2) # call interpolant object via broadcast
+
+julia> gradient.(Ref(cuitp), 1:0.5:2)
+```
+
+To achieve this, an `ITP <: AbstractInterpolation` should define it's own `Adapt.adapt_structure(to, itp::ITP)`, which constructs a new `ITP` with the adapted
+fields (`adapt(to, itp.fieldname)`) of `itp`. The field adaption could be skipped
+if we know that it has been GPU-compatable, e.g. a `isbit` range.
+
+!!! note
+    Some adaptors may change the storage type. Please ensure that the adapted `itp`
+    has the correct element type via the method `eltype`.
+
+Also, all GPU-compatable `AbstractInterpolation`s should define their own `Interpolations.root_storage_type`. This function allows us to modify the broadcast mechanism by overloading the default `BroadcastStyle`. See [Customizing broadcasting](https://docs.julialang.org/en/v1/manual/interfaces/#man-interfaces-broadcasting) for more details.
