@@ -64,6 +64,6 @@ replace_linear_line(bc::BoundaryCondition) = bc
 replace_linear_line(etpflag::Tuple) = replace_linear_line.(etpflag)
 
 # Old convenience constructors
-@deprecate LinearInterpolation linear_interpolation
-@deprecate ConstantInterpolation constant_interpolation
-@deprecate CubicSplineInterpolation cubic_spline_interpolation
+@deprecate LinearInterpolation(args...; kwargs...) linear_interpolation(args...; kwargs...)
+@deprecate ConstantInterpolation(args...; kwargs...) constant_interpolation(args...; kwargs...)
+@deprecate CubicSplineInterpolation(args...; kwargs...) cubic_spline_interpolation(args...; kwargs...)
