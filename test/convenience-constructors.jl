@@ -47,6 +47,19 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         @test interp(XMIN + ΔX / 2) ≈ f(XMIN + ΔX / 2) atol=.1
         @test_throws BoundsError interp(XMIN - ΔX / 2)
         @test_throws BoundsError interp(XMAX + ΔX / 2)
+
+        # Check deprecated usage
+        interp = ConstantInterpolation(xs, A; extrapolation_bc = Throw()) # using convenience constructor
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Constant())), xs), Throw()) # using full constructor
+
+        @test typeof(interp) == typeof(interp_full)
+        @test interp(XMIN) ≈ f(XMIN)
+        @test interp(XMAX) ≈ f(XMAX)
+        @test interp(XMIN + ΔX) ≈ f(XMIN + ΔX)
+        @test interp(XMAX - ΔX) ≈ f(XMAX - ΔX)
+        @test interp(XMIN + ΔX / 2) ≈ f(XMIN + ΔX / 2) atol=.1
+        @test_throws BoundsError interp(XMIN - ΔX / 2)
+        @test_throws BoundsError interp(XMAX + ΔX / 2)
     end
 
     @testset "1d-regular-grids-cubic" begin
@@ -54,6 +67,19 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         f(x) = log(x)
         A = [f(x) for x in xs]
         interp = cubic_spline_interpolation(xs, A)
+        interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line(OnGrid())))), xs), Throw())
+
+        @test typeof(interp) == typeof(interp_full)
+        @test interp(XMIN) ≈ f(XMIN)
+        @test interp(XMAX) ≈ f(XMAX)
+        @test interp(XMIN + ΔX) ≈ f(XMIN + ΔX)
+        @test interp(XMAX - ΔX) ≈ f(XMAX - ΔX)
+        @test interp(XMIN + ΔX / 2) ≈ f(XMIN + ΔX / 2) atol=.1
+        @test_throws BoundsError interp(XMIN - ΔX / 2)
+        @test_throws BoundsError interp(XMAX + ΔX / 2)
+
+        #  Check deprecated usage
+        interp = CubicSplineInterpolation(xs, A; extrapolation_bc = Throw())
         interp_full = extrapolate(scale(interpolate(A, BSpline(Cubic(Line(OnGrid())))), xs), Throw())
 
         @test typeof(interp) == typeof(interp_full)
@@ -112,6 +138,14 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         x_higher = XMAX + ΔX
 
         extrap = linear_interpolation(xs, A, extrapolation_bc = Line())
+        extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs), Line())
+
+        @test typeof(extrap) == typeof(extrap_full)
+        @test extrap(x_lower) ≈ A[1] - ΔA_l
+        @test extrap(x_higher) ≈ A[end] + ΔA_h
+
+        # Check deprecated usage
+        extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
         extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs), Line())
 
         @test typeof(extrap) == typeof(extrap_full)
@@ -257,6 +291,14 @@ end
         y_higher = YMAX + ΔY
 
         extrap = linear_interpolation((xs, ys), A, extrapolation_bc = (Line(), Flat()))
+        extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs, ys), (Line(), Flat()))
+
+        @test typeof(extrap) == typeof(extrap_full)
+        @test extrap(x_lower, y_lower) ≈ A[1, 1] - ΔA_l
+        @test extrap(x_higher, y_higher) ≈ A[end, end] + ΔA_h
+
+        # Check deprecated usage
+        extrap = LinearInterpolation((xs, ys), A, extrapolation_bc = (Line(), Flat()))
         extrap_full = extrapolate(scale(interpolate(A, BSpline(Linear())), xs, ys), (Line(), Flat()))
 
         @test typeof(extrap) == typeof(extrap_full)
