@@ -168,7 +168,7 @@ using Interpolations, Test, ForwardDiff
         @test_throws ErrorException Interpolations.symsize(Val(33))
     end
     @testset "issue 509" begin
-        struct CPUITP{T,N} <: AbstractInterpolation{T,N,NTuple{N,NoInterp}} end
+        @eval struct CPUITP{T,N} <: AbstractInterpolation{T,N,NTuple{N,NoInterp}} end
         @test Broadcast.BroadcastStyle(CPUITP{Int,2}) == Broadcast.BroadcastStyle(Matrix{Int})
         # example in #509
         percentile_values = [0.0, 0.01, 0.1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 91.0, 92.0, 93.0, 94.0, 95.0, 96.0, 97.0, 98.0, 99.0, 99.9, 99.99, 100.0]
