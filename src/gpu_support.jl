@@ -56,6 +56,7 @@ end
 This function returns the type of the root cofficients array of an `AbstractInterpolation`.
 Some array wrappers, like `OffsetArray`, should be skipped.
 """
+root_storage_type(::Type{T}) where {T<:AbstractInterpolation} = Array{eltype(T),ndims(T)} # fallback to `Array` by default.
 root_storage_type(::Type{T}) where {T<:Extrapolation} = root_storage_type(fieldtype(T, 1))
 root_storage_type(::Type{T}) where {T<:ScaledInterpolation} = root_storage_type(fieldtype(T, 1))
 root_storage_type(::Type{T}) where {T<:BSplineInterpolation} = root_storage_type(fieldtype(T, 1))
