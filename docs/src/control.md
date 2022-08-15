@@ -119,9 +119,9 @@ NoInterp()
 whereby the coordinate of the selected input vector MUST be located on a grid point. Requests for off grid
 coordinates results in the throwing of an error.
 
-For `Constant()` there are the additional options `Constant{Previous}()` in order to perform a previous
+For [`Constant`](@ref) there are the additional options `Constant{Previous}()` in order to perform a previous
 neighbor interpolation and `Constant{Next}()` for a next neighbor interpolation.
-Note that rounding can be an issue, see [#473](https://github.com/JuliaMath/Interpolations.jl/issues/473)
+Note that rounding can be an issue, see [#473](https://github.com/JuliaMath/Interpolations.jl/issues/473).
 
 `missing` data will naturally propagate through the interpolation,
 where some values will become missing. To avoid that, one can
