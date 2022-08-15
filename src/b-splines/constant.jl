@@ -1,8 +1,32 @@
 export Nearest, Previous, Next
 
 abstract type ConstantInterpType end
+
+"""
+Default option for `Constant` that performes *nearest-neighbor* interpolations.
+Can optionally be specified as
+```
+Constant() === Constant{Nearest}()
+```
+"""
 struct Nearest <: ConstantInterpType end
+
+"""
+Option for `Constant` that performes *previous-neighbor* interpolations.
+Applied through 
+´´´
+Constant{Previous}()
+´´´
+"""
 struct Previous <: ConstantInterpType end
+
+"""
+Option for `Constant` that performes *next-neighbor* interpolations.
+Applied through 
+```
+Constant{Next}()
+```
+"""
 struct Next <: ConstantInterpType end
 
 struct Constant{T<:ConstantInterpType,BC<:Union{Throw{OnGrid},Periodic{OnCell}}} <: DegreeBC{0}
