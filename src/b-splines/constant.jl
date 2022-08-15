@@ -55,6 +55,11 @@ end
 """
 Constant b-splines are *nearest-neighbor* interpolations, and effectively
 return `A[round(Int,x)]` when interpolating.
+
+`Constant{Previous}()` interpolates to the previous value thus equivalent
+to `A[floor(Int,x)]`.
+`Constant{Next}()` interpolates to the next value thus equivalent
+to `A[ceil(Int,x)]`.
 """
 Constant
 
