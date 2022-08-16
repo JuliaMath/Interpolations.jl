@@ -3,7 +3,7 @@ export Nearest, Previous, Next
 abstract type ConstantInterpType end
 
 """
-Default option for `Constant` that performes *nearest-neighbor* interpolations.
+Default parameter for `Constant` that performs *nearest-neighbor* interpolation.
 Can optionally be specified as
 ```
 Constant() === Constant{Nearest}()
