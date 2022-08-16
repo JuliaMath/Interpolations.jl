@@ -12,7 +12,7 @@ Constant() === Constant{Nearest}()
 struct Nearest <: ConstantInterpType end
 
 """
-Option for `Constant` that performes *previous-neighbor* interpolations.
+Parameter for `Constant` that performs *previous-neighbor* interpolations.
 Applied through 
 ´´´
 Constant{Previous}()
