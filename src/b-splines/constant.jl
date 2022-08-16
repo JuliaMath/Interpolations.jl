@@ -21,7 +21,7 @@ Constant{Previous}()
 struct Previous <: ConstantInterpType end
 
 """
-Option for `Constant` that performes *next-neighbor* interpolations.
+Parameter for `Constant` that performs *next-neighbor* interpolations.
 Applied through 
 ```
 Constant{Next}()
