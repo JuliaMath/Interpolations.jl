@@ -14,6 +14,14 @@ Some examples:
 itp = interpolate(a, BSpline(Constant()))
 v = itp(5.4)   # returns a[5]
 
+# Previous-neighbor interpolation
+itp = interpolate(a, BSpline(Constant(Previous)))
+v = itp(1.8)   # returns a[1]
+
+# Next-neighbor interpolation
+itp = interpolate(a, BSpline(Constant(Next)))
+v = itp(5.4)   # returns a[6]
+
 # (Multi)linear interpolation
 itp = interpolate(A, BSpline(Linear()))
 v = itp(3.2, 4.1)  # returns 0.9*(0.8*A[3,4]+0.2*A[4,4]) + 0.1*(0.8*A[3,5]+0.2*A[4,5])
@@ -110,6 +118,10 @@ NoInterp()
 ```
 whereby the coordinate of the selected input vector MUST be located on a grid point. Requests for off grid
 coordinates results in the throwing of an error.
+
+For [`Constant`](@ref) there are additional parameters. Use `Constant{Previous}()` in order to perform a previous
+neighbor interpolation. Use `Constant{Next}()` for a next neighbor interpolation.
+Note that rounding can be an issue, see [#473](https://github.com/JuliaMath/Interpolations.jl/issues/473).
 
 `missing` data will naturally propagate through the interpolation,
 where some values will become missing. To avoid that, one can
