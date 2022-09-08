@@ -407,10 +407,10 @@ end
 @inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::Vararg{ExpandedIndexTypes,N}) where N =
     _checkbounds(BoundsCheckStyle(itp), itp, x)
 
-@inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::LogicalIndex) where N =
+@inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::LogicalIndex) =
     _checkbounds(BoundsCheckStyle(itp), itp, x)
 
-@inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::LogicalIndex{<:Any,<:AbstractArray{Bool,1}}) where N =
+@inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::LogicalIndex{<:Any,<:AbstractArray{Bool,1}}) =
     _checkbounds(BoundsCheckStyle(itp), itp, x)
 
 _checkbounds(::CheckWillPass, itp, x) = true
