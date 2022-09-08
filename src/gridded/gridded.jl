@@ -34,7 +34,7 @@ end
 
     Construct a GriddedInterpolation for generic knots from an AbstractArray
 """
-function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {N,Tel,TWeights<:Real,IT<:DimSpec{Gridded},pad}
+function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {N,Tel,TWeights<:Real,IT<:DimSpec{Gridded}}
     isconcretetype(IT) || error("The b-spline type must be a leaf type (was $IT)")
 
     check_gridded(it, knots, axes(A))
@@ -57,7 +57,7 @@ end
 
     AbstractUnitRanges are collected to an Array to not confuse bound calculations (See Issue #398)
 """
-function GriddedInterpolation(tw::Type{TWeights}, knots::NTuple{N,AbstractUnitRange}, A::AbstractArray{TCoefs,N}, it::IT) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded},pad}
+function GriddedInterpolation(tw::Type{TWeights}, knots::NTuple{N,AbstractUnitRange}, A::AbstractArray{TCoefs,N}, it::IT) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded}}
     # Fix Issue 398: Ensure that gridded_*bounds is used by converting
     # AbstractUnitRange to a non-AbstractUnitRange AbstractVector
     GriddedInterpolation(tw, collect.(knots), A, it)
