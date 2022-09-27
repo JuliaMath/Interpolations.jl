@@ -27,7 +27,7 @@ function interpolate!(::Type{TWeights}, A, it::IT, gt::GT) where {TWeights,IT<:D
     Base.depwarn("interpolate!($TWeights, A, $it, $gt) is deprecated, use interpolate!($TWeights, A, $bcs)", :interpolate)
     interpolate!(TWeights, A, bcs)
 end
-function interpolate!(A, it::IT, gt::GT) where {TWeights,IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
+function interpolate!(A, it::IT, gt::GT) where {IT<:DimSpec{BSpline},GT<:DimSpec{GridType}}
     bcs = create_bcs(it, gt)
     Base.depwarn("interpolate!(A, $it, $gt) is deprecated, use interpolate!(A, $bcs)", :interpolate)
     interpolate!(A, bcs)
