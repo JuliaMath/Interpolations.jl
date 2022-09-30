@@ -9,11 +9,14 @@
         "Cardinal"              cubic cardinal splines, uses tension parameter which must be between [0,1]
                                 cubin cardinal splines can overshoot for non-monotonic data
                                 (increasing tension decreases overshoot)
+        "Akima"                 monotonic - tagents are dertermined at each given point locally,
+                                results are close to manual drawn curves
         "FritschCarlson"        monotonic - tangents are first initialized, then adjusted if they are not monotonic
                                 can overshoot for non-monotonic data
         "FritschButland"        monotonic - faster algorithm (only requires one pass) but somewhat higher apparent "tension"
         "Steffen"               monotonic - also only one pass, results usually between FritschCarlson and FritschButland
     Sources:
+        Akima (1970), "A New Method of Interpolation and Smooth Curve Fitting Based on Local Procedures", doi:10.1145/321607.321609
         Fritsch & Carlson (1980), "Monotone Piecewise Cubic Interpolation", doi:10.1137/0717021.
         Fritsch & Butland (1984), "A Method for Constructing Local Monotone Piecewise Cubic Interpolants", doi:10.1137/0905021.
         Steffen (1990), "A Simple Method for Monotonic Interpolation in One Dimension", http://adsabs.harvard.edu/abs/1990A%26A...239..443S
@@ -25,6 +28,7 @@ export
     LinearMonotonicInterpolation,
     FiniteDifferenceMonotonicInterpolation,
     CardinalMonotonicInterpolation,
+    AkimaMonotonicInterpolation,
     FritschCarlsonMonotonicInterpolation,
     FritschButlandMonotonicInterpolation,
     SteffenMonotonicInterpolation
@@ -62,6 +66,19 @@ Cubin cardinal splines can overshoot for non-monotonic data
 """
 struct CardinalMonotonicInterpolation{TTension<:Number} <: MonotonicInterpolationType
     tension :: TTension # must be in [0, 1]
+end
+
+"""
+    AkimaMonotonicInterpolation
+
+Monotonic interpolation based on Akima (1970),
+"A New Method of Interpolation and Smooth Curve Fitting Based on Local Procedures",
+doi:10.1145/321607.321609.
+
+Tagents are dertermined at each given point locally,
+results are close to manual drawn curves
+"""
+struct AkimaMonotonicInterpolation <: MonotonicInterpolationType
 end
 
 """
@@ -276,6 +293,36 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
         end
     end
     m[n] = Δ[n-1]
+    return (m, Δ)
+end
+
+function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
+    y :: AbstractVector{TEl}, method::AkimaMonotonicInterpolation) where {TCoeffs, TEl}
+
+    # based on Akima (1970),
+    # "A New Method of Interpolation and Smooth Curve Fitting Based on Local Procedures",
+    # doi:10.1145/321607.321609.
+
+    n = length(x)
+    Δ = Vector{TCoeffs}(undef, n-1)
+    m = Vector{TCoeffs}(undef, n)
+
+    for k in 1:n-1
+        Δk = (y[k+1] - y[k]) / (x[k+1] - x[k])
+        Δ[k] = Δk
+    end
+    Γ = [3Δ[1] - 2Δ[2]; 2Δ[1] - Δ[2]; Δ; 2Δ[n-1] - Δ[n-2]; 3Δ[n-1] - 2Δ[n-2]]
+
+    for k in 1:n
+        δ = abs(Γ[k+3] - Γ[k+2]) + abs(Γ[k+1] - Γ[k])
+        if δ > 0
+            α = abs(Γ[k+1] - Γ[k]) / δ
+            m[k] = (1-α) * Γ[k+1] + α * Γ[k+2]
+        else
+            m[k] = 0.5 * Γ[k+1] + 0.5 * Γ[k+2]
+        end
+    end
+
     return (m, Δ)
 end
 
