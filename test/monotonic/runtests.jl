@@ -17,6 +17,7 @@ using Unitful
         (CardinalMonotonicInterpolation(0.0), true),
         (CardinalMonotonicInterpolation(0.5), true),
         (CardinalMonotonicInterpolation(1.0), false),
+        (AkimaMonotonicInterpolation(), true),
         (FritschCarlsonMonotonicInterpolation(), true),
         (FritschButlandMonotonicInterpolation(), false),
         (SteffenMonotonicInterpolation(), false)]
