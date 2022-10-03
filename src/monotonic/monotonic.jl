@@ -306,23 +306,20 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
     m = Vector{TCoeffs}(undef, n)
-
     for k in 1:n-1
         Δk = (y[k+1] - y[k]) / (x[k+1] - x[k])
         Δ[k] = Δk
     end
     Γ = [3Δ[1] - 2Δ[2]; 2Δ[1] - Δ[2]; Δ; 2Δ[n-1] - Δ[n-2]; 3Δ[n-1] - 2Δ[n-2]]
-
     for k in 1:n
         δ = abs(Γ[k+3] - Γ[k+2]) + abs(Γ[k+1] - Γ[k])
-        if δ > 0
+        if δ > zero(δ)
             α = abs(Γ[k+1] - Γ[k]) / δ
             m[k] = (1-α) * Γ[k+1] + α * Γ[k+2]
         else
             m[k] = 0.5 * Γ[k+1] + 0.5 * Γ[k+2]
         end
     end
-
     return (m, Δ)
 end
 
