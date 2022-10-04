@@ -9,8 +9,8 @@
         "Cardinal"              cubic cardinal splines, uses tension parameter which must be between [0,1]
                                 cubin cardinal splines can overshoot for non-monotonic data
                                 (increasing tension decreases overshoot)
-        "Akima"                 monotonic - tagents are dertermined at each given point locally,
-                                results are close to manual drawn curves
+        "Akima"                 monotonic - tangents are determined at each given point locally,
+                                the curve obtained is close to a manually drawn curve, can overshoot for non-monotonic data
         "FritschCarlson"        monotonic - tangents are first initialized, then adjusted if they are not monotonic
                                 can overshoot for non-monotonic data
         "FritschButland"        monotonic - faster algorithm (only requires one pass) but somewhat higher apparent "tension"
@@ -297,7 +297,7 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
 end
 
 function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
-    y :: AbstractVector{TEl}, method::AkimaMonotonicInterpolation) where {TCoeffs, TEl}
+    y::AbstractVector{TEl}, method::AkimaMonotonicInterpolation) where {TCoeffs, TEl}
 
     # based on Akima (1970),
     # "A New Method of Interpolation and Smooth Curve Fitting Based on Local Procedures",
