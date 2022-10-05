@@ -9,11 +9,14 @@
         "Cardinal"              cubic cardinal splines, uses tension parameter which must be between [0,1]
                                 cubin cardinal splines can overshoot for non-monotonic data
                                 (increasing tension decreases overshoot)
+        "Akima"                 monotonic - tangents are determined at each given point locally,
+                                the curve obtained is close to a manually drawn curve, can overshoot for non-monotonic data
         "FritschCarlson"        monotonic - tangents are first initialized, then adjusted if they are not monotonic
                                 can overshoot for non-monotonic data
         "FritschButland"        monotonic - faster algorithm (only requires one pass) but somewhat higher apparent "tension"
         "Steffen"               monotonic - also only one pass, results usually between FritschCarlson and FritschButland
     Sources:
+        Akima (1970), "A New Method of Interpolation and Smooth Curve Fitting Based on Local Procedures", doi:10.1145/321607.321609
         Fritsch & Carlson (1980), "Monotone Piecewise Cubic Interpolation", doi:10.1137/0717021.
         Fritsch & Butland (1984), "A Method for Constructing Local Monotone Piecewise Cubic Interpolants", doi:10.1137/0905021.
         Steffen (1990), "A Simple Method for Monotonic Interpolation in One Dimension", http://adsabs.harvard.edu/abs/1990A%26A...239..443S
@@ -25,6 +28,7 @@ export
     LinearMonotonicInterpolation,
     FiniteDifferenceMonotonicInterpolation,
     CardinalMonotonicInterpolation,
+    AkimaMonotonicInterpolation,
     FritschCarlsonMonotonicInterpolation,
     FritschButlandMonotonicInterpolation,
     SteffenMonotonicInterpolation
@@ -62,6 +66,19 @@ Cubin cardinal splines can overshoot for non-monotonic data
 """
 struct CardinalMonotonicInterpolation{TTension<:Number} <: MonotonicInterpolationType
     tension :: TTension # must be in [0, 1]
+end
+
+"""
+    AkimaMonotonicInterpolation
+
+Monotonic interpolation based on Akima (1970),
+"A New Method of Interpolation and Smooth Curve Fitting Based on Local Procedures",
+doi:10.1145/321607.321609.
+
+Tagents are dertermined at each given point locally,
+results are close to manual drawn curves
+"""
+struct AkimaMonotonicInterpolation <: MonotonicInterpolationType
 end
 
 """
@@ -161,7 +178,7 @@ function interpolate(::Type{TWeights}, ::Type{TCoeffs1},::Type{TCoeffs2},::Type{
     m, Δ = calcTangents(TCoeffs1, knots, A, it)
     c = Vector{TCoeffs2}(undef, n-1)
     d = Vector{TCoeffs3}(undef, n-1)
-    for k ∈ 1:n-1
+    for k ∈ eachindex(c)
         if TInterpolationType == LinearMonotonicInterpolation
             c[k] = zero(TCoeffs2)
             d[k] = zero(TCoeffs3)
@@ -232,10 +249,9 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
     m = Vector{TCoeffs}(undef, n)
-    for k in 1:n-1
-        Δk = (y[k+1] - y[k]) / (x[k+1] - x[k])
-        Δ[k] = Δk
-        m[k] = Δk
+    for k ∈ eachindex(Δ)
+        Δ[k] = (y[k+1] - y[k]) / (x[k+1] - x[k])
+        m[k] = Δ[k]
     end
     m[n] = Δ[n-1]
     return (m, Δ)
@@ -247,13 +263,12 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
     m = Vector{TCoeffs}(undef, n)
-    for k in 1:n-1
-        Δk = (y[k+1] - y[k]) / (x[k+1] - x[k])
-        Δ[k] = Δk
+    for k ∈ eachindex(Δ)
+        Δ[k] = (y[k+1] - y[k]) / (x[k+1] - x[k])
         if k == 1   # left endpoint
-            m[k] = Δk
+            m[k] = Δ[k]
         else
-            m[k] = (Δ[k-1] + Δk) / 2
+            m[k] = (Δ[k-1] + Δ[k]) / 2
         end
     end
     m[n] = Δ[n-1]
@@ -266,16 +281,41 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
     m = Vector{TCoeffs}(undef, n)
-    for k in 1:n-1
-        Δk = (y[k+1] - y[k]) / (x[k+1] - x[k])
-        Δ[k] = Δk
+    for k ∈ eachindex(Δ)
+        Δ[k] = (y[k+1] - y[k]) / (x[k+1] - x[k])
         if k == 1   # left endpoint
-            m[k] = Δk
+            m[k] = Δ[k]
         else
             m[k] = (oneunit(TTension) - method.tension) * (y[k+1] - y[k-1]) / (x[k+1] - x[k-1])
         end
     end
     m[n] = Δ[n-1]
+    return (m, Δ)
+end
+
+function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
+    y::AbstractVector{TEl}, method::AkimaMonotonicInterpolation) where {TCoeffs, TEl}
+
+    # based on Akima (1970),
+    # "A New Method of Interpolation and Smooth Curve Fitting Based on Local Procedures",
+    # doi:10.1145/321607.321609.
+
+    n = length(x)
+    Δ = Vector{TCoeffs}(undef, n-1)
+    m = Vector{TCoeffs}(undef, n)
+    for k ∈ eachindex(Δ)
+        Δ[k] = (y[k+1] - y[k]) / (x[k+1] - x[k])
+    end
+    Γ = [3Δ[1] - 2Δ[2]; 2Δ[1] - Δ[2]; Δ; 2Δ[n-1] - Δ[n-2]; 3Δ[n-1] - 2Δ[n-2]]
+    for k ∈ eachindex(m)
+        δ = abs(Γ[k+3] - Γ[k+2]) + abs(Γ[k+1] - Γ[k])
+        if δ > zero(δ)
+            α = abs(Γ[k+1] - Γ[k]) / δ
+            m[k] = (1-α) * Γ[k+1] + α * Γ[k+2]
+        else
+            m[k] = 0.5 * Γ[k+1] + 0.5 * Γ[k+2]
+        end
+    end
     return (m, Δ)
 end
 
@@ -286,18 +326,17 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     Δ = Vector{TCoeffs}(undef, n-1)
     m = Vector{TCoeffs}(undef, n)
     buff = Vector{typeof(first(Δ)^2)}(undef, n)
-    for k in 1:n-1
-        Δk = (y[k+1] - y[k]) / (x[k+1] - x[k])
-        Δ[k] = Δk
+    for k ∈ eachindex(Δ)
+        Δ[k] = (y[k+1] - y[k]) / (x[k+1] - x[k])
         if k == 1   # left endpoint
-            m[k] = Δk
+            m[k] = Δ[k]
         else
             # If any consecutive secant lines change sign (i.e. curve changes direction), initialize the tangent to zero.
             # This is needed to make the interpolation monotonic. Otherwise set tangent to the average of the secants.
-            if Δ[k-1] * Δk <= zero(Δk^2)
+            if Δ[k-1] * Δ[k] <= zero(Δ[k]^2)
                 m[k] = zero(TCoeffs)
             else
-                m[k] =  (Δ[k-1] + Δk) / 2.0
+                m[k] =  (Δ[k-1] + Δ[k]) / 2.0
             end
         end
     end
@@ -312,19 +351,18 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     =#
 
     # Second pass of FritschCarlson: adjust any non-monotonic tangents.
-    for k in 1:n-1
-        Δk = Δ[k]
-        if Δk == zero(TCoeffs)
+    for k ∈ eachindex(Δ)
+        if Δ[k] == zero(TCoeffs)
             m[k] = zero(TCoeffs)
             m[k+1] = zero(TCoeffs)
             continue
         end
-        α = m[k] / Δk
-        β = m[k+1] / Δk
+        α = m[k] / Δ[k]
+        β = m[k+1] / Δ[k]
         τ = 3.0 * oneunit(α) / sqrt(α^2 + β^2)
         if τ < 1.0   # if we're outside the circle with radius 3 then move onto the circle
-            m[k] = τ * α * Δk
-            m[k+1] = τ * β * Δk
+            m[k] = τ * α * Δ[k]
+            m[k+1] = τ * β * Δ[k]
         end
     end
     return (m, Δ)
@@ -340,16 +378,15 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
     m = Vector{TCoeffs}(undef, n)
-    for k in 1:n-1
-        Δk = (y[k+1] - y[k]) / (x[k+1] - x[k])
-        Δ[k] = Δk
+    for k ∈ eachindex(Δ)
+        Δ[k] = (y[k+1] - y[k]) / (x[k+1] - x[k])
         if k == 1   # left endpoint
-            m[k] = Δk
-        elseif Δ[k-1] * Δk <= zero(Δk^2)
+            m[k] = Δ[k]
+        elseif Δ[k-1] * Δ[k] <= zero(Δ[k]^2)
             m[k] = zero(TCoeffs)
         else
             α = (1.0 + (x[k+1] - x[k]) / (x[k+1] - x[k-1])) / 3.0
-            m[k] = Δ[k-1] * Δk / (α*Δk + (1.0 - α)*Δ[k-1])
+            m[k] = Δ[k-1] * Δ[k] / (α*Δ[k] + (1.0 - α)*Δ[k-1])
         end
     end
     m[n] = Δ[n-1]
@@ -366,15 +403,14 @@ function calcTangents(::Type{TCoeffs}, x::AbstractVector{<:Number},
     n = length(x)
     Δ = Vector{TCoeffs}(undef, n-1)
     m = Vector{TCoeffs}(undef, n)
-    for k in 1:n-1
-        Δk = (y[k+1] - y[k]) / (x[k+1] - x[k])
-        Δ[k] = Δk
+    for k ∈ eachindex(Δ)
+        Δ[k] = (y[k+1] - y[k]) / (x[k+1] - x[k])
         if k == 1   # left endpoint
-            m[k] = Δk
+            m[k] = Δ[k]
         else
-            p = ((x[k+1] - x[k]) * Δ[k-1] + (x[k] - x[k-1]) * Δk) / (x[k+1] - x[k-1])
-            m[k] = (sign(Δ[k-1]) + sign(Δk)) *
-                min(abs(Δ[k-1]), abs(Δk), 0.5*abs(p))
+            p = ((x[k+1] - x[k]) * Δ[k-1] + (x[k] - x[k-1]) * Δ[k]) / (x[k+1] - x[k-1])
+            m[k] = (sign(Δ[k-1]) + sign(Δ[k])) *
+                min(abs(Δ[k-1]), abs(Δ[k]), 0.5*abs(p))
         end
     end
     m[n] = Δ[n-1]

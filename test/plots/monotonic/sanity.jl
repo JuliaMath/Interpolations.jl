@@ -12,6 +12,7 @@ itypes = [LinearMonotonicInterpolation(),
     CardinalMonotonicInterpolation(0.0),
     CardinalMonotonicInterpolation(0.5),
     CardinalMonotonicInterpolation(1.0),
+    AkimaMonotonicInterpolation(),
     FritschCarlsonMonotonicInterpolation(),
     FritschButlandMonotonicInterpolation(),
     SteffenMonotonicInterpolation()
