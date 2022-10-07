@@ -49,7 +49,8 @@ count_interp_dims(::Type{<:Extrapolation{T,N,ITPT}}, n) where {T,N,ITPT} = count
     itpval = @inbounds(itp(xs...))
     ((xs == x) & allisreal(x)) && return itpval
     g = @inbounds gradient(itp, xs...)
-    extrapolate_value(eflag, skip_flagged_nointerp(itp, x), skip_flagged_nointerp(itp, xs), Tuple(g), itpval)
+    g = g.data # Extract NTuple data from SVector
+    extrapolate_value(eflag, skip_flagged_nointerp(itp, x), skip_flagged_nointerp(itp, xs), g, itpval)
 end
 @inline function (etp::Extrapolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
     # The eltype of the args may change the return type
@@ -71,8 +72,9 @@ end
         eflag = tcollect(etpflag, etp)
         xs = inbounds_position(eflag, bounds(itp), x, etp, x)
         g = @inbounds gradient(itp, xs...)
+        g = g.data # Extract NTuple data from SVector
         skipni = Base.Fix1(skip_flagged_nointerp, itp)
-        SVector(map(extrapolate_gradient, skipni(eflag), skipni(x), skipni(xs), Tuple(g)))
+        SVector(map(extrapolate_gradient, skipni(eflag), skipni(x), skipni(xs), g))
     end
 end
 

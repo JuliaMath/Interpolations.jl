@@ -19,7 +19,7 @@ end
 @inline function gradient(itp::GriddedInterpolation{T,N}, x::Vararg{Number,N}) where {T,N}
     @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
     wis = weightedindexes((value_weights, gradient_weights), itpinfo(itp)..., x)
-    SVector(map(inds->InterpGetindex(itp)[inds...], wis))
+    SVector{N, T}(map(inds->InterpGetindex(itp)[inds...], wis))
 end
 
 itpinfo(itp::GriddedInterpolation) = (tcollect(itpflag, itp), itp.knots)
