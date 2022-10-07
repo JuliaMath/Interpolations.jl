@@ -4,7 +4,7 @@ if !isdefined(Main, :InterpolationTestUtils)
 end
 
 using Test, SharedArrays, Random, ColorVectorSpace
-using StaticArrays, WoodburyMatrices
+using StaticArraysCore, WoodburyMatrices
 using Interpolations
 
 @test isempty(detect_ambiguities(Interpolations))

@@ -1,5 +1,5 @@
 using Interpolations
-using Test, LinearAlgebra, StaticArrays
+using Test, LinearAlgebra, StaticArraysCore
 
 @testset "Scaling" begin
     # Model linear interpolation of y = -3 + .5x by interpolating y=x
@@ -126,7 +126,7 @@ end
 @testset "eachvalue iteration" begin
     A = reshape(reinterpret(SVector{2,Float64}, collect(1.:12.)), 3, 2)
     sitp = scale(interpolate(A, BSpline(Cubic(Line(OnGrid())))), 1:3, 1:2)
-    @test first(eachvalue(sitp)) ≈ @SVector [1.,2.]
+    @test first(eachvalue(sitp)) ≈ SVector(1.,2.)
 end
 
 @testset "axes" begin

@@ -1,6 +1,6 @@
 module InterpolationTestUtils
 
-using Test, Interpolations, ForwardDiff, StaticArrays
+using Test, Interpolations, ForwardDiff, StaticArraysCore
 using Interpolations: degree, itpflag, bounds, lbounds, ubounds
 
 export check_axes, check_inbounds_values, check_oob, can_eval_near_boundaries,

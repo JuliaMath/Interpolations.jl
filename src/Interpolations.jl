@@ -37,7 +37,7 @@ export
     # scaling/scaling.jl
 
 using LinearAlgebra, SparseArrays
-using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
+using StaticArraysCore, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
 using ChainRulesCore, Requires
 
 using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
