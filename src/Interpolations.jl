@@ -94,6 +94,7 @@ struct Throw{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
 struct Flat{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
 "`Line(gt)` uses a constant slope for extrapolation"
 struct Line{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
+"`Free(gt)` the free boundary condition makes sure the interpoland has a continuous third derivative at the second-to-outermost cell boundary"
 struct Free{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
 "`Periodic(gt)` applies periodic boundary conditions"
 struct Periodic{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
