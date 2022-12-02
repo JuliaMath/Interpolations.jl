@@ -1,6 +1,6 @@
 The Interpolations.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2014: Tomas Lycken, Tim Holy.
+> Copyright (c) 2022: Mark Kittisopikul, Tomas Aschan, Tim Holy, and Interpolations.jl contributors.
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the
