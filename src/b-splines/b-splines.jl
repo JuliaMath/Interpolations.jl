@@ -9,6 +9,7 @@ export
 
 abstract type Degree{N} <: Flag end
 abstract type DegreeBC{N} <: Degree{N} end  # degree type supporting a BoundaryCondition
+(::Type{D})(::Type{BC}) where {D <: Degree, BC <: BoundaryCondition} = D(BC())
 
 """
     BSpline(degree)
