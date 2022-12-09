@@ -154,7 +154,7 @@ function MonotonicInterpolation(::Type{TWeights}, it::TInterpolationType, knots:
     m::Vector{TCoeffs1}, c::Vector{TCoeffs2}, d::Vector{TCoeffs3}) where {TWeights, TCoeffs1, TCoeffs2, TCoeffs3, TEl, TInterpolationType<:MonotonicInterpolationType, TKnots<:AbstractVector{<:Number}}
 
     isconcretetype(TInterpolationType) || error("The spline type must be a leaf type (was $TInterpolationType)")
-    isconcretetype(tcoef(A)) || warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
+    isconcretetype(tcoef(A)) || @warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
 
     check_monotonic(knots, A)
 
