@@ -50,6 +50,11 @@
         end
     end
 
+    # Test default constructor
+    itp_type = Cubic |> BSpline
+    itp = interpolate(1:5, itp_type)
+    @test itp(1:0.5:5) ≈ 1:0.5:5
+
     ix = 1:15
     k = length(ix) - 1
     f(x) = cos((x-1)*2pi/k)

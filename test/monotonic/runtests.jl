@@ -70,4 +70,21 @@ using Unitful
         @test_throws DimensionMismatch interpolate(x, y2, it)
         @test_throws MethodError interpolate(x, y3, it)
     end
+
+    # Issue 535
+    struct MyArray
+        a::Vector{Real} # Not recommended
+    end
+    x = 1:5
+    y = MyArray(
+        map(1:5) do x
+            x + rand()
+        end
+    )
+    interp = interpolate(
+        x,
+        y.a,
+        FritschCarlsonMonotonicInterpolation()
+    )
+    @test interp.(x) == y.a
 end

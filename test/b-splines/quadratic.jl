@@ -39,6 +39,11 @@
         end
     end
 
+    # Test default constructor
+    itp_type = Quadratic |> BSpline
+    itp = interpolate(1:5, itp_type)
+    @test itp(1:0.5:5) ≈ 1:0.5:5
+
     # InPlace
     let
         f(x) = sin((x-3)*2pi/9 - 1)

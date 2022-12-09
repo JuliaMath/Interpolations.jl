@@ -10,6 +10,8 @@
         for T in (Nearest, Previous, Next)
             it = Constant{T}()
             @test it isa Constant{T}
+            it = T |> Constant
+            @test it isa Constant{T}
         end
     end
 
