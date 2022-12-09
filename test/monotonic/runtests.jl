@@ -86,5 +86,5 @@ using Unitful
         y.a,
         FritschCarlsonMonotonicInterpolation()
     )
-    @test interp.(x) == y.a
+    @test interp.(x) ≈ y.a
 end
