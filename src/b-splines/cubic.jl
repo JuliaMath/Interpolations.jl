@@ -3,6 +3,8 @@ struct Cubic{BC<:BoundaryCondition} <: DegreeBC{3}
 end
 
 (deg::Cubic)(gt::GridType) = Cubic(deg.bc(gt))
+# Default constructor to match cubic_spline_interpolation
+Cubic() = Cubic(Line(OnGrid()))
 
 """
     Cubic(bc::BoundaryCondition)

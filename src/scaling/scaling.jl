@@ -28,6 +28,7 @@ function scale(itp::AbstractInterpolation{T,N,IT}, ranges::Vararg{AbstractRange,
     check_ranges(itpflag(itp), axes(itp), ranges)
     ScaledInterpolation{T,N,typeof(itp),IT,typeof(ranges)}(itp, ranges)
 end
+scale(itp::AbstractInterpolation{T,N,IT}, ranges::NTuple{N, <:AbstractRange}) where {T,N,IT} = scale(itp, ranges...)
 
 function check_ranges(flags, axs, ranges)
     check_range(getfirst(flags), axs[1], ranges[1])

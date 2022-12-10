@@ -20,6 +20,8 @@ struct BSpline{D<:Degree} <: InterpolationType
     degree::D
 end
 
+BSpline(::Type{D}) where D <: Degree = BSpline(D())
+
 bsplinetype(::Type{BSpline{D}}) where {D<:Degree} = D
 bsplinetype(::BS) where {BS<:BSpline} = bsplinetype(BS)
 

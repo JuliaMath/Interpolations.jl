@@ -1,6 +1,8 @@
 struct Quadratic{BC<:BoundaryCondition} <: DegreeBC{2}
     bc::BC
 end
+# Default constructor
+Quadratic() = Quadratic(Line(OnGrid()))
 (deg::Quadratic)(gt::GridType) = Quadratic(deg.bc(gt))
 
 

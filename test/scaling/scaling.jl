@@ -1,5 +1,5 @@
 using Interpolations
-using Test, LinearAlgebra, StaticArrays
+using Test, LinearAlgebra, StaticArrays, OffsetArrays
 
 @testset "Scaling" begin
     # Model linear interpolation of y = -3 + .5x by interpolating y=x
@@ -121,6 +121,10 @@ using Test, LinearAlgebra, StaticArrays
     foo!(rfoo, sitp)
     bar!(rbar, sitp)
     @test rfoo ≈ rbar
+
+    itp = scale(interpolate(ones(2,2), BSpline(Linear())), 1:2, 1:2)
+    itp2 = scale(interpolate(ones(2,2), BSpline(Linear())), (1:2, 1:2))
+    @test itp == itp2
 end
 
 @testset "eachvalue iteration" begin
