@@ -3,6 +3,8 @@ struct Quadratic{BC<:BoundaryCondition} <: DegreeBC{2}
 end
 # Default constructor
 Quadratic() = Quadratic(Line(OnGrid()))
+Quadratic{BC}(::Type{BC}) where BC <: BoundaryCondition = Quadratic{BC}(BC())
+Quadratic{BC}(::Type{BC2}) where {BC <: BoundaryCondition, BC2 <: BoundaryCondition} = throw(ArgumentError("Argument must match type parameter"))
 (deg::Quadratic)(gt::GridType) = Quadratic(deg.bc(gt))
 
 

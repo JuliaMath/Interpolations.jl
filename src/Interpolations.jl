@@ -109,7 +109,13 @@ struct InPlaceQ{GT<:Union{GridType,Nothing}} <: BoundaryCondition gt::GT end
 const Natural = Line
 
 (::Type{BC})() where BC<:BoundaryCondition = BC(nothing)
-(::Type{BC})(::Type{GT}) where {GT <: GridType, BC<:BoundaryCondition} = BC{GT}(GT())
+# (::Type{BC})(::Type{GT}) where {GT <: GridType, BC<:BoundaryCondition} = BC{GT}(GT())
+for BC in (:Throw, :Flat, :Line, :Free, :Reflect, :InPlace)
+    eval(quote
+        $BC(::Type{GT}) where GT <: GridType = $BC{GT}(GT())
+        $BC{GT}(::Type{GT}) where GT <: GridType = $BC{GT}(GT())
+    end)
+end
 function Base.show(io::IO, bc::BoundaryCondition)
     print(io, nameof(typeof(bc)), '(')
     bc.gt === nothing || show(io, bc.gt)

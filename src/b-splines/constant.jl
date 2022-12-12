@@ -37,9 +37,10 @@ struct Constant{T<:ConstantInterpType,BC<:Union{Throw{OnGrid},Periodic{OnCell}}}
 end
 
 # Default to Nearest and Throw{OnGrid}
-Constant(args...) = Constant{Nearest}(args...)
+Constant() = Constant{Nearest}()
 Constant{T}() where {T<:ConstantInterpType} = Constant{T,Throw{OnGrid}}(Throw(OnGrid()))
 Constant{T}(bc::BC) where {T<:ConstantInterpType,BC<:BoundaryCondition} = Constant{T,BC}(bc)
+Constant(p::Periodic) where {T<:ConstantInterpType} = Constant{Nearest}(p)
 Constant{T}(::Periodic{Nothing}) where {T<:ConstantInterpType} = Constant{T,Periodic{OnCell}}(Periodic(OnCell()))
 Constant(::Type{T}) where T <: ConstantInterpType = Constant{T}()
 
