@@ -38,11 +38,11 @@ end
 
 # Default to Nearest and Throw{OnGrid}
 Constant() = Constant{Nearest}()
+Constant(bc::BC) where {BC <: BoundaryCondition} = Constant{Nearest}(bc)
+Constant(::Type{T}) where T <: ConstantInterpType = Constant{T}()
 Constant{T}() where {T<:ConstantInterpType} = Constant{T,Throw{OnGrid}}(Throw(OnGrid()))
 Constant{T}(bc::BC) where {T<:ConstantInterpType,BC<:BoundaryCondition} = Constant{T,BC}(bc)
-Constant(p::Periodic) where {T<:ConstantInterpType} = Constant{Nearest}(p)
 Constant{T}(::Periodic{Nothing}) where {T<:ConstantInterpType} = Constant{T,Periodic{OnCell}}(Periodic(OnCell()))
-Constant(::Type{T}) where T <: ConstantInterpType = Constant{T}()
 
 function Base.show(io::IO, deg::Constant)
     print(io, nameof(typeof(deg)), '{', typeof(deg).parameters[1], '}', '(')
