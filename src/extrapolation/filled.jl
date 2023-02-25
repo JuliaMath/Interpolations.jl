@@ -1,4 +1,4 @@
-mutable struct FilledExtrapolation{T,N,ITP<:AbstractInterpolation,IT,FT} <: AbstractExtrapolation{T,N,ITP,IT}
+struct FilledExtrapolation{T,N,ITP<:AbstractInterpolation,IT,FT} <: AbstractExtrapolation{T,N,ITP,IT}
     itp::ITP
     fillvalue::FT
 end
