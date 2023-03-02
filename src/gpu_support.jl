@@ -41,6 +41,12 @@ function adapt_structure(to, itp::Extrapolation{T,N}) where {T,N}
     Extrapolation{eltype(itp′),N,typeof(itp′),itptype(itp),typeof(et)}(itp′, et)
 end
 
+function adapt_structure(to, itp::FilledExtrapolation{T,N}) where {T,N}
+    fillvalue = itp.fillvalue
+    itp′ = adapt(to, itp.itp)
+    FilledExtrapolation{eltype(itp′),N,typeof(itp′),itptype(itp),typeof(fillvalue)}(itp′, fillvalue)
+end
+
 import Base.Broadcast: broadcasted, BroadcastStyle
 using Base.Broadcast: broadcastable, combine_styles, AbstractArrayStyle
 function broadcasted(itp::AbstractInterpolation, args...)
@@ -58,6 +64,7 @@ Some array wrappers, like `OffsetArray`, should be skipped.
 """
 root_storage_type(::Type{T}) where {T<:AbstractInterpolation} = Array{eltype(T),ndims(T)} # fallback to `Array` by default.
 root_storage_type(::Type{T}) where {T<:Extrapolation} = root_storage_type(fieldtype(T, 1))
+root_storage_type(::Type{T}) where {T<:FilledExtrapolation} = root_storage_type(fieldtype(T, 1))
 root_storage_type(::Type{T}) where {T<:ScaledInterpolation} = root_storage_type(fieldtype(T, 1))
 root_storage_type(::Type{T}) where {T<:BSplineInterpolation} = root_storage_type(fieldtype(T, 1))
 root_storage_type(::Type{T}) where {T<:LanczosInterpolation} = root_storage_type(fieldtype(T, 1))
