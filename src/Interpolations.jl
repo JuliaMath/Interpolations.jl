@@ -428,8 +428,8 @@ maybe_clamp(itp, xs) = maybe_clamp(BoundsCheckStyle(itp), itp, xs)
 maybe_clamp(::NeedsCheck, itp, xs) = map(clamp, xs, lbounds(itp), ubounds(itp))
 maybe_clamp(::CheckWillPass, itp, xs) = xs
 
-Base.hash(x::AbstractInterpolation, h::UInt = zero(UInt)) = Base.hash_uint(3h - objectid(x))
-Base.hash(x::AbstractExtrapolation, h::UInt = zero(UInt)) = Base.hash_uint(3h - objectid(x))
+Base.hash(x::AbstractInterpolation, h::UInt) = Base.hash_uint(3h - objectid(x))
+Base.hash(x::AbstractExtrapolation, h::UInt) = Base.hash_uint(3h - objectid(x))
 
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
