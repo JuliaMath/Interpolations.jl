@@ -38,7 +38,7 @@ export
 
 using LinearAlgebra, SparseArrays
 using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
-using ChainRulesCore, Requires
+using ChainRulesCore
 
 using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
     SizeUnknown, Indices
@@ -450,8 +450,14 @@ if VERSION >= v"1.6"
     include("gpu_support.jl")
 end
 
+if !isdefined(Base, :get_extension)
+using Requires
+end
+
+@static if !isdefined(Base, :get_extension)
 function __init__()
-    @require Unitful="1986cc42-f94f-5a68-af5c-568840ba703d" include("requires/unitful.jl")
+    @require Unitful="1986cc42-f94f-5a68-af5c-568840ba703d" include("../ext/InterpolationsUnitfulExt.jl")
+end
 end
 
 end # module
