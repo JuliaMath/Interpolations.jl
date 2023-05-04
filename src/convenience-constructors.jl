@@ -1,4 +1,4 @@
-# convenience copnstructors for constant / linear / cubic spline interpolations
+# convenience constructors for constant / linear / cubic spline interpolations
 # 1D version
 constant_interpolation(range::AbstractRange, vs::AbstractVector; extrapolation_bc = Throw()) =
     extrapolate(scale(interpolate(vs, BSpline(Constant())), range), extrapolation_bc)

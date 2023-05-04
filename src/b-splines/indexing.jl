@@ -98,7 +98,7 @@ function weightedindexes(parts::Vararg{Union{Int,GradParts},N}) where N
     #       gwik are gradient-coefficient WeightedIndexes along dimension k
     #       i2 is the integer index along dimension 2
     # These will result in a 2-vector gradient.
-    # TODO: check whether this is inferrable
+    # TODO: check whether this is inferable
     slot_substitute(parts, map(positions, parts), map(valuecoefs, parts), map(gradcoefs, parts))
 end
 
@@ -127,7 +127,7 @@ end
 # Substitute the dth dimension's gradient coefs for the remaining coefs, column by column
 slot_substitute(kind::Tuple, p, v, g, h) = (_column(kind, kind, p, v, g, h)..., slot_substitute(Base.tail(kind), p, v, g, h)...)
 slot_substitute(::Tuple{}, p, v, g, h) = ()
-# inner: calulate a single column
+# inner: calculate a single column
 function _column(kind1::K, kind2::K, p, v, g, h) where {K<:Tuple}
     ss = substitute_ruled(v, kind1, h)
     (map(maybe_weightedindex, p, ss), _column(Base.tail(kind1), kind2, p, v, g, h)...)
