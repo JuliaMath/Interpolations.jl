@@ -28,7 +28,7 @@ check1(args) = _check1(true, args...)
 @inline _check1(tf, a, args...) = _check1(tf & (a == 1), args...)
 _check1(tf) = tf
 
-# These are not inferrable for mixed-type tuples, so when that's important use `getfirst`
+# These are not inferable for mixed-type tuples, so when that's important use `getfirst`
 # and `getrest` instead.
 iextract(f::Flag, d) = f
 iextract(t::Tuple, d) = t[d]

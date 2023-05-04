@@ -153,7 +153,7 @@ that\n\np(1) = 0\np(0) = q(1)\np\[CloseCurlyQuote](1) = 0\n\
 p\[CloseCurlyQuote](0) = q\[CloseCurlyQuote](1)\nq\[CloseCurlyQuote](0) = 0\n\
 p\[CloseCurlyQuote]\[CloseCurlyQuote](1) = 0\np\[CloseCurlyQuote]\
 \[CloseCurlyQuote](0) = q\[CloseCurlyQuote]\[CloseCurlyQuote](1)\n\nThese \
-conditions are satisifed by the following cubic polynomials (TODO: show \
+conditions are satisfied by the following cubic polynomials (TODO: show \
 derivation somehow -- I just took it from Tim\[CloseCurlyQuote]s notes):"
 }], "Text",
  CellChangeTimes->{{3.656419693589711*^9, 3.6564199581451*^9}, {
@@ -362,7 +362,7 @@ Cell[BoxData[{
      "]"}], "/.", "params"}]}], "\[IndentingNewLine]", 
   RowBox[{"(*", " ", 
    RowBox[{
-   "To", " ", "analyzy", " ", "bounary", " ", "conditions", " ", "we", " ", 
+   "To", " ", "analyze", " ", "boundary", " ", "conditions", " ", "we", " ", 
     "also", " ", "want", " ", "first", " ", "and", " ", "second", " ", 
     "derivatives", " ", "of", " ", "y"}], " ", 
    "*)"}]}], "\[IndentingNewLine]", 

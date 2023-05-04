@@ -182,7 +182,7 @@ function checkbounds(::Type{Bool}, iter::KnotIterator{T,ET}, idx::Int) where {T,
 end
 
 # Returns the knot given by idx, or raise a BoundsError
-# Despatches to getknotindex(ET, iter, idx) if idx is an extrapolated knot,
+# Dispatches to getknotindex(ET, iter, idx) if idx is an extrapolated knot,
 # where ET is the boundary conditions for the relevant side
 function getindex(iter::KnotIterator{T, ET}, idx::Int) where {T, ET <: ExtrapDimSpec}
     # Get Left/Right Extrapolation Boundary Conditions for the KnotIterator

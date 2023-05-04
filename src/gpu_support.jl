@@ -59,7 +59,7 @@ end
 """
     Interpolations.root_storage_type(::Type{<:AbstractInterpolation}) -> Type{<:AbstractArray}
 
-This function returns the type of the root cofficients array of an `AbstractInterpolation`.
+This function returns the type of the root coefficients array of an `AbstractInterpolation`.
 Some array wrappers, like `OffsetArray`, should be skipped.
 """
 root_storage_type(::Type{T}) where {T<:AbstractInterpolation} = Array{eltype(T),ndims(T)} # fallback to `Array` by default.
