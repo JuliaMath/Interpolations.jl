@@ -121,7 +121,7 @@ degree(flag::Gridded) = flag.degree
 function deduplicate_knots!(knots; move_knots::Bool = false)
     last_knot = first(knots)
     for i = eachindex(knots)
-        if i == 1
+        if i == firstindex(knots)
             continue
         end
         if knots[i] == last_knot || (move_knots && (@inbounds knots[i] <= knots[i-1]))
