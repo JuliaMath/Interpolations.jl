@@ -79,3 +79,12 @@ end
     @test (@inferred eltype(itp)) == Float64
     @test (@inferred ndims(itp)) == 1
 end
+
+@testset "checkbounds" begin
+    itp = interpolate(randn(2,2,1), (BSpline(Linear()), BSpline(Linear()), NoInterp()))
+    @test !Base.checkbounds(Bool, itp, 1)
+    @test Base.checkbounds(Bool, itp, 1, 1)
+    @test Base.checkbounds(Bool, itp, 1, 1, 1)
+    @test Base.checkbounds(Bool, itp, 1, 1, 1, 1)
+    @test !Base.checkbounds(Bool, itp, 1, 1, 1, 1, 2)
+end

@@ -418,10 +418,12 @@ _checkbounds(::CheckWillPass, itp, x) = true
 _checkbounds(::NeedsCheck, itp, x) = checklubounds(lbounds(itp), ubounds(itp), x)
 
 checklubounds(ls, us, xs) = _checklubounds(true, ls, us, xs)
-_checklubounds(tf::Bool, ls, us, xs::Tuple{Number, Vararg{Any}}) =
-    _checklubounds(tf & (ls[1] <= xs[1] <= us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
-_checklubounds(tf::Bool, ls, us, xs::Tuple{AbstractVector, Vararg{Any}}) =
+_checklubounds(tf::Bool, ls::Tuple, us::Tuple, xs::Tuple) =
     _checklubounds(tf & allbetween(ls[1], xs[1], us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
+_checklubounds(tf::Bool, ::Tuple{}, ::Tuple{}, xs::Tuple) =
+    _checklubounds(tf & all(isone, xs[1]), (), (), Base.tail(xs))
+_checklubounds(tf::Bool, ls::Tuple, us::Tuple, ::Tuple{}) =
+    _checklubounds(tf & (ls[1] == us[1]), Base.tail(ls), Base.tail(us), ())
 _checklubounds(tf::Bool, ::Tuple{}, ::Tuple{}, ::Tuple{}) = tf
 
 maybe_clamp(itp, xs) = maybe_clamp(BoundsCheckStyle(itp), itp, xs)
