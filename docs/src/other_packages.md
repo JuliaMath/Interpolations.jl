@@ -20,6 +20,7 @@ Other interpolation packages for Julia include:
 - [LinearInterpolations.jl](https://github.com/jw3126/LinearInterpolations.jl) allows for interpolation using weighted averages allowing probability distributions, rotations, and other Lie groups to be interpolated.
 - [LinearInterpolators.jl](https://github.com/emmt/LinearInterpolators.jl) provides linear interpolation methods for Julia based on InterpolationKernels.jl, above.
 - [LocalFunctionApproximation.jl](https://github.com/sisl/LocalFunctionApproximation.jl) provides local function approximators that interpolates a scalar-valued function across a vector space.
+- [NaturalNeighbours.jl](https://github.com/DanielVandH/NaturalNeighbours.jl) provides natural neighbour interpolation methods for scattered two-dimensional point sets, with support for derivative generation.
 - [PCHIPInterpolation.jl](https://github.com/gerlero/PCHIPInterpolation.jl) for monotonic interpolation.
 - [PiecewiseLinearApprox.jl](https://github.com/RJDennis/PiecewiseLinearApprox.jl) performs piecewise linear interpolation over an arbitrary number of dimensions.
 - [ScatteredInterpolation.jl](https://github.com/eljungsk/ScatteredInterpolation.jl) interpolates scattered data in arbitrary dimensions.

@@ -38,7 +38,7 @@ export
 
 using LinearAlgebra, SparseArrays
 using StaticArraysCore, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
-using ChainRulesCore, Requires
+using ChainRulesCore
 
 using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
     SizeUnknown, Indices
@@ -428,8 +428,8 @@ maybe_clamp(itp, xs) = maybe_clamp(BoundsCheckStyle(itp), itp, xs)
 maybe_clamp(::NeedsCheck, itp, xs) = map(clamp, xs, lbounds(itp), ubounds(itp))
 maybe_clamp(::CheckWillPass, itp, xs) = xs
 
-Base.hash(x::AbstractInterpolation, h::UInt = zero(UInt)) = Base.hash_uint(3h - objectid(x))
-Base.hash(x::AbstractExtrapolation, h::UInt = zero(UInt)) = Base.hash_uint(3h - objectid(x))
+Base.hash(x::AbstractInterpolation, h::UInt) = Base.hash_uint(3h - objectid(x))
+Base.hash(x::AbstractExtrapolation, h::UInt) = Base.hash_uint(3h - objectid(x))
 
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
@@ -450,8 +450,14 @@ if VERSION >= v"1.6"
     include("gpu_support.jl")
 end
 
+if !isdefined(Base, :get_extension)
+using Requires
+end
+
+@static if !isdefined(Base, :get_extension)
 function __init__()
-    @require Unitful="1986cc42-f94f-5a68-af5c-568840ba703d" include("requires/unitful.jl")
+    @require Unitful="1986cc42-f94f-5a68-af5c-568840ba703d" include("../ext/InterpolationsUnitfulExt.jl")
+end
 end
 
 end # module

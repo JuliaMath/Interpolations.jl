@@ -31,6 +31,15 @@ JLArrays.allowscalar(false)
     @test gradient.(Ref(esitp), idx) ==
         collect(gradient.(Ref(jlesitp), idx)) ==
         collect(gradient.(Ref(jlesitp), jlidx))
+
+    esitp = extrapolate(sitp, 0.0)
+    jlesitp = jl(esitp)
+    idx = -1.0:0.84:41.0
+    jlidx = jl(collect(idx))
+    @test esitp.(idx) == collect(jlesitp.(idx)) == collect(jlesitp.(jlidx))
+    @test gradient.(Ref(esitp), idx) ==
+        collect(gradient.(Ref(jlesitp), idx)) ==
+        collect(gradient.(Ref(jlesitp), jlidx))
 end
 
 @testset "2d GPU Interpolation" begin
@@ -69,6 +78,16 @@ end
     @test gradient.(Ref(esitp), idx, idx') ==
         collect(gradient.(Ref(jlesitp), idx, idx')) ==
         collect(gradient.(Ref(jlesitp), jlidx, jlidx'))
+
+    esitp = extrapolate(sitp, 0.0)
+    jlesitp = jl(esitp)
+    idx = -1.0:0.84:41.0
+    jlidx = jl(collect(idx))
+    @test esitp.(idx, idx') == collect(jlesitp.(idx, idx')) == collect(jlesitp.(jlidx, jlidx'))
+    # gradient for `extrapolation` is currently broken under CUDA
+    @test gradient.(Ref(esitp), idx, idx') ==
+        collect(gradient.(Ref(jlesitp), idx, idx')) ==
+        collect(gradient.(Ref(jlesitp), jlidx, jlidx'))
 end
 
 @testset "Lanczos on gpu" begin
@@ -99,6 +118,7 @@ end
     @test eltype(adapt(Array{Real}, itp)) === Float64
     @test eltype(adapt(Array{Float32}, scale(itp, A_x))) === Float32
     @test eltype(adapt(Array{Float32}, extrapolate(scale(itp, A_x), Flat()))) === Float32
+    @test eltype(adapt(Array{Float32}, extrapolate(scale(itp, A_x), 0.0))) === Float32
     itp = interpolate((-1:0.2:1, -1:0.2:1), randn(11, 11), Gridded(Linear()))
     @test eltype(adapt(Array{Float32}, itp)) === Float32
     itp = interpolate((1.0:0.0, 1.:0.), randn(0, 0), Gridded(Linear()))
