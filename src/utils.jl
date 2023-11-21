@@ -98,14 +98,15 @@ function getindex!(dest, itp, xs::Vararg{AbstractArray,N}) where N
     return dest
 end
 
-function allbetween(l::Real, xs, u::Real)
+allbetween(l, x::Number, u) = (l <= x) & (x <= u)
+function allbetween(l, xs::AbstractVector, u)
     ret = true
     @inbounds for x in xs
-        ret = ret & (l <= x) & (x <= u)
+        ret = ret & allbetween(l, x, u)
     end
     return ret
 end
-allbetween(l::Real, xs::AbstractRange, u::Real) = (l <= minimum(xs)) & (maximum(xs) <= u)
+allbetween(l::Real, xs::AbstractRange{<:Real}, u::Real) = (l <= minimum(xs)) & (maximum(xs) <= u)
 
 allisreal(x) = _allisreal(true, x...)
 @inline _allisreal(ret, x1::Real, xs...) = _allisreal(ret, xs...)
