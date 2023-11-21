@@ -50,4 +50,4 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["OffsetArrays", "Unitful", "SharedArrays", "StaticArraysCore", "ForwardDiff", "LinearAlgebra", "DualNumbers", "Random", "Pkg", "Test", "Zygote", "ColorVectorSpace"]
+test = ["OffsetArrays", "Unitful", "SharedArrays", "StaticArrays", "StaticArraysCore", "ForwardDiff", "LinearAlgebra", "DualNumbers", "Random", "Pkg", "Test", "Zygote", "ColorVectorSpace"]
