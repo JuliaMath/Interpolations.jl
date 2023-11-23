@@ -156,7 +156,7 @@ using Interpolations, Test, ForwardDiff
     end
     @testset "issue 469" begin
         # We have different inference result on different version.
-        max_dim = VERSION < v"1.3" ? 3 : isdefined(Base, :Any32) ? 7 : 5
+        max_dim = isdefined(Base, :Any32) ? 7 : 5
         for dims in 3:max_dim
             A = zeros(Float64, ntuple(_ -> 5, dims))
             itp = interpolate(A, BSpline(Quadratic(Reflect(OnCell()))))

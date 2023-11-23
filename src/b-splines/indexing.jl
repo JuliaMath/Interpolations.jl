@@ -102,10 +102,12 @@ function weightedindexes(parts::Vararg{Union{Int,GradParts},N}) where N
     slot_substitute(parts, map(positions, parts), map(valuecoefs, parts), map(gradcoefs, parts))
 end
 
-# Skip over NoInterp dimensions
-slot_substitute(kind::Tuple{Int,Vararg{Any}}, p, v, g) = slot_substitute(Base.tail(kind), p, v, g)
 # Substitute the dth dimension's gradient coefs for the remaining coefs
-slot_substitute(kind, p, v, g) = (map(maybe_weightedindex, p, substitute_ruled(v, kind, g)), slot_substitute(Base.tail(kind), p, v, g)...)
+function slot_substitute(kind, p, v, g)
+    rest = slot_substitute(Base.tail(kind), p, v, g)
+    kind[1] isa Int && return rest # Skip over NoInterp dimensions
+    (map(maybe_weightedindex, p, substitute_ruled(v, kind, g)), rest...)
+end
 # Termination
 slot_substitute(kind::Tuple{}, p, v, g) = ()
 
@@ -132,15 +134,14 @@ function _column(kind1::K, kind2::K, p, v, g, h) where {K<:Tuple}
     ss = substitute_ruled(v, kind1, h)
     (map(maybe_weightedindex, p, ss), _column(Base.tail(kind1), kind2, p, v, g, h)...)
 end
+_column(kind1::K, kind2::K, p, v, g, h) where {K<:Tuple{Int,Vararg}} = () # Skip over NoInterp dimensions
 function _column(kind1::Tuple, kind2::Tuple, p, v, g, h)
+    rest = _column(Base.tail(kind1), kind2, p, v, g, h)
+    kind1[1] isa Int && return rest # Skip over NoInterp dimensions
     ss = substitute_ruled(substitute_ruled(v, kind1, g), kind2, g)
-    (map(maybe_weightedindex, p, ss), _column(Base.tail(kind1), kind2, p, v, g, h)...)
+    (map(maybe_weightedindex, p, ss), rest...)
 end
 _column(::Tuple{}, ::Tuple, p, v, g, h) = ()
-# Skip over NoInterp dimensions
-slot_substitute(kind::Tuple{Int,Vararg{Any}}, p, v, g, h) = slot_substitute(Base.tail(kind), p, v, g, h)
-_column(kind1::Tuple{Int,Vararg{Any}}, kind2::Tuple, p, v, g, h) =
-    _column(Base.tail(kind1), kind2, p, v, g, h)
 
 weightedindex_parts(fs::F, itpflag::BSpline, ax, x) where F =
     weightedindex_parts(fs, degree(itpflag), ax, x)
