@@ -278,24 +278,33 @@ struct InterpGetindex{N,A<:AbstractArray{<:Any,N}}
     InterpGetindex(A::AbstractArray) = new{ndims(A),typeof(A)}(A)
 end
 @inline Base.getindex(A::InterpGetindex{N}, I::Vararg{Union{Int,WeightedIndex},N}) where {N} =
-    interp_getindex(A.coeffs, ntuple(_ -> 0, Val(N)), map(indexflag, I)...)
-indexflag(I::Int) = I
-@inline indexflag(I::WeightedIndex) = indextuple(I), weights(I)
+    interp_getindex(A.coeffs, ntuple(zero, Val(N)), map(indexflag, I)...)
+@inline indexflag(I) = indextuple(I), weights(I)
+
+# Direct recursion would allow more eager inference before julia 1.11.
+# Normalize all index into the same format.
+struct One end  # Singleton for express weights of no-interp dims
+indextuple(I::Int) = (I,)
+weights(::Int) = (One(),)
+
+struct Zero end # Singleton for dim expansion termination
 
 # A recursion-based `interp_getindex`, which follows a "move processed indexes to the back" strategy
 # `I` contains the processed index, and (wi1, wis...) contains the yet-to-be-processed indexes
-# Here we meet a no-interp dim, just append the index to `I`'s end.
-@inline interp_getindex(A, I, wi1::Int, wis...) =
-    interp_getindex(A, (Base.tail(I)..., wi1), wis...)
 # Here we handle the expansion of a single dimension.
-@inline interp_getindex(A, I, wi1::NTuple{2,Tuple{Any,Vararg{Any,N}}}, wis...) where {N} =
-    wi1[2][end] * interp_getindex(A, (Base.tail(I)..., wi1[1][end]), wis...) +
-    interp_getindex(A, I, map(Base.front, wi1), wis...)
-@inline interp_getindex(A, I, wi1::NTuple{2,Tuple{Any}}, wis...) =
-    wi1[2][1] * interp_getindex(A, (Base.tail(I)..., wi1[1][1]), wis...)
+@inline function interp_getindex(A, I, (is, ws)::NTuple{2,Tuple}, wis...)
+    itped1 = interp_getindex(A, (Base.tail(I)..., is[end]), wis...)
+    witped = interp_getindex(A, I, (Base.front(is), Base.front(ws)), wis...)
+    _weight_itp(ws[end], itped1, witped)
+end
+interp_getindex(_, _, ::NTuple{2,Tuple{}}, ::Vararg) = Zero()
 # Termination
 @inline interp_getindex(A::AbstractArray{T,N}, I::Dims{N}) where {T,N} =
     @inbounds A[I...] # all bounds-checks have already happened
+
+_weight_itp(w, i, wir) = w * i + wir
+_weight_itp(::One, i, ::Zero) = i
+_weight_itp(w, i, ::Zero) = w * i
 
 """
     w = value_weights(degree, δx)
