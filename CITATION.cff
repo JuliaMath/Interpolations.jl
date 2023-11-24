@@ -1,0 +1,14 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Kittisopikul"
+    given-names: "Mark"
+    orcid: "https://orcid.org/0000-0002-9558-6248"
+  - family-names: "Holy"
+    given-names: "Timothy E."
+    orcid: "https://orcid.org/0000-0002-2429-1071"
+  - family-names: "Aschan"
+    given-names: "Tomas"
+title: JuliaMath/Interpolations.jl: v0.14.7
+version: v0.14.7
+date-released: 2022-12-10
