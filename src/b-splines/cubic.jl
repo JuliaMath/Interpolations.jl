@@ -5,6 +5,8 @@ end
 (deg::Cubic)(gt::GridType) = Cubic(deg.bc(gt))
 # Default constructor to match cubic_spline_interpolation
 Cubic() = Cubic(Line(OnGrid()))
+Cubic{BC}(::Type{BC}) where BC <: BoundaryCondition = Cubic{BC}(BC())
+Cubic{BC}(::Type{BC2}) where {BC <: BoundaryCondition, BC2 <: BoundaryCondition} = throw(ArgumentError("Argument must match type parameter"))
 
 """
     Cubic(bc::BoundaryCondition)

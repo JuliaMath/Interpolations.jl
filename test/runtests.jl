@@ -50,6 +50,7 @@ const isci = get(ENV, "CI", "") in ("true", "True")
     include("convenience-constructors.jl")
     include("readme-examples.jl")
     include("iterate.jl")
+    include("pipes.jl")
 
     # Chain rules interaction
     include("chainrules.jl")
