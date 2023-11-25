@@ -72,6 +72,7 @@ Other interpolation packages for Julia include:
 - [FEMBasis.jl](https://github.com/JuliaFEM/FEMBasis.jl) contains interpolation routines for standard finite element function spaces.
 - [FineShift.jl](https://github.com/emmt/FineShift.jl) does fast sub-sample shifting of multidimensional arrays.
 - [FourierTools.jl](https://github.com/bionanoimaging/FourierTools.jl) includes sinc interpolation for up and down sampling.
+- [GeoStats.jl](https://github.com/JuliaEarth/GeoStats.jl) provides interpolation and simulation methods over complex 2D and 3D meshes.
 - [GridInterpolations.jl](https://github.com/sisl/GridInterpolations.jl) performs multivariate interpolation on a rectilinear grid.
 - [InterpolationKernels.jl](https://github.com/emmt/InterpolationKernels.jl) provides a library of interpolation kernels.
 - [KissSmoothing.jl](https://github.com/francescoalemanno/KissSmoothing.jl) implements denoising and a Radial Basis Function estimation procedure.
