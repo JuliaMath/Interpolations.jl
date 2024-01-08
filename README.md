@@ -65,7 +65,7 @@ Other interpolation packages for Julia include:
 - [BasicInterpolators.jl](https://github.com/markmbaum/BasicInterpolators.jl) provides a collection of common interpolation recipes for basic applications.
 - [BSplineKit.jl](https://github.com/jipolanco/BSplineKit.jl) offers tools for B-spline based Galerkin and collocation methods, including for interpolation and approximation.
 - [Curves.jl](https://github.com/lungben/Curves.jl) supports log-interpolation via immutable `Curve` objects.
-- [DataInterpolations.jl](https://github.com/PumasAI/DataInterpolations.jl) is a library for performing interpolations of one-dimensional data.
+- [DataInterpolations.jl](https://github.com/SciML/DataInterpolations.jl) is a library for performing interpolations of one-dimensional data.
 - [Dierckx.jl](https://github.com/kbarbary/Dierckx.jl) is a wrapper for the dierckx Fortran library, which also underlies `scipy.interpolate`.
 - [DIVAnd.jl](https://github.com/gher-ulg/DIVAnd.jl) for N-dimensional smoothing interpolation. 
 - [FastChebInterp.jl](https://github.com/stevengj/FastChebInterp.jl) does fast multidimensional Chebyshev interpolation on a hypercube using separable grid of interpolation points.
