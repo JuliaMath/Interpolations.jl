@@ -1,6 +1,4 @@
-# deprecate getindex for non-integer numeric indices
-@deprecate getindex(itp::AbstractInterpolation{T,N}, i::Vararg{Number,N}) where {T,N} itp(i...)
-@deprecate getindex(itp::AbstractInterpolation{T,N}, i::Vararg{ExpandedIndexTypes,N}) where {T,N} itp(i...)
+# Removed with 0.16, indexing via non-integers
 
 for T in (:Throw, :Flat, :Line, :Free, :Periodic, :Reflect, :InPlace, :InPlaceQ)
     @eval begin
