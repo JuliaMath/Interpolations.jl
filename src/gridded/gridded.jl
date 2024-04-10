@@ -97,25 +97,25 @@ are unique. Otherwise, a warning will be issued.
 ```jldoctest; setup = :(using Interpolations)
 julia> knots = [-8.0, 0.0, 20.0, 20.0]
 4-element Vector{Float64}:
--8.0
-0.0
-20.0
-20.0
+ -8.0
+  0.0
+ 20.0
+ 20.0
 
 julia> Interpolations.deduplicate_knots!(knots)
 4-element Vector{Float64}:
--8.0
-0.0
-20.0
-20.000000000000004
+ -8.0
+  0.0
+ 20.0
+ 20.000000000000004
 
 julia> Interpolations.deduplicate_knots!([1.0, 1.0, 1.0, nextfloat(1.0), nextfloat(1.0)]; move_knots = true)
 5-element Vector{Float64}:
-1.0
-1.0000000000000002
-1.0000000000000004
-1.0000000000000007
-1.0000000000000009
+ 1.0
+ 1.0000000000000002
+ 1.0000000000000004
+ 1.0000000000000007
+ 1.0000000000000009
 ```
 """
 function deduplicate_knots!(knots; move_knots::Bool = false)
