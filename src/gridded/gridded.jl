@@ -94,7 +94,7 @@ are unique. Otherwise, a warning will be issued.
 
 # Example
 
-```jldoctest
+```jldoctest; setup = :(using Interpolations)
 julia> knots = [-8.0, 0.0, 20.0, 20.0]
 4-element Vector{Float64}:
 -8.0
