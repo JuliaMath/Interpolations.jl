@@ -32,7 +32,7 @@ end
                          array::AbstractArray{Tel,N},
                          interpolationType::DimSpec{<:Gridded})
 
-    Construct a GriddedInterpolation for generic knots from an AbstractArray
+Construct a GriddedInterpolation for generic knots from an AbstractArray
 """
 function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {N,Tel,TWeights<:Real,IT<:DimSpec{Gridded}}
     isconcretetype(IT) || error("The b-spline type must be a leaf type (was $IT)")
@@ -53,9 +53,9 @@ end
                          array::AbstractArray{TCoefs,N},
                          interpolationType::DimSpec{<:Gridded})
 
-    Construct a GriddedInterpolation for generic knots from an AbstractUnitRange.
+Construct a GriddedInterpolation for generic knots from an AbstractUnitRange.
 
-    AbstractUnitRanges are collected to an Array to not confuse bound calculations (See Issue #398)
+AbstractUnitRanges are collected to an Array to not confuse bound calculations (See Issue #398)
 """
 function GriddedInterpolation(tw::Type{TWeights}, knots::NTuple{N,AbstractUnitRange}, A::AbstractArray{TCoefs,N}, it::IT) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded}}
     # Fix Issue 398: Ensure that gridded_*bounds is used by converting
@@ -88,35 +88,35 @@ degree(flag::Gridded) = flag.degree
 """
     Interpolations.deduplicate_knots!(knots; move_knots = false)
 
-    Makes knots unique by incrementing repeated but otherwise sorted knots using `nextfloat`.
-    If keyword `move_knots` is true, then `nextfloat` will be applied successively until knots
-    are unique. Otherwise, a warning will be issued.
+Makes knots unique by incrementing repeated but otherwise sorted knots using `nextfloat`.
+If keyword `move_knots` is true, then `nextfloat` will be applied successively until knots
+are unique. Otherwise, a warning will be issued.
 
-    # Example
+# Example
 
-    ```jldoctest
-    julia> knots = [-8.0, 0.0, 20.0, 20.0]
-    4-element Vector{Float64}:
-    -8.0
-    0.0
-    20.0
-    20.0
+```jldoctest
+julia> knots = [-8.0, 0.0, 20.0, 20.0]
+4-element Vector{Float64}:
+-8.0
+0.0
+20.0
+20.0
 
-    julia> Interpolations.deduplicate_knots!(knots)
-    4-element Vector{Float64}:
-    -8.0
-    0.0
-    20.0
-    20.000000000000004
+julia> Interpolations.deduplicate_knots!(knots)
+4-element Vector{Float64}:
+-8.0
+0.0
+20.0
+20.000000000000004
 
-    julia> Interpolations.deduplicate_knots!([1.0, 1.0, 1.0, nextfloat(1.0), nextfloat(1.0)]; move_knots = true)
-    5-element Vector{Float64}:
-    1.0
-    1.0000000000000002
-    1.0000000000000004
-    1.0000000000000007
-    1.0000000000000009
-    ```
+julia> Interpolations.deduplicate_knots!([1.0, 1.0, 1.0, nextfloat(1.0), nextfloat(1.0)]; move_knots = true)
+5-element Vector{Float64}:
+1.0
+1.0000000000000002
+1.0000000000000004
+1.0000000000000007
+1.0000000000000009
+```
 """
 function deduplicate_knots!(knots; move_knots::Bool = false)
     last_knot = first(knots)
