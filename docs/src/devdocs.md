@@ -239,3 +239,9 @@ Also, all GPU-compatable `AbstractInterpolation`s should define their own
 broadcast mechanism by overloading the default `BroadcastStyle`. See
 [Customizing broadcasting](https://docs.julialang.org/en/v1/manual/interfaces/#man-interfaces-broadcasting)
 for more details.
+
+
+```@bibliography
+Pages = ["devdocs.md"]
+Canonical = false
+```

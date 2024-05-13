@@ -71,9 +71,9 @@ end
 """
     AkimaMonotonicInterpolation
 
-Monotonic interpolation based on Akima (1970),
+Monotonic interpolation based on [Akima (1970)
 "A New Method of Interpolation and Smooth Curve Fitting Based on Local Procedures",
-doi:10.1145/321607.321609.
+doi:10.1145/321607.321609](@cite Akima1970).
 
 Tangents are determined at each given point locally,
 results are close to manual drawn curves
@@ -84,8 +84,8 @@ end
 """
     FritschCarlsonMonotonicInterpolation
 
-Monotonic interpolation based on Fritsch & Carlson (1980),
-"Monotone Piecewise Cubic Interpolation", doi:10.1137/0717021.
+Monotonic interpolation based on [Fritsch & Carlson (1980),
+"Monotone Piecewise Cubic Interpolation", doi:10.1137/0717021](@cite Fritsch1980).
 
 Tangents are first initialized, then adjusted if they are not monotonic
 can overshoot for non-monotonic data
@@ -96,9 +96,9 @@ end
 """
     FritschButlandMonotonicInterpolation
 
-Monotonic interpolation based on  Fritsch & Butland (1984),
+Monotonic interpolation based on [Fritsch & Butland (1984),
 "A Method for Constructing Local Monotone Piecewise Cubic Interpolants",
-doi:10.1137/0905021.
+doi:10.1137/0905021](@cite Fritsch1984).
 
 Faster than FritschCarlsonMonotonicInterpolation (only requires one pass)
 but somewhat higher apparent "tension".
@@ -109,9 +109,9 @@ end
 """
     SteffenMonotonicInterpolation
 
-Monotonic interpolation based on Steffen (1990),
+Monotonic interpolation based on [Steffen (1990),
 "A Simple Method for Monotonic Interpolation in One Dimension",
-http://adsabs.harvard.edu/abs/1990A%26A...239..443S
+http://adsabs.harvard.edu/abs/1990A%26A...239..443S](@cite Steffen1990)
 
 Only one pass, results usually between FritschCarlson and FritschButland.
 """

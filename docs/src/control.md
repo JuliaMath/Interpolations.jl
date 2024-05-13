@@ -241,7 +241,11 @@ There are a few different monotonic interpolation algorithms. Some guarantee tha
 * [`SteffenMonotonicInterpolation`](@ref) -- it does not overshoot.
 
 You can read about monotonic interpolation in the following sources:
+```@bibliography
+Pages = []
+Canonical = false
 
-* Fritsch & Carlson (1980), "Monotone Piecewise Cubic Interpolation", doi:10.1137/0717021.
-* Fritsch & Butland (1984), "A Method for Constructing Local Monotone Piecewise Cubic Interpolants", doi:10.1137/0905021.
-* Steffen (1990), "A Simple Method for Monotonic Interpolation in One Dimension", [URL](http://adsabs.harvard.edu/abs/1990A%26A...239..443S)
+Fritsch1980
+Fritsch1984
+Steffen1990
+```

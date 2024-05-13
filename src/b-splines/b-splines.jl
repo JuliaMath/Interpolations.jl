@@ -213,7 +213,8 @@ a polynomial of order `k-1`. A value of 2 is the most common.
 
 `λ` is non-negative. If its value is zero, it falls back to non-regularized interpolation.
 
-[1] https://projecteuclid.org/euclid.ss/1038425655.
+# References
+- [Eilers and Marx, 1996, Statist. Sci. 11(2), 1996](@cite Eilers1996)
 """
 function interpolate(A::AbstractArray, it::IT, λ::Real, k::Int) where {IT<:DimSpec{BSpline}}
     interpolate(tweight(A), tcoef(A), A, it, λ, k)

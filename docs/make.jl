@@ -1,4 +1,5 @@
 using Documenter
+using DocumenterCitations
 using Interpolations
 
 DocMeta.setdocmeta!(
@@ -7,6 +8,12 @@ DocMeta.setdocmeta!(
     :(using Interpolations),
     recursive = true,
 )
+
+bib = CitationBibliography(
+    joinpath(@__DIR__, "src", "refs.bib"),
+    style = :authoryear,
+)
+
 makedocs(
     sitename = "Interpolations.jl",
     modules = [Interpolations],
@@ -24,9 +31,11 @@ makedocs(
         "Library" => "api.md",
         "News and Changes" => "NEWS.md",
         "Other Interpolation Packages" => "other_packages.md",
+        "Bilbiography" => "bibliography.md",
     ],
     warnonly = false,
     doctest = true,
+    plugins = [bib],
 )
 
 deploydocs(
