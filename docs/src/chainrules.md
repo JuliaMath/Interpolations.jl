@@ -12,7 +12,7 @@ This enables integration with autodiff libraries like Zygote, enabling
 ```julia
 x = 1:10
 y = sin.(x)
-itp = interpolate(y,BSpline(Linear()))
+itp = interpolate(y, BSpline(Linear()))
 Zygote.gradient(itp, 2)
 #([-0.7681774187658145],)
 ```

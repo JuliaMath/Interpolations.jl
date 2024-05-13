@@ -1,4 +1,4 @@
-﻿module ConvenienceConstructorTests
+module ConvenienceConstructorTests
 
 using Interpolations
 using Test
@@ -31,7 +31,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         @test_throws BoundsError interp(XMIN - ΔX / 2)
         @test_throws BoundsError interp(XMAX + ΔX / 2)
     end
-    
+
     @testset "1d-regular-grids-constant" begin
         xs = XMIN:ΔX:XMAX
         f(x) = log(x)
@@ -109,7 +109,7 @@ YLEN = convert(Integer, floor((YMAX - YMIN)/ΔY) + 1)
         @test_throws BoundsError interp(xmin - ΔX / 2)
         @test_throws BoundsError interp(xmax + ΔX / 2)
     end
-    
+
     @testset "1d-irregular-grids-constant" begin
         xs = [x^2 for x in XMIN:ΔX:XMAX]
         xmin = xs[1]
@@ -177,7 +177,7 @@ end
         @test_throws BoundsError interp(XMIN + ΔX / 2,YMIN - ΔY / 2)
         @test_throws BoundsError interp(XMAX + ΔX / 2,YMAX + ΔY / 2)
     end
-    
+
     @testset "2d-regular-grids-constant" begin
         xs = XMIN:ΔX:XMAX
         ys = YMIN:ΔY:YMAX
@@ -250,7 +250,7 @@ end
         @test_throws BoundsError interp(xmin + ΔX / 2,ymin - ΔY / 2)
         @test_throws BoundsError interp(xmax + ΔX / 2,ymax + ΔY / 2)
     end
-    
+
     @testset "2d-irregular-grids-constant" begin
         xs = [x^2 for x in XMIN:ΔX:XMAX]
         ys = [y^2 for y in YMIN:ΔY:YMAX]

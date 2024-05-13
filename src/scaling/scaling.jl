@@ -18,11 +18,17 @@ BoundsCheckStyle(sitp::ScaledInterpolation) = BoundsCheckStyle(sitp.itp)
 coefficients(A::ScaledInterpolation) = coefficients(A.itp)
 
 """
-`scale(itp, xs, ys, ...)` scales an existing interpolation object to allow for indexing using other coordinate axes than unit ranges, by wrapping the interpolation object and transforming the indices from the provided axes onto unit ranges upon indexing.
+    scale(itp, xs, ys, ...)
 
-The parameters `xs` etc must be either ranges or linspaces, and there must be one coordinate range/linspace for each dimension of the interpolation object.
+Scales an existing interpolation object to allow for indexing using other
+coordinate axes than unit ranges, by wrapping the interpolation object and
+transforming the indices from the provided axes onto unit ranges upon indexing.
 
-For every `NoInterp` dimension of the interpolation object, the range must be exactly `1:size(itp, d)`.
+The parameters `xs` etc must be either ranges or linspaces, and there must be
+one coordinate range/linspace for each dimension of the interpolation object.
+
+For every `NoInterp` dimension of the interpolation object, the range must be
+exactly `1:size(itp, d)`.
 """
 function scale(itp::AbstractInterpolation{T,N,IT}, ranges::Vararg{AbstractRange,N}) where {T,N,IT}
     check_ranges(itpflag(itp), axes(itp), ranges)
@@ -60,7 +66,8 @@ boundstep(r::UnitRange) = 1//2
 Returns *half* the width of one step of the range.
 
 This function is used to calculate the upper and lower bounds of `OnCell` interpolation objects.
-""" boundstep
+"""
+boundstep
 
 lbound(ax::AbstractRange, ::DegreeBC, ::OnCell) = first(ax) - boundstep(ax)
 ubound(ax::AbstractRange, ::DegreeBC, ::OnCell) = last(ax) + boundstep(ax)
@@ -133,10 +140,11 @@ rescale_gradient(r::StepRange, g) = g / r.step
 rescale_gradient(r::UnitRange, g) = g
 
 """
-`rescale_gradient(r::AbstractRange)`
+    rescale_gradient(r::AbstractRange)
 
 Implements the chain rule dy/dx = dy/du * du/dx for use when calculating gradients with scaled interpolation objects.
-""" rescale_gradient
+"""
+rescale_gradient
 
 @propagate_inbounds function hessian(sitp::ScaledInterpolation{T,N}, xs::Vararg{Number,N}) where {T,N}
     @boundscheck (checkbounds(Bool, sitp, xs...) || Base.throw_boundserror(sitp, xs))
@@ -236,9 +244,12 @@ _reduce(op, list::Tuple{Any}) = list[1]
 _reduce(op, list::Tuple{}) = error("cannot reduce an empty list")
 
 # We use weights only as a ruler to determine when we are done
-cache_evaluations(coefs, i::Int, weights, rest) = (coefs[i, rest...], cache_evaluations(coefs, i+1, Base.tail(weights), rest)...)
-cache_evaluations(coefs, indexes, weights, rest) = (coefs[indexes[1], rest...], cache_evaluations(coefs, Base.tail(indexes), Base.tail(weights), rest)...)
+cache_evaluations(coefs, i::Int, weights, rest) =
+    (coefs[i, rest...], cache_evaluations(coefs, i+1, Base.tail(weights), rest)...)
+cache_evaluations(coefs, indexes, weights, rest) =
+    (coefs[indexes[1], rest...], cache_evaluations(coefs, Base.tail(indexes), Base.tail(weights), rest)...)
 cache_evaluations(coefs, ::Int, ::Tuple{}, rest) = ()
 cache_evaluations(coefs, ::Any, ::Tuple{}, rest) = ()
 
-ssize(sitp::ScaledInterpolation{T,N}) where {T,N} = map(r->round(Int, last(r)-first(r)+1), sitp.ranges)::NTuple{N,Int}
+ssize(sitp::ScaledInterpolation{T,N}) where {T,N} =
+    map(r->round(Int, last(r)-first(r)+1), sitp.ranges)::NTuple{N,Int}

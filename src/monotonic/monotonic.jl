@@ -150,8 +150,10 @@ axes(A::MonotonicInterpolation) = axes(A.knots)
 itpflag(A::MonotonicInterpolation) = A.it
 coefficients(A::MonotonicInterpolation) = A.A
 
-function MonotonicInterpolation(::Type{TWeights}, it::TInterpolationType, knots::TKnots, A::AbstractArray{TEl,1},
-    m::Vector{TCoeffs1}, c::Vector{TCoeffs2}, d::Vector{TCoeffs3}) where {TWeights, TCoeffs1, TCoeffs2, TCoeffs3, TEl, TInterpolationType<:MonotonicInterpolationType, TKnots<:AbstractVector{<:Number}}
+function MonotonicInterpolation(
+        ::Type{TWeights}, it::TInterpolationType, knots::TKnots, A::AbstractArray{TEl,1},
+        m::Vector{TCoeffs1}, c::Vector{TCoeffs2}, d::Vector{TCoeffs3}
+    ) where {TWeights, TCoeffs1, TCoeffs2, TCoeffs3, TEl, TInterpolationType<:MonotonicInterpolationType, TKnots<:AbstractVector{<:Number}}
 
     isconcretetype(TInterpolationType) || error("The spline type must be a leaf type (was $TInterpolationType)")
     isconcretetype(tcoef(A)) || @warn("For performance reasons, consider using an array of a concrete type (eltype(A) == $(eltype(A)))")
@@ -168,8 +170,10 @@ function MonotonicInterpolation(::Type{TWeights}, it::TInterpolationType, knots:
     MonotonicInterpolation{T, TCoeffs1, TCoeffs2, TCoeffs3, TEl, TInterpolationType, TKnots, typeof(A)}(it, knots, A, m, c, d)
 end
 
-function interpolate(::Type{TWeights}, ::Type{TCoeffs1},::Type{TCoeffs2},::Type{TCoeffs3}, knots::TKnots,
-    A::AbstractArray{TEl,1}, it::TInterpolationType) where {TWeights,TCoeffs1,TCoeffs2,TCoeffs3,TEl,TKnots<:AbstractVector{<:Number},TInterpolationType<:MonotonicInterpolationType}
+function interpolate(
+        ::Type{TWeights}, ::Type{TCoeffs1}, ::Type{TCoeffs2}, ::Type{TCoeffs3},
+        knots::TKnots, A::AbstractArray{TEl,1}, it::TInterpolationType
+    ) where {TWeights,TCoeffs1,TCoeffs2,TCoeffs3,TEl,TKnots<:AbstractVector{<:Number},TInterpolationType<:MonotonicInterpolationType}
 
     check_monotonic(knots, A)
 
@@ -192,8 +196,10 @@ function interpolate(::Type{TWeights}, ::Type{TCoeffs1},::Type{TCoeffs2},::Type{
     MonotonicInterpolation(TWeights, it, knots, A, m, c, d)
 end
 
-function interpolate(knots::AbstractVector{<:Number}, A::AbstractArray{TEl,1},
-    it::TInterpolationType) where {TEl,TInterpolationType<:MonotonicInterpolationType}
+function interpolate(
+        knots::AbstractVector{<:Number}, A::AbstractArray{TEl,1},
+        it::TInterpolationType
+    ) where {TEl,TInterpolationType<:MonotonicInterpolationType}
 
     interpolate(tweight(A),typeof(oneunit(eltype(A)) / oneunit(eltype(knots))),
         typeof(oneunit(eltype(A)) / oneunit(eltype(knots))^2),

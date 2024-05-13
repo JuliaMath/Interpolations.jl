@@ -31,27 +31,29 @@ pull request here.
 Interpolations.jl can be installed via the following invocation
 since it is a registered Julia package.
 
-```julia
-using Pkg
-Pkg.add("Interpolations")
+```julia-repl
+julia> using Pkg
+julia> Pkg.add("Interpolations")
 ```
 
 ## Example Usage
 Create a grid `xs` and an array `A` of values to be interpolated
-```julia
+```@example lerp
+using Interpolations
 xs = 1:0.2:5
 A = log.(xs)
+nothing # hide
 ```
 Create linear interpolation object without extrapolation
-```julia
-interp_linear = linear_interpolation(xs, A)
+```@repl lerp
+interp_linear = linear_interpolation(xs, A);
 interp_linear(3) # exactly log(3)
 interp_linear(3.1) # approximately log(3.1)
 interp_linear(0.9) # outside grid: error
 ```
 Create linear interpolation object with extrapolation
-```julia
-interp_linear_extrap = linear_interpolation(xs, A,extrapolation_bc=Line()) 
+```@repl lerp
+interp_linear_extrap = linear_interpolation(xs, A, extrapolation_bc=Line());
 interp_linear_extrap(0.9) # outside grid: linear extrapolation
 ```
 

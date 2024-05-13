@@ -1,9 +1,20 @@
-using Documenter, Interpolations
+using Documenter
+using Interpolations
+
+DocMeta.setdocmeta!(
+    Interpolations,
+    :DocTestSetup,
+    :(using Interpolations),
+    recursive = true,
+)
 makedocs(
-sitename="Interpolations.jl",
-modules=[Interpolations],
-format=Documenter.HTML(prettyurls = get(ENV, "CI", nothing)=="true"),
-pages=["Home" => "index.md",
+    sitename = "Interpolations.jl",
+    modules = [Interpolations],
+    format = Documenter.HTML(
+        prettyurls = get(ENV, "CI", nothing)=="true",
+    ),
+    pages = [
+        "Home" => "index.md",
         "Convenience Constructors" => "convenience-construction.md",
         "General usage" => "interpolations.md",
         "Interpolation algorithms" => "control.md",
@@ -13,9 +24,11 @@ pages=["Home" => "index.md",
         "Library" => "api.md",
         "News and Changes" => "NEWS.md",
         "Other Interpolation Packages" => "other_packages.md",
-],
-strict=true,
+    ],
+    doctest = true,
 )
 
-deploydocs(repo="github.com/JuliaMath/Interpolations.jl.git",
-            push_preview=true)
+deploydocs(
+    repo = "github.com/JuliaMath/Interpolations.jl.git",
+    push_preview = true,
+)

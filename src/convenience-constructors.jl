@@ -9,7 +9,7 @@ linear_interpolation(range::AbstractRange, vs::AbstractVector; extrapolation_bc 
 linear_interpolation(range::AbstractVector, vs::AbstractVector; extrapolation_bc = Throw()) =
     extrapolate(interpolate((range, ), vs, Gridded(Linear())), extrapolation_bc)
 cubic_spline_interpolation(range::AbstractRange, vs::AbstractVector;
-                         bc = Line(OnGrid()), extrapolation_bc = Throw()) =
+                           bc = Line(OnGrid()), extrapolation_bc = Throw()) =
     extrapolate(scale(interpolate(vs, BSpline(Cubic(bc))), range), extrapolation_bc)
 
 # multivariate versions
@@ -59,7 +59,7 @@ constant_interpolation
 """
     etp = cubic_spline_interpolation(knots, A; bc=Line(OnGrid()), extrapolation_bc=Throw())
 
-A shorthand for `extrapolate(scale(interpolate(A, BSpline(Cubic(bc))),knots), extrapolation_bc)`.
+A shorthand for `extrapolate(scale(interpolate(A, BSpline(Cubic(bc))), knots), extrapolation_bc)`.
 
 Consider using `interpolate`, `scale`, or `extrapolate` explicitly as needed
 rather than using this convenience constructor. Performance will improve

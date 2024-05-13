@@ -1,9 +1,11 @@
 ## Extrapolation
 
-The call to `extrapolate` defines what happens if you try to index into the interpolation object with coordinates outside of its
-bounds in any dimension. The implemented boundary conditions are `Throw`, `Flat`, `Line`, `Periodic` and `Reflect`,
-or you can pass a constant to be used as a "fill" value returned for any out-of-bounds evaluation.
-`Periodic` and `Reflect` require that there is a method of `Base.mod` that can handle the indices used.
+The call to `extrapolate` defines what happens if you try to index into the
+interpolation object with coordinates outside of its bounds in any dimension.
+The implemented boundary conditions are `Throw`, `Flat`, `Line`, `Periodic` and
+`Reflect`, or you can pass a constant to be used as a "fill" value returned for
+any out-of-bounds evaluation.  `Periodic` and `Reflect` require that there is a
+method of `Base.mod` that can handle the indices used.
 
 Examples:
 

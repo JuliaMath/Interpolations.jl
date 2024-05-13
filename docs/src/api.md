@@ -1,9 +1,4 @@
 ## Public API
-```@meta
-DocTestSetup= quote
-using Interpolations
-end
-```
 
 ```@autodocs
 Modules = [Interpolations]

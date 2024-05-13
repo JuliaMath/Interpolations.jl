@@ -13,16 +13,16 @@ struct Nearest <: ConstantInterpType end
 
 """
 Parameter for `Constant` that performs *previous-neighbor* interpolations.
-Applied through 
-´´´
+Applied through
+```
 Constant{Previous}()
-´´´
+```
 """
 struct Previous <: ConstantInterpType end
 
 """
 Parameter for `Constant` that performs *next-neighbor* interpolations.
-Applied through 
+Applied through
 ```
 Constant{Next}()
 ```
