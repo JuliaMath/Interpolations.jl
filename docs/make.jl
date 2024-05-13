@@ -25,6 +25,7 @@ makedocs(
         "News and Changes" => "NEWS.md",
         "Other Interpolation Packages" => "other_packages.md",
     ],
+    warnonly = false,
     doctest = true,
 )
 
