@@ -49,8 +49,6 @@ multiple KnotIterator within `Iterators.product`.
   implemented for `KnotIterator`
 
 ```jldoctest
-julia> using Interpolations;
-
 julia> etp = linear_interpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
 
 julia> kiter = knots(etp);
@@ -61,7 +59,6 @@ julia> kiter[4]
 julia> kiter[36]
 24.3
 ```
-
 """
 struct KnotIterator{T,ET <: ExtrapSpec}
     knots::Vector{T}
@@ -112,25 +109,22 @@ Iterator will yield scalar values for interpolations over a single dimension,
 and tuples of coordinates for higher dimension interpolations. Iteration over
 higher dimensions is taken as the product of knots along each dimension.
 
-ie. Iterator.product(knots on first dim, knots on 2nd dim,...)
+i.e., Iterator.product(knots on 1st dim, knots on 2nd dim,...)
 
 Extrapolations with Periodic or Reflect boundary conditions, will produce an
 infinite sequence of knots.
 
 # Example
 ```jldoctest
-julia> using Interpolations;
-
 julia> etp = linear_interpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
 
 julia> Iterators.take(knots(etp), 5) |> collect
-5-element $(Array{typeof(1.0),1}):
+5-element Vector{Float64}:
  1.0
  1.2
  2.3
  3.0
  3.2
-
 ```
 """
 function knots(itp::AbstractInterpolation)
@@ -232,9 +226,9 @@ Returns the index of the first knot such that `x < k` or `nothing` if no such
 knot exists.
 
 New boundary conditions should define:
-
-    nextknotidx(::Type{<:NewBoundaryCondition}, knots::Vector, x)
-
+```julia
+nextknotidx(::Type{<:NewBoundaryCondition}, knots::Vector, x)
+```
 Where `knots` is `iter.knots` and `NewBoundaryCondition` is the new boundary
 conditions. This method is expected to handle values of `x` that are both inbounds
 or extrapolated.
@@ -257,9 +251,9 @@ Returns the index of the last knot such that `k < x` or `nothing` ig not such
 knot exists.
 
 New boundary conditions should define
-
-    priorknotidx(::Type{<:NewBoundaryCondition}, knots::Vector, x)
-
+```julia
+priorknotidx(::Type{<:NewBoundaryCondition}, knots::Vector, x)
+```
 Where knots is `iter.knots` and `NewBoundaryCondition` is the new boundary
 condition. This method is expected to handle values of `x` that are both inbounds
 or extrapolated.
@@ -422,8 +416,6 @@ If no such knots exists will return a KnotIterator with length 0
 
 # Example
 ```jldoctest
-julia> using Interpolations;
-
 julia> etp = linear_interpolation([1.0, 1.2, 2.3, 3.0], rand(4); extrapolation_bc=Periodic());
 
 julia> knotsbetween(etp; start=38, stop=42) |> collect
@@ -434,7 +426,6 @@ julia> knotsbetween(etp; start=38, stop=42) |> collect
  40.3
  41.0
  41.2
-
 ```
 """
 knotsbetween(itp; start=nothing, stop=nothing) = knotsbetween(itp, start, stop)

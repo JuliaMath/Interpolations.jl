@@ -2,11 +2,20 @@
 
 ### BSplines
 
-The interpolation type is described in terms of *degree* and, if necessary, *boundary conditions*. There are currently four degrees available: `Constant`, `Linear`, `Quadratic`,  and `Cubic` corresponding to B-splines of degree 0, 1, 2, and 3 respectively.
+The interpolation type is described in terms of *degree* and, if necessary,
+*boundary conditions*. There are currently four degrees available: `Constant`,
+`Linear`, `Quadratic`, and `Cubic` corresponding to B-splines of degree 0, 1,
+2, and 3 respectively.
 
-B-splines of quadratic or higher degree require solving an equation system to obtain the interpolation coefficients, and for that you must specify a *boundary condition* that is applied to close the system. The following boundary conditions are implemented: `Flat`, `Line` (alternatively, `Natural`), `Free`, `Periodic` and `Reflect`; their mathematical implications are described in detail in their docstrings.
-When specifying these boundary conditions you also have to specify whether they apply at the edge grid point (`OnGrid()`)
-or beyond the edge point halfway to the next (fictitious) grid point (`OnCell()`).
+B-splines of quadratic or higher degree require solving an equation system to
+obtain the interpolation coefficients, and for that you must specify a
+*boundary condition* that is applied to close the system. The following boundary
+conditions are implemented: `Flat`, `Line` (alternatively, `Natural`), `Free`,
+`Periodic` and `Reflect`; their mathematical implications are described in
+detail in their docstrings.
+When specifying these boundary conditions you also have to specify whether they
+apply at the edge grid point (`OnGrid()`) or beyond the edge point halfway to
+the next (fictitious) grid point (`OnCell()`).
 
 Some examples:
 ```julia
@@ -30,7 +39,8 @@ v = itp(3.2, 4.1)  # returns 0.9*(0.8*A[3,4]+0.2*A[4,4]) + 0.1*(0.8*A[3,5]+0.2*A
 # Quadratic is the lowest order that has continuous gradient
 itp = interpolate(A, BSpline(Quadratic(Reflect(OnCell()))))
 
-# Linear interpolation in the first dimension, and no interpolation (just lookup) in the second
+# Linear interpolation in the first dimension, and no interpolation
+# (just lookup) in the second
 itp = interpolate(A, (BSpline(Linear()), NoInterp()))
 v = itp(3.65, 5)  # returns  0.35*A[3,5] + 0.65*A[4,5]
 ```
@@ -43,7 +53,15 @@ which destroys the input `A` but also does not need to allocate as much memory.
 
 ### Scaled BSplines
 
-BSplines assume your data is uniformly spaced on the grid `1:N`, or its multidimensional equivalent. If you have data of the form `[f(x) for x in A]`, you need to tell Interpolations about the grid `A`. If `A` is not uniformly spaced, you must use gridded interpolation described below. However, if `A` is a collection of ranges or linspaces, you can use scaled BSplines. This is more efficient because the gridded algorithm does not exploit the uniform spacing. Scaled BSplines can also be used with any spline degree available for BSplines, while gridded interpolation does not currently support quadratic or cubic splines.
+BSplines assume your data is uniformly spaced on the grid `1:N`, or its
+multidimensional equivalent. If you have data of the form `[f(x) for x in A]`,
+you need to tell Interpolations about the grid `A`. If `A` is not uniformly
+spaced, you must use gridded interpolation described below. However, if `A` is a
+collection of ranges or linspaces, you can use scaled BSplines. This is more
+efficient because the gridded algorithm does not exploit the uniform spacing.
+Scaled BSplines can also be used with any spline degree available for BSplines,
+while gridded interpolation does not currently support quadratic or cubic
+splines.
 
 Some examples,
 ```julia
@@ -89,8 +107,8 @@ The general syntax is
 ```julia
 itp = interpolate(nodes, A, options...)
 ```
-where `nodes = (xnodes, ynodes, ...)` specifies the positions along
-each axis at which the array `A` is sampled for arbitrary ("rectangular") samplings.
+where `nodes = (xnodes, ynodes, ...)` specifies the positions along each axis
+at which the array `A` is sampled for arbitrary ("rectangular") samplings.
 
 For example:
 ```julia
@@ -101,27 +119,30 @@ itp(4,1.2)  # approximately A[2,6]
 ```
 One may also mix modes, by specifying a mode vector in the form of an explicit tuple:
 ```julia
-itp = interpolate(nodes, A, (Gridded(Linear()),Gridded(Constant())))
+itp = interpolate(nodes, A, (Gridded(Linear()), Gridded(Constant())))
 ```
 
 Presently there are only three modes for gridded:
-```julia
-Gridded(Linear())
-```
-whereby a linear interpolation is applied between nodes,
-```julia
-Gridded(Constant())
-```
-whereby nearest neighbor interpolation is used on the applied axis,
-```julia
-NoInterp()
-```
-whereby the coordinate of the selected input vector MUST be located on a grid point. Requests for off grid
-coordinates results in the throwing of an error.
+- For linear interpolation between nodes
+  ```julia
+  Gridded(Linear())
+  ```
+- For nearest neighbor interpolation on the applied axis
+  ```julia
+  Gridded(Constant())
+  ```
+- For no interpolation. The coordinate of the selected input vector MUST be
+  located on a grid point. Requests for off grid coordinates results in the
+  throwing of an error.
+  ```julia
+  NoInterp()
+  ```
 
-For [`Constant`](@ref) there are additional parameters. Use `Constant{Previous}()` in order to perform a previous
-neighbor interpolation. Use `Constant{Next}()` for a next neighbor interpolation.
-Note that rounding can be an issue, see [#473](https://github.com/JuliaMath/Interpolations.jl/issues/473).
+For [`Constant`](@ref) there are additional parameters. Use
+`Constant{Previous}()` in order to perform a previous neighbor interpolation.
+Use `Constant{Next}()` for a next neighbor interpolation.
+Note that rounding can be an issue, see
+[issue #473](https://github.com/JuliaMath/Interpolations.jl/issues/473).
 
 `missing` data will naturally propagate through the interpolation,
 where some values will become missing. To avoid that, one can
@@ -131,22 +152,27 @@ For example:
 x = 1:6
 A = [i == 3 ? missing : i for i in x]
 xf = [xi for (xi,a) in zip(x, A) if !ismissing(a)]
-Af = [a for a in A if !ismissing(a)]
+Af = filter(!ismissing, A)
 itp = interpolate((xf, ), Af, Gridded(Linear()))
 ```
 
 In-place gridded interpolation is also possible:
-```julia
+```@example
+using Interpolations # hide
 x = 1:4
 y = view(rand(4), :)
 itp = interpolate!((x,), y, Gridded(Linear()))
 y .= 0
-@show itp(2.5) # 0
+itp(2.5)
 ```
 
 ## Parametric splines
 
-Given a set a knots with coordinates `x(t)` and `y(t)`, a parametric spline `S(t) = (x(t),y(t))` parametrized by `t in [0,1]` can be constructed with the following code adapted from a [post](http://julia-programming-language.2336112.n4.nabble.com/Parametric-splines-td37794.html#a37818) by Tomas Lycken:
+Given a set a knots with coordinates `x(t)` and `y(t)`, a parametric spline
+`S(t) = (x(t),y(t))` parametrized by `t` in `[0,1]` can be constructed with the
+following code adapted from a
+[post](http://julia-programming-language.2336112.n4.nabble.com/Parametric-splines-td37794.html#a37818)
+by Tomas Lycken:
 
 ```julia
 using Interpolations
@@ -156,7 +182,11 @@ x = sin.(2π*t)
 y = cos.(2π*t)
 A = hcat(x,y)
 
-itp = Interpolations.scale(interpolate(A, (BSpline(Cubic(Natural(OnGrid()))), NoInterp())), t, 1:2)
+itp = Interpolations.scale(
+    interpolate(A, (BSpline(Cubic(Natural(OnGrid()))), NoInterp())),
+    t,
+    1:2
+)
 
 tfine = 0:.01:1
 xs, ys = [itp(t,1) for t in tfine], [itp(t,2) for t in tfine]
@@ -174,16 +204,27 @@ plot!(xs, ys, label="spline")
 
 ## Monotonic interpolation
 
-When you have some one-dimensional data that is monotonic, many standard interpolation methods may give an interpolating function that it is not monotonic. Monotonic interpolation ensures that the interpolating function is also monotonic.
+When you have some one-dimensional data that is monotonic, many standard
+interpolation methods may give an interpolating function that it is not
+monotonic. Monotonic interpolation ensures that the interpolating function is
+also monotonic.
 
 Here is an example of making a cumulative distribution function for some data:
 
 ```julia
-percentile_values = [0.0, 0.01, 0.1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 91.0, 92.0, 93.0, 94.0, 95.0, 96.0, 97.0, 98.0, 99.0, 99.9, 99.99, 100.0];
+percentile_values = [
+    0.0, 0.01, 0.1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0,
+    10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0,
+    91.0, 92.0, 93.0, 94.0, 95.0, 96.0, 97.0, 98.0, 99.0,
+    99.9, 99.99, 100.0
+];
 
 y = sort(randn(length(percentile_values))); # some random data
 
-itp_cdf = extrapolate(interpolate(y, percentile_values, SteffenMonotonicInterpolation()), Flat());
+itp_cdf = extrapolate(
+    interpolate(y, percentile_values, SteffenMonotonicInterpolation()),
+    Flat()
+);
 
 t = -3.0:0.01:3.0 # just a range for calculating values of the interpolating function
 
@@ -200,7 +241,11 @@ There are a few different monotonic interpolation algorithms. Some guarantee tha
 * [`SteffenMonotonicInterpolation`](@ref) -- it does not overshoot.
 
 You can read about monotonic interpolation in the following sources:
+```@bibliography
+Pages = []
+Canonical = false
 
-* Fritsch & Carlson (1980), "Monotone Piecewise Cubic Interpolation", doi:10.1137/0717021.
-* Fritsch & Butland (1984), "A Method for Constructing Local Monotone Piecewise Cubic Interpolants", doi:10.1137/0905021.
-* Steffen (1990), "A Simple Method for Monotonic Interpolation in One Dimension", [URL](http://adsabs.harvard.edu/abs/1990A%26A...239..443S)
+Fritsch1980
+Fritsch1984
+Steffen1990
+```

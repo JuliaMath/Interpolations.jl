@@ -41,4 +41,4 @@ For some of these, extra care needs to be taken in higher dimensions, when decid
               |               |
     ----------+---------------+--------
               |               |
-              |               |    ...and here? 
+              |               |    ...and here?

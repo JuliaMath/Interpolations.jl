@@ -135,7 +135,7 @@ twotuple(x, y) = (x, y)
 
 Return the `bounds` of the domain of `itp` as a tuple of `(min, max)` pairs for each coordinate. This is best explained by example:
 
-```jldoctest; setup = :(using Interpolations)
+```jldoctest
 julia> itp = interpolate([1 2 3; 4 5 6], BSpline(Linear()));
 
 julia> bounds(itp)
@@ -198,16 +198,17 @@ For an ordinary vector `a`, `a[i]` extracts the element at index `i`.
 When interpolating, one is typically interested in a range of indexes and the output is
 some weighted combination of array values at these indexes.
 For example, for linear interpolation at a location `x` between integers `i` and `i+1`, we have
-
-    ret = (1-f)*a[i] + f*a[i+1]
-
+```julia
+ret = (1-f)*a[i] + f*a[i+1]
+```
 where `f = x-i` lies between 0 and 1. This can be represented as `a[wi]`, where
-
-    wi = WeightedIndex(i:i+1, (1-f, f))
-
+```julia
+wi = WeightedIndex(i:i+1, (1-f, f))
+```
 i.e.,
-
-    ret = sum(a[indexes] .* weights)
+```julia
+ret = sum(a[indexes] .* weights)
+```
 
 Linear interpolation thus constructs weighted indices using a 2-tuple for `weights` and
 a length-2 `indexes` range.
@@ -221,10 +222,10 @@ of multiple weighted indices, accessing `A[wi1, wi2, ...]` where each `wi` is th
 For value interpolation, `weights` will typically sum to 1.
 However, for gradient and Hessian computation this will not necessarily be true.
 For example, the gradient of one-dimensional linear interpolation can be represented as
-
-    gwi = WeightedIndex(i:i+1, (-1, 1))
-    g1 = a[gwi]
-
+```julia
+gwi = WeightedIndex(i:i+1, (-1, 1))
+g1 = a[gwi]
+```
 For a three-dimensional array `A`, one might compute `∂A/∂x₂` (the second component
 of the gradient) as `A[wi1, gwi2, wi3]`, where `wi1` and `wi3` are "value" weights
 and `gwi2` "gradient" weights.
@@ -247,7 +248,8 @@ struct WeightedArbIndex{L,W} <: WeightedIndex{L,W}
 end
 
 function WeightedIndex(indexes::AbstractUnitRange{<:Integer}, weights::NTuple{L,Any}) where L
-    @noinline mismatch(indexes, weights) = throw(ArgumentError("the length of indexes must match weights, got $indexes vs $weights"))
+    @noinline mismatch(indexes, weights) =
+        throw(ArgumentError("the length of indexes must match weights, got $indexes vs $weights"))
     length(indexes) == L || mismatch(indexes, weights)
     WeightedAdjIndex(first(indexes), promote(weights...))
 end
@@ -320,7 +322,7 @@ Compute the weights for interpolation of the value at an offset `δx` from the "
 
 # Example
 
-```jldoctest; setup = :(using Interpolations)
+```jldoctest
 julia> Interpolations.value_weights(Linear(), 0.2)
 (0.8, 0.2)
 ```
@@ -337,7 +339,7 @@ Compute the weights for interpolation of the gradient at an offset `δx` from th
 
 # Example
 
-```jldoctest; setup = :(using Interpolations)
+```jldoctest
 julia> Interpolations.gradient_weights(Linear(), 0.2)
 (-1.0, 1.0)
 ```
@@ -354,7 +356,7 @@ Compute the weights for interpolation of the hessian at an offset `δx` from the
 
 # Example
 
-```jldoctest; setup = :(using Interpolations)
+```jldoctest
 julia> Interpolations.hessian_weights(Linear(), 0.2)
 (0.0, 0.0)
 ```

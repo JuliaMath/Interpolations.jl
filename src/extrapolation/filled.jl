@@ -23,7 +23,8 @@ etpflag(A::FilledExtrapolation) = A.fillvalue
 itpflag(A::FilledExtrapolation) = itpflag(A.itp)
 
 """
-`extrapolate(itp, fillvalue)` creates an extrapolation object that returns the `fillvalue` any time the indexes in `itp(x1,x2,...)` are out-of-bounds.
+`extrapolate(itp, fillvalue)` creates an extrapolation object that returns the
+`fillvalue` any time the indexes in `itp(x1,x2,...)` are out-of-bounds.
 """
 extrapolate(itp::AbstractInterpolation{T,N,IT}, fillvalue) where {T,N,IT} = FilledExtrapolation(itp, fillvalue)
 

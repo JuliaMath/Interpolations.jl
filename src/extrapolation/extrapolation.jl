@@ -23,7 +23,8 @@ etpflag(etp::Extrapolation{T,N,ITPT,IT,ET}) where {T,N,ITPT,IT,ET} = etp.et
 BoundsCheckStyle(etp::AbstractExtrapolation) = CheckWillPass()
 
 """
-`extrapolate(itp, scheme)` adds extrapolation behavior to an interpolation object, according to the provided scheme.
+`extrapolate(itp, scheme)` adds extrapolation behavior to an interpolation
+object, according to the provided scheme.
 
 The scheme can take any of these values:
 
@@ -33,9 +34,13 @@ The scheme can take any of these values:
 * `Reflect` - reflecting extrapolation (indices must support `mod`)
 * `Periodic` - periodic extrapolation (indices must support `mod`)
 
-You can also combine schemes in tuples. For example, the scheme `(Line(), Flat())` will use linear extrapolation in the first dimension, and constant in the second.
+You can also combine schemes in tuples. For example, the scheme `(Line(), Flat())`
+will use linear extrapolation in the first dimension, and constant in the second.
 
-Finally, you can specify different extrapolation behavior in different direction. `((Line(),Flat()), Flat())` will extrapolate linearly in the first dimension if the index is too small, but use constant etrapolation if it is too large, and always use constant extrapolation in the second dimension.
+Finally, you can specify different extrapolation behavior in different direction.
+`((Line(),Flat()), Flat())` will extrapolate linearly in the first dimension if
+the index is too small, but use constant etrapolation if it is too large, and
+always use constant extrapolation in the second dimension.
 """
 extrapolate(itp::AbstractInterpolation{T,N,IT}, et::ET) where {T,N,IT,ET<:ExtrapDimSpec} =
     Extrapolation{T,N,typeof(itp),IT,ET}(itp, et)

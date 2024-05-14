@@ -32,9 +32,11 @@ end
                          array::AbstractArray{Tel,N},
                          interpolationType::DimSpec{<:Gridded})
 
-    Construct a GriddedInterpolation for generic knots from an AbstractArray
+Construct a GriddedInterpolation for generic knots from an AbstractArray
 """
-function GriddedInterpolation(::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {N,Tel,TWeights<:Real,IT<:DimSpec{Gridded}}
+function GriddedInterpolation(
+        ::Type{TWeights}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT
+    ) where {N,Tel,TWeights<:Real,IT<:DimSpec{Gridded}}
     isconcretetype(IT) || error("The b-spline type must be a leaf type (was $IT)")
 
     check_gridded(it, knots, axes(A))
@@ -53,11 +55,13 @@ end
                          array::AbstractArray{TCoefs,N},
                          interpolationType::DimSpec{<:Gridded})
 
-    Construct a GriddedInterpolation for generic knots from an AbstractUnitRange.
+Construct a GriddedInterpolation for generic knots from an AbstractUnitRange.
 
-    AbstractUnitRanges are collected to an Array to not confuse bound calculations (See Issue #398)
+AbstractUnitRanges are collected to an Array to not confuse bound calculations (See Issue #398)
 """
-function GriddedInterpolation(tw::Type{TWeights}, knots::NTuple{N,AbstractUnitRange}, A::AbstractArray{TCoefs,N}, it::IT) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded}}
+function GriddedInterpolation(
+        tw::Type{TWeights}, knots::NTuple{N,AbstractUnitRange}, A::AbstractArray{TCoefs,N}, it::IT
+    ) where {N,TCoefs,TWeights<:Real,IT<:DimSpec{Gridded}}
     # Fix Issue 398: Ensure that gridded_*bounds is used by converting
     # AbstractUnitRange to a non-AbstractUnitRange AbstractVector
     GriddedInterpolation(tw, collect.(knots), A, it)
@@ -72,7 +76,7 @@ end
     end
     degree(flag) isa Union{NoInterp,Constant,Linear} || error("only Linear, Constant, and NoInterp supported, got $flag")
     length(k1) == 1 && error("dimensions of length 1 not yet supported")  # FIXME
-    if issorted(k1) 
+    if issorted(k1)
         if !allunique(k1)
             @warn "Duplicated knots were deduplicated. Use Interpolations.deduplicate_knots!(knots) explicitly to avoid this warning." k1
             deduplicate_knots!(k1)
@@ -88,35 +92,35 @@ degree(flag::Gridded) = flag.degree
 """
     Interpolations.deduplicate_knots!(knots; move_knots = false)
 
-    Makes knots unique by incrementing repeated but otherwise sorted knots using `nextfloat`.
-    If keyword `move_knots` is true, then `nextfloat` will be applied successively until knots
-    are unique. Otherwise, a warning will be issued.
+Makes knots unique by incrementing repeated but otherwise sorted knots using `nextfloat`.
+If keyword `move_knots` is true, then `nextfloat` will be applied successively until knots
+are unique. Otherwise, a warning will be issued.
 
-    # Example
+# Example
 
-    ```jldoctest
-    julia> knots = [-8.0, 0.0, 20.0, 20.0]
-    4-element Vector{Float64}:
-    -8.0
-    0.0
-    20.0
-    20.0
+```jldoctest
+julia> knots = [-8.0, 0.0, 20.0, 20.0]
+4-element Vector{Float64}:
+ -8.0
+  0.0
+ 20.0
+ 20.0
 
-    julia> Interpolations.deduplicate_knots!(knots)
-    4-element Vector{Float64}:
-    -8.0
-    0.0
-    20.0
-    20.000000000000004
+julia> Interpolations.deduplicate_knots!(knots)
+4-element Vector{Float64}:
+ -8.0
+  0.0
+ 20.0
+ 20.000000000000004
 
-    julia> Interpolations.deduplicate_knots!([1.0, 1.0, 1.0, nextfloat(1.0), nextfloat(1.0)]; move_knots = true)
-    5-element Vector{Float64}:
-    1.0
-    1.0000000000000002
-    1.0000000000000004
-    1.0000000000000007
-    1.0000000000000009
-    ```
+julia> Interpolations.deduplicate_knots!([1.0, 1.0, 1.0, nextfloat(1.0), nextfloat(1.0)]; move_knots = true)
+5-element Vector{Float64}:
+ 1.0
+ 1.0000000000000002
+ 1.0000000000000004
+ 1.0000000000000007
+ 1.0000000000000009
+```
 """
 function deduplicate_knots!(knots; move_knots::Bool = false)
     last_knot = first(knots)
@@ -126,7 +130,7 @@ function deduplicate_knots!(knots; move_knots::Bool = false)
         end
         if knots[i] == last_knot || (move_knots && (@inbounds knots[i] <= knots[i-1]))
             @inbounds knots[i] = nextfloat(knots[i-1])
-        elseif @inbounds knots[i] <= knots[i-1] 
+        elseif @inbounds knots[i] <= knots[i-1]
             @warn "Successive repeated knots detected. Consider using `move_knots` keyword to Interpolations.deduplicate_knots!" last_knot knots[i-1] knots[i]
             @inbounds knots[i] = nextfloat(knots[i-1])
             move_knots = true
@@ -145,7 +149,10 @@ axes(A::GriddedInterpolation) = axes(A.coefs)
 
 itpflag(A::GriddedInterpolation) = A.it
 
-function interpolate(::Type{TWeights}, ::Type{TCoefs}, knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {TWeights,TCoefs,Tel,N,IT<:DimSpec{Gridded}}
+function interpolate(
+        ::Type{TWeights}, ::Type{TCoefs}, knots::NTuple{N,GridIndex},
+        A::AbstractArray{Tel,N}, it::IT
+    ) where {TWeights,TCoefs,Tel,N,IT<:DimSpec{Gridded}}
     GriddedInterpolation(TWeights, knots, copy(A), it)
 end
 """
@@ -162,7 +169,9 @@ in the mode determined by `interpmode`.
 
 It may also be a tuple of such values, if you want to use different interpolation schemes along each axis.
 """
-function interpolate(knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT) where {Tel,N,IT<:DimSpec{Gridded}}
+function interpolate(
+        knots::NTuple{N,GridIndex}, A::AbstractArray{Tel,N}, it::IT
+    ) where {Tel,N,IT<:DimSpec{Gridded}}
     interpolate(tweight(A), tcoef(A), knots, A, it)
 end
 

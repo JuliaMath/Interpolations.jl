@@ -1,9 +1,4 @@
 ## Public API
-```@meta
-DocTestSetup= quote
-using Interpolations
-end
-```
 
 ```@autodocs
 Modules = [Interpolations]
@@ -16,4 +11,10 @@ Order = [:function, :type]
 Modules = [Interpolations]
 Public = false
 Order = [:function, :type]
+```
+
+## Bibliography
+```@bibliography
+Pages = ["api.md"]
+Canonical = false
 ```

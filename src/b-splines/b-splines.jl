@@ -60,13 +60,14 @@ describe the types of fields:
   these may or may not be the same as the supplied array of interpolant values.
 - `parentaxes` holds the axes of the parent. Depending on prefiltering this may be
   "narrower" than the axes of `coefs`.
-- `it` holds the interpolation type, e.g., `BSpline(Linear())` or `(BSpline(Quadratic(OnCell()),BSpline(Linear()))`.
+- `it` holds the interpolation type, e.g., `BSpline(Linear())` or
+  `(BSpline(Quadratic(OnCell()),BSpline(Linear()))`.
 
 `BSplineInterpolation` objects are typically created with [`interpolate`](@ref).
 However, for customized control you may also construct them with
-
-    BSplineInterpolation(TWeights, coefs, it, axs)
-
+```julia
+BSplineInterpolation(TWeights, coefs, it, axs)
+```
 where `T` gets computed from the product of `TWeights` and `eltype(coefs)`.
 (This is equivalent to indicating that you'll be evaluating at locations `itp(x::TWeights, y::TWeights, ...)`.)
 """
@@ -195,7 +196,7 @@ end
     itp = interpolate(A, interpmode, gridstyle, λ, k)
 
 Interpolate an array `A` in the mode determined by `interpmode` and `gridstyle`
-with regularization following [1], of order `k` and constant `λ`. 
+with regularization following [1], of order `k` and constant `λ`.
 `interpmode` may be one of
 
 - `BSpline(NoInterp())`
@@ -212,7 +213,8 @@ a polynomial of order `k-1`. A value of 2 is the most common.
 
 `λ` is non-negative. If its value is zero, it falls back to non-regularized interpolation.
 
-[1] https://projecteuclid.org/euclid.ss/1038425655.
+# References
+- [Eilers and Marx, 1996, Statist. Sci. 11(2), 1996](@cite Eilers1996)
 """
 function interpolate(A::AbstractArray, it::IT, λ::Real, k::Int) where {IT<:DimSpec{BSpline}}
     interpolate(tweight(A), tcoef(A), A, it, λ, k)

@@ -91,7 +91,7 @@ function prefilter!(
     else
         false
     end
-    
+
     if fallback
         return prefilter!(TWeights, ret, it)
     end
@@ -130,7 +130,7 @@ popwrapper(A) = A
 popwrapper(A::OffsetArray) = A.parent
 
 """
-    M, b = prefiltering_system{T,TC,GT<:GridType,D<:Degree}m(::T, ::Type{TC}, n::Int, ::Type{D}, ::Type{GT})
+    M, b = prefiltering_system{T,TC,GT<:GridType,D<:Degree}(::T, ::Type{TC}, n::Int, ::Type{D}, ::Type{GT})
 
 Given element types (`T`, `TC`) and interpolation scheme
 (`GT`, `D`) as well the number of rows in the data input (`n`), compute the
