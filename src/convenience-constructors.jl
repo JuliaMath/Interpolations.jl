@@ -29,6 +29,19 @@ cubic_spline_interpolation(ranges::NTuple{N,AbstractRange}, vs::AbstractArray{T,
                          bc = Line(OnGrid()), extrapolation_bc = Throw()) where {N,T} =
     extrapolate(scale(interpolate(vs, BSpline(Cubic(bc))), ranges...), extrapolation_bc)
 
+# convolution interpolation
+# convolution_interpolation(knots::Union{AbstractVector,NTuple{N,AbstractVector}}, values::AbstractArray{T}; 
+#     extrapolation_bc = Throw()) where {T,N} = extrapolate(scale(ConvolutionInterpolation(knots isa AbstractVector ? (knots,) : knots, values), knots...), extrapolation_bc)
+# convolution_interpolation(ranges::NTuple{N,AbstractVector}, vs::AbstractArray{T}; 
+#     extrapolation_bc = Throw()) where {T,N} = ConvolutionInterpolation(ranges isa AbstractVector ? (ranges,) : ranges, vs) # extrapolate(, extrapolation_bc)
+function convolution_interpolation(knots::Union{AbstractVector,NTuple{N,AbstractVector}}, values::AbstractArray{T}; 
+    extrapolation_bc = Throw()) where {T,N}
+    if knots isa AbstractVector
+        knots = (knots,)
+    end
+    itp = ConvolutionInterpolation(knots, values)
+    return extrapolate(itp, extrapolation_bc)
+end
 """
     etp = linear_interpolation(knots, A; extrapolation_bc=Throw())
 
@@ -66,3 +79,9 @@ rather than using this convenience constructor. Performance will improve
 without scaling or extrapolation.
 """
 cubic_spline_interpolation
+"""
+    etp = convolution_interpolation(knots, values; extrapolation_bc=Throw())
+
+A shorthand for `extrapolate(ConvolutionInterpolation(knots, values), extrapolation_bc)`.
+"""
+convolution_interpolation
