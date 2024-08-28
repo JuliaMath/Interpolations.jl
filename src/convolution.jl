@@ -130,11 +130,3 @@ Interpolations.lbounds(itp::ConvolutionInterpolation) = first.(itp.knots)
 Interpolations.ubounds(itp::ConvolutionInterpolation) = last.(itp.knots)
 Interpolations.itpflag(::Type{<:ConvolutionInterpolation{T,N,TCoefs,IT}}) where {T,N,TCoefs,IT} = IT()
 Interpolations.coefficients(itp::ConvolutionInterpolation) = itp.coefs
-
-function Base.getindex(itp::ConvolutionInterpolation{T,1}, x::Number) where T
-    itp(x)
-end
-
-function Base.getindex(itp::ConvolutionInterpolation{T,2}, x::Number, y::Number) where T
-    itp(x, y)
-end
