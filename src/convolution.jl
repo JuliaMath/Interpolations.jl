@@ -102,7 +102,7 @@ function create_cubic_convolutional_coefs(knots::Tuple{AbstractVector,AbstractVe
             c[L,j,k] = 3*c[L-1,j,k] - 3*c[L-2,j,k] + c[L-3,j,k]
         end
     end
-    # 6 edges (2 fixed coordinates)
+    # 12 edges (2 fixed coordinates)
     for i = 2:L-1
         c[i,1,1] = 3*c[i,2,1] - 3*c[i,3,1] + c[i,4,1]
         c[i,M,1] = 3*c[i,M-1,1] - 3*c[i,M-2,1] + c[i,M-3,1]
