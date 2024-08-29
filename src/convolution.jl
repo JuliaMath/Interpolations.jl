@@ -1,10 +1,10 @@
-export ConvolutionInterpolation, ConvolutionMethod
+export CubicConvolutionalInterpolation, ConvolutionMethod
 
-struct ConvolutionKernel end
+struct CubicConvolutionalKernel end
 
 struct ConvolutionMethod <: InterpolationType end
 
-function (::ConvolutionKernel)(s)
+function (::CubicConvolutionalKernel)(s)
     s_abs = abs(s)
     if s_abs < 1.0
         return (3/2)*s_abs^3 - (5/2)*s_abs^2 + 1
@@ -15,32 +15,34 @@ function (::ConvolutionKernel)(s)
     end
 end
 
-struct ConvolutionInterpolation{T,N,TCoefs<:AbstractArray,IT<:NTuple{N,ConvolutionMethod},Axs<:Tuple} <: AbstractInterpolation{T,N,IT}
+struct CubicConvolutionalInterpolation{T,N,TCoefs<:AbstractArray,IT<:NTuple{N,ConvolutionMethod},Axs<:Tuple} <: AbstractInterpolation{T,N,IT}
     coefs::TCoefs
     knots::Axs
     it::IT
     h::NTuple{N,Float64}
-    kernel::ConvolutionKernel
+    kernel::CubicConvolutionalKernel
 end
 
-function ConvolutionInterpolation(knots::NTuple{N,AbstractVector}, vs::AbstractArray{T,N}) where {T,N}
-    if N > 2
-        error("ConvolutionInterpolation is currently implemented only for 1D and 2D. Got $N dimensions.")
+function CubicConvolutionalInterpolation(knots::NTuple{N,AbstractVector}, vs::AbstractArray{T,N}) where {T,N}
+    if N > 3
+        error("CubicConvolutionalInterpolation is currently implemented only for 1D, 2D and 3D. Got $N dimensions.")
     end
 
-    coefs = create_coefs(knots, vs)
+    coefs = create_cubic_convolutional_coefs(knots, vs)
     h = map(k -> k[2] - k[1], knots)
     it = ntuple(_ -> ConvolutionMethod(), N)
     if N == 1
         knots_new = (knots[1][1]-h[1]:h[1]:knots[1][end]+h[1],)
-    else
+    elseif N == 2
         knots_new = (knots[1][1]-h[1]:h[1]:knots[1][end]+h[1], knots[2][1]-h[2]:h[2]:knots[2][end]+h[2])
+    else
+        knots_new = (knots[1][1]-h[1]:h[1]:knots[1][end]+h[1], knots[2][1]-h[2]:h[2]:knots[2][end]+h[2], knots[3][1]-h[3]:h[3]:knots[3][end]+h[3])
     end
 
-    ConvolutionInterpolation{T,N,typeof(coefs),typeof(it),typeof(knots)}(coefs, (knots_new), it, h, ConvolutionKernel())
+    CubicConvolutionalInterpolation{T,N,typeof(coefs),typeof(it),typeof(knots)}(coefs, (knots_new), it, h, CubicConvolutionalKernel())
 end
 
-function create_coefs(knots::Tuple{AbstractVector}, vs::AbstractVector{T}) where T
+function create_cubic_convolutional_coefs(knots::Tuple{AbstractVector}, vs::AbstractVector{T}) where T
     N = length(vs) + 2
     c = zeros(T, N)
     c[2:N-1] = vs
@@ -52,81 +54,149 @@ function create_coefs(knots::Tuple{AbstractVector}, vs::AbstractVector{T}) where
     return c
 end
 
-function create_coefs(knots::Tuple{AbstractVector,AbstractVector}, values::AbstractMatrix{T}) where T
-    N, M = size(values) .+ 2
-    c = zeros(T, N, M)
-    c[2:N-1, 2:M-1] = values
+function create_cubic_convolutional_coefs(knots::Tuple{AbstractVector,AbstractVector}, values::AbstractMatrix{T}) where T
+    L, M = size(values) .+ 2
+    c = zeros(T, L, M)
+    c[2:L-1, 2:M-1] = values
 
     # 2D boundary conditions
-    for k = 2:M-1
-        c[1,k] = 3*c[2,k] - 3*c[3,k] + c[4,k]
-        c[N,k] = 3*c[N-1,k] - 3*c[N-2,k] + c[N-3,k]
+    for i = 2:L-1
+        c[i,1] = 3*c[i,2] - 3*c[i,3] + c[i,4]
+        c[i,M] = 3*c[i,M-1] - 3*c[i,M-2] + c[i,M-3]
     end
-    for j = 2:N-1
-        c[j,1] = 3*c[j,2] - 3*c[j,3] + c[j,4]
-        c[j,M] = 3*c[j,M-1] - 3*c[j,M-2] + c[j,M-3]
+    for j = 2:M-1
+        c[1,j] = 3*c[2,j] - 3*c[3,j] + c[4,j]
+        c[L,j] = 3*c[L-1,j] - 3*c[L-2,j] + c[L-3,j]
     end
+
     c[1,1] = 3*c[2,1] - 3*c[3,1] + c[4,1]
-    c[N,1] = 3*c[N-1,1] - 3*c[N-2,1] + c[N-3,1]
+    c[L,1] = 3*c[L-1,1] - 3*c[L-2,1] + c[L-3,1]
     c[1,M] = 3*c[1,M-1] - 3*c[1,M-2] + c[1,M-3]
-    c[N,M] = 3*c[N-1,M] - 3*c[N-2,M] + c[N-3,M]
+    c[L,M] = 3*c[L-1,M] - 3*c[L-2,M] + c[L-3,M]
 
     return c
 end
 
-function (itp::ConvolutionInterpolation{T,1})(x::Number) where T
-    j = searchsortedlast(itp.knots[1], x)
+function create_cubic_convolutional_coefs(knots::Tuple{AbstractVector,AbstractVector,AbstractVector}, values::AbstractArray{T,3}) where {T}
+    L, M, N = size(values) .+ 2
+    c = zeros(T, L, M, N)
+    c[2:L-1, 2:M-1, 2:N-1] = values
 
-    if j == 1
-        j = j + 1
-    elseif j == length(itp.knots[1])-1
-        j = j - 1
-    elseif j == length(itp.knots[1])
-        j = j - 2
+    # 3D boundary conditions
+    # 6 faces (1 fixed coordinate)
+    for i = 2:L-1
+        for j = 2:M-1
+            c[i,j,1] = 3*c[i,j,2] - 3*c[i,j,3] + c[i,j,4]
+            c[i,j,N] = 3*c[i,j,N-1] - 3*c[i,j,N-2] + c[i,j,N-3]
+        end
     end
+    for i = 2:L-1
+        for k = 2:N-1
+            c[i,1,k] = 3*c[i,2,k] - 3*c[i,3,k] + c[i,4,k]
+            c[i,M,k] = 3*c[i,M-1,k] - 3*c[i,M-2,k] + c[i,M-3,k]
+        end
+    end
+    for j = 2:M-1
+        for k = 2:N-1
+            c[1,j,k] = 3*c[2,j,k] - 3*c[3,j,k] + c[4,j,k]
+            c[L,j,k] = 3*c[L-1,j,k] - 3*c[L-2,j,k] + c[L-3,j,k]
+        end
+    end
+    # 6 edges (2 fixed coordinates)
+    for i = 2:L-1
+        c[i,1,1] = 3*c[i,2,1] - 3*c[i,3,1] + c[i,4,1]
+        c[i,M,1] = 3*c[i,M-1,1] - 3*c[i,M-2,1] + c[i,M-3,1]
+        c[i,1,N] = 3*c[i,1,N-1] - 3*c[i,1,N-2] + c[i,1,N-3]
+        c[i,M,N] = 3*c[i,M,N-1] - 3*c[i,M,N-2] + c[i,M,N-3]
+    end
+    for j = 2:M-1
+        c[1,j,1] = 3*c[2,j,1] - 3*c[3,j,1] + c[4,j,1]
+        c[L,j,1] = 3*c[L-1,j,1] - 3*c[L-2,j,1] + c[L-3,j,1]
+        c[1,j,N] = 3*c[1,j,N-1] - 3*c[1,j,N-2] + c[1,j,N-3]
+        c[L,j,N] = 3*c[L,j,N-1] - 3*c[L,j,N-2] + c[L,j,N-3]
+    end
+    for k = 2:N-1
+        c[1,1,k] = 3*c[2,1,k] - 3*c[3,1,k] + c[4,1,k]
+        c[L,1,k] = 3*c[L-1,1,k] - 3*c[L-2,1,k] + c[L-3,1,k]
+        c[1,M,k] = 3*c[1,M-1,k] - 3*c[1,M-2,k] + c[1,M-3,k]
+        c[L,M,k] = 3*c[L,M-1,k] - 3*c[L,M-2,k] + c[L,M-3,k]
+    end
+    # 8 vertices (3 fixed coordinates)
+    c[1,1,1] = 3*c[2,1,1] - 3*c[3,1,1] + c[4,1,1]
+    c[L,1,1] = 3*c[L-1,1,1] - 3*c[L-2,1,1] + c[L-3,1,1]
+    c[1,M,1] = 3*c[1,M-1,1] - 3*c[1,M-2,1] + c[1,M-3,1]
+    c[L,M,1] = 3*c[L,M-1,1] - 3*c[L,M-2,1] + c[L,M-3,1]
+    c[1,1,N] = 3*c[1,1,N-1] - 3*c[1,1,N-2] + c[1,1,N-3]
+    c[L,1,N] = 3*c[L,1,N-1] - 3*c[L,1,N-2] + c[L,1,N-3]
+    c[1,M,N] = 3*c[1,M,N-1] - 3*c[1,M,N-2] + c[1,M,N-3]
+    c[L,M,N] = 3*c[L,M,N-1] - 3*c[L,M,N-2] + c[L,M,N-3]
 
-    s = (x-itp.knots[1][j])/itp.h[1]
+    return c
+end
 
-    result = itp.coefs[j-1] * (-s^3 + 2*s^2 - s)/2 + itp.coefs[j] * (3*s^3 - 5*s^2 + 2)/2 +
-            itp.coefs[j+1] * (-3*s^3 + 4*s^2 + s)/2 + itp.coefs[j+2] * (s^3 - s^2)/2  
+function (itp::CubicConvolutionalInterpolation{T,1})(x::Number) where T
+    i = searchsortedlast(itp.knots[1], x)
+
+    i = limit_convolution_bounds(1, i, itp)
+
+    s = (x-itp.knots[1][i])/itp.h[1]
+
+    result = itp.coefs[i-1] * (-s^3 + 2*s^2 - s)/2 + itp.coefs[i] * (3*s^3 - 5*s^2 + 2)/2 +
+            itp.coefs[i+1] * (-3*s^3 + 4*s^2 + s)/2 + itp.coefs[i+2] * (s^3 - s^2)/2  
 
     return result
 end
 
-function (itp::ConvolutionInterpolation{T,2})(x::Number, y::Number) where T
-    j = searchsortedlast(itp.knots[1], x)
-    k = searchsortedlast(itp.knots[2], y)
+function (itp::CubicConvolutionalInterpolation{T,2})(x::Number, y::Number) where T
+    i = searchsortedlast(itp.knots[1], x)
+    j = searchsortedlast(itp.knots[2], y)
     
-    if j < 1 || j == 1
-        j = 2
-    elseif j == length(itp.knots[1])-1
-        j = j - 1
-    elseif j == length(itp.knots[1])
-        j = j - 2
-    end
-
-    if k < 1 || k == 1
-        k = 2
-    elseif k == length(itp.knots[2])-1
-        k = k - 1
-    elseif k == length(itp.knots[2])
-        k = k - 2
-    end
+    i = limit_convolution_bounds(1, i, itp)
+    j = limit_convolution_bounds(2, j, itp)
 
     result = zero(T)
     for l = -1:2, m = -1:2
-        result += itp.coefs[j+l, k+m] * 
-                  itp.kernel((x - itp.knots[1][j+l]) / itp.h[1]) * 
-                  itp.kernel((y - itp.knots[2][k+m]) / itp.h[2])
+        result += itp.coefs[i+l, j+m] * 
+                  itp.kernel((x - itp.knots[1][i+l]) / itp.h[1]) * 
+                  itp.kernel((y - itp.knots[2][j+m]) / itp.h[2])
     end
     
     return result
 end
 
-Interpolations.getknots(itp::ConvolutionInterpolation) = itp.knots
-Base.axes(itp::ConvolutionInterpolation) = axes(itp.coefs)
-Base.size(itp::ConvolutionInterpolation) = size(itp.coefs)
-Interpolations.lbounds(itp::ConvolutionInterpolation) = first.(itp.knots)
-Interpolations.ubounds(itp::ConvolutionInterpolation) = last.(itp.knots)
-Interpolations.itpflag(::Type{<:ConvolutionInterpolation{T,N,TCoefs,IT}}) where {T,N,TCoefs,IT} = IT()
-Interpolations.coefficients(itp::ConvolutionInterpolation) = itp.coefs
+function (itp::CubicConvolutionalInterpolation{T,3})(x::Number, y::Number, z::Number) where T
+    i = searchsortedlast(itp.knots[1], x)
+    j = searchsortedlast(itp.knots[2], y)
+    k = searchsortedlast(itp.knots[3], z)
+
+    i = limit_convolution_bounds(1, i, itp)
+    j = limit_convolution_bounds(2, j, itp)
+    k = limit_convolution_bounds(3, k, itp)
+
+    result = zero(T)
+    for l = -1:2, m = -1:2, n = -1:2
+        result += itp.coefs[i+l, j+m, k+n] * 
+                  itp.kernel((x - itp.knots[1][i+l]) / itp.h[1]) * 
+                  itp.kernel((y - itp.knots[2][j+m]) / itp.h[2]) *
+                  itp.kernel((z - itp.knots[3][k+n]) / itp.h[3])
+    end
+    
+    return result
+end
+
+function limit_convolution_bounds(dim::Int, index::Int, itp::CubicConvolutionalInterpolation)
+    if index < 2
+        index = 2
+    elseif index > length(itp.knots[dim]) - 2
+        index = length(itp.knots[dim]) - 2
+    end
+    return index
+end
+
+Interpolations.getknots(itp::CubicConvolutionalInterpolation) = itp.knots
+Base.axes(itp::CubicConvolutionalInterpolation) = axes(itp.coefs)
+Base.size(itp::CubicConvolutionalInterpolation) = size(itp.coefs)
+Interpolations.lbounds(itp::CubicConvolutionalInterpolation) = first.(itp.knots)
+Interpolations.ubounds(itp::CubicConvolutionalInterpolation) = last.(itp.knots)
+Interpolations.itpflag(::Type{<:CubicConvolutionalInterpolation{T,N,TCoefs,IT}}) where {T,N,TCoefs,IT} = IT()
+Interpolations.coefficients(itp::CubicConvolutionalInterpolation) = itp.coefs

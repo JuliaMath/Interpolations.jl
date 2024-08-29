@@ -35,7 +35,7 @@ function convolution_interpolation(knots::Union{AbstractVector,NTuple{N,Abstract
     if knots isa AbstractVector
         knots = (knots,)
     end
-    itp = ConvolutionInterpolation(knots, values)
+    itp = CubicConvolutionalInterpolation(knots, values)
     return extrapolate(itp, extrapolation_bc)
 end
 """
