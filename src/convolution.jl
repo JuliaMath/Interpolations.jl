@@ -1,8 +1,17 @@
 export CubicConvolutionalInterpolation, ConvolutionMethod
 
+# for type stability of specialized coefficient generation
+const Knots1D = Tuple{AbstractVector{T}} where T
+const Knots2D = Tuple{AbstractVector{T}, AbstractVector{T}} where T
+const Knots3D = Tuple{AbstractVector{T}, AbstractVector{T}, AbstractVector{T}} where T
+
 struct CubicConvolutionalKernel end
 
 struct ConvolutionMethod <: InterpolationType end
+
+# for type stability of specialized interpolation functions
+struct HigherDimension{N} end
+HigherDimension(::Val{N}) where N = HigherDimension{N}()
 
 function (::CubicConvolutionalKernel)(s)
     s_abs = abs(s)
@@ -15,34 +24,35 @@ function (::CubicConvolutionalKernel)(s)
     end
 end
 
-struct CubicConvolutionalInterpolation{T,N,TCoefs<:AbstractArray,IT<:NTuple{N,ConvolutionMethod},Axs<:Tuple} <: AbstractInterpolation{T,N,IT}
+struct CubicConvolutionalInterpolation{T,N,TCoefs<:AbstractArray,IT<:NTuple{N,ConvolutionMethod},Axs<:Tuple,DT} <: AbstractInterpolation{T,N,IT}
     coefs::TCoefs
     knots::Axs
     it::IT
     h::NTuple{N,Float64}
     kernel::CubicConvolutionalKernel
+    dimension::DT
 end
 
 function CubicConvolutionalInterpolation(knots::NTuple{N,AbstractVector}, vs::AbstractArray{T,N}) where {T,N}
-    if N > 3
-        error("CubicConvolutionalInterpolation is currently implemented only for 1D, 2D and 3D. Got $N dimensions.")
-    end
-
+    
     coefs = create_cubic_convolutional_coefs(knots, vs)
     h = map(k -> k[2] - k[1], knots)
     it = ntuple(_ -> ConvolutionMethod(), N)
-    if N == 1
-        knots_new = (knots[1][1]-h[1]:h[1]:knots[1][end]+h[1],)
-    elseif N == 2
-        knots_new = (knots[1][1]-h[1]:h[1]:knots[1][end]+h[1], knots[2][1]-h[2]:h[2]:knots[2][end]+h[2])
-    else
-        knots_new = (knots[1][1]-h[1]:h[1]:knots[1][end]+h[1], knots[2][1]-h[2]:h[2]:knots[2][end]+h[2], knots[3][1]-h[3]:h[3]:knots[3][end]+h[3])
-    end
 
-    CubicConvolutionalInterpolation{T,N,typeof(coefs),typeof(it),typeof(knots)}(coefs, (knots_new), it, h, CubicConvolutionalKernel())
+    knots_new = expand_knots(knots, h)
+
+    dimension = N <= 3 ? Val(N) : HigherDimension(Val(N))
+
+    CubicConvolutionalInterpolation{T,N,typeof(coefs),typeof(it),typeof(knots),typeof(dimension)}(coefs, (knots_new), it, h, CubicConvolutionalKernel(), dimension)
 end
 
-function create_cubic_convolutional_coefs(knots::Tuple{AbstractVector}, vs::AbstractVector{T}) where T
+function expand_knots(knots::NTuple{N,AbstractVector}, h::NTuple{N,Real}) where N
+    knots_new = ntuple(i -> knots[i][1]-h[i]:h[i]:knots[i][end]+h[i], N)
+    return knots_new
+end
+
+# specialized dispatch for 1D
+function create_cubic_convolutional_coefs(knots::Knots1D, vs::AbstractVector{T}) where T
     N = length(vs) + 2
     c = zeros(T, N)
     c[2:N-1] = vs
@@ -54,10 +64,11 @@ function create_cubic_convolutional_coefs(knots::Tuple{AbstractVector}, vs::Abst
     return c
 end
 
-function create_cubic_convolutional_coefs(knots::Tuple{AbstractVector,AbstractVector}, values::AbstractMatrix{T}) where T
-    L, M = size(values) .+ 2
+# specialized dispatch for 2D
+function create_cubic_convolutional_coefs(knots::Knots2D, vs::AbstractMatrix{T}) where T
+    L, M = size(vs) .+ 2
     c = zeros(T, L, M)
-    c[2:L-1, 2:M-1] = values
+    c[2:L-1, 2:M-1] = vs
 
     # 2D boundary conditions
     for i = 2:L-1
@@ -77,10 +88,11 @@ function create_cubic_convolutional_coefs(knots::Tuple{AbstractVector,AbstractVe
     return c
 end
 
-function create_cubic_convolutional_coefs(knots::Tuple{AbstractVector,AbstractVector,AbstractVector}, values::AbstractArray{T,3}) where {T}
-    L, M, N = size(values) .+ 2
+# specialized dispatch for 3D
+function create_cubic_convolutional_coefs(knots::Knots3D, vs::AbstractArray{T,3}) where {T}
+    L, M, N = size(vs) .+ 2
     c = zeros(T, L, M, N)
-    c[2:L-1, 2:M-1, 2:N-1] = values
+    c[2:L-1, 2:M-1, 2:N-1] = vs
 
     # 3D boundary conditions
     # 6 faces (1 fixed coordinate)
@@ -134,12 +146,83 @@ function create_cubic_convolutional_coefs(knots::Tuple{AbstractVector,AbstractVe
     return c
 end
 
-function (itp::CubicConvolutionalInterpolation{T,1})(x::Number) where T
-    i = searchsortedlast(itp.knots[1], x)
+# generalized dispatch for N > 3
+function create_cubic_convolutional_coefs(knots::NTuple{N,AbstractVector}, vs::AbstractArray{T,N}) where {T,N}
+    new_dims = size(vs) .+ 2    
+    c = zeros(T, new_dims)
+    inner_indices = map(d -> 2:(d-1), new_dims)
+    c[inner_indices...] = vs
+    
+    # helper function to apply boundary condition along specific dimensions
+    function apply_boundary_condition!(c, fixed_dims)
+        for idx in CartesianIndices(size(c))
+            is_boundary = any(idx[dim] in (1, size(c, dim)) for dim in fixed_dims)
+            if !is_boundary
+                continue
+            end
+            
+            for dim in fixed_dims
+                if idx[dim] == 1
+                    offset1 = CartesianIndex(ntuple(i -> i == dim ? 1 : 0, N))
+                    offset2 = CartesianIndex(ntuple(i -> i == dim ? 2 : 0, N))
+                    offset3 = CartesianIndex(ntuple(i -> i == dim ? 3 : 0, N))
+                    c[idx] = 3*c[idx + offset1] - 3*c[idx + offset2] + c[idx + offset3]
+                elseif idx[dim] == size(c, dim)
+                    offset1 = CartesianIndex(ntuple(i -> i == dim ? 1 : 0, N))
+                    offset2 = CartesianIndex(ntuple(i -> i == dim ? 2 : 0, N))
+                    offset3 = CartesianIndex(ntuple(i -> i == dim ? 3 : 0, N))
+                    c[idx] = 3*c[idx - offset1] - 3*c[idx - offset2] + c[idx - offset3]
+                end
+            end
+        end
+    end
+    
+    # apply boundary conditions, starting from faces and working outwards towards corners
+    for num_fixed_dims in 1:N
+        for fixed_dims in combinations(1:N, num_fixed_dims)
+            apply_boundary_condition!(c, fixed_dims)
+        end
+    end
+    
+    return c
+end
+
+# combinations function
+function combinations(iterable, r)
+    pool = collect(iterable)
+    n = length(pool)
+    if r > n
+        return []
+    end
+    indices = collect(1:r)
+    result = [pool[indices]]
+    while true
+        finished = true
+        for i in reverse(1:r)
+            if indices[i] != i + n - r
+                finished = false
+                indices[i] += 1
+                for j in (i+1):r
+                    indices[j] = indices[j-1] + 1
+                end
+                break
+            end
+        end
+        if finished
+            break
+        end
+        push!(result, pool[indices])
+    end
+    return result
+end
+
+# specialized dispatch for 1D
+function (itp::CubicConvolutionalInterpolation{T,1,TCoefs,IT,Axs,Val{1}})(x::Vararg{T,1}) where {T,TCoefs,IT,Axs}
+    i = searchsortedlast(itp.knots[1], x[1])
 
     i = limit_convolution_bounds(1, i, itp)
 
-    s = (x-itp.knots[1][i])/itp.h[1]
+    s = (x[1]-itp.knots[1][i])/itp.h[1]
 
     result = itp.coefs[i-1] * (-s^3 + 2*s^2 - s)/2 + itp.coefs[i] * (3*s^3 - 5*s^2 + 2)/2 +
             itp.coefs[i+1] * (-3*s^3 + 4*s^2 + s)/2 + itp.coefs[i+2] * (s^3 - s^2)/2  
@@ -147,9 +230,10 @@ function (itp::CubicConvolutionalInterpolation{T,1})(x::Number) where T
     return result
 end
 
-function (itp::CubicConvolutionalInterpolation{T,2})(x::Number, y::Number) where T
-    i = searchsortedlast(itp.knots[1], x)
-    j = searchsortedlast(itp.knots[2], y)
+# specialized dispatch for 2D
+function (itp::CubicConvolutionalInterpolation{T,2,TCoefs,IT,Axs,Val{2}})(x::Vararg{T,2}) where {T,TCoefs,IT,Axs}
+    i = searchsortedlast(itp.knots[1], x[1])
+    j = searchsortedlast(itp.knots[2], x[2])
     
     i = limit_convolution_bounds(1, i, itp)
     j = limit_convolution_bounds(2, j, itp)
@@ -157,17 +241,18 @@ function (itp::CubicConvolutionalInterpolation{T,2})(x::Number, y::Number) where
     result = zero(T)
     for l = -1:2, m = -1:2
         result += itp.coefs[i+l, j+m] * 
-                  itp.kernel((x - itp.knots[1][i+l]) / itp.h[1]) * 
-                  itp.kernel((y - itp.knots[2][j+m]) / itp.h[2])
+                  itp.kernel((x[1] - itp.knots[1][i+l]) / itp.h[1]) * 
+                  itp.kernel((x[2] - itp.knots[2][j+m]) / itp.h[2])
     end
     
     return result
 end
 
-function (itp::CubicConvolutionalInterpolation{T,3})(x::Number, y::Number, z::Number) where T
-    i = searchsortedlast(itp.knots[1], x)
-    j = searchsortedlast(itp.knots[2], y)
-    k = searchsortedlast(itp.knots[3], z)
+# specialized dispatch for 3D
+function (itp::CubicConvolutionalInterpolation{T,3,TCoefs,IT,Axs,Val{3}})(x::Vararg{T,3}) where {T,TCoefs,IT,Axs}
+    i = searchsortedlast(itp.knots[1], x[1])
+    j = searchsortedlast(itp.knots[2], x[2])
+    k = searchsortedlast(itp.knots[3], x[3])
 
     i = limit_convolution_bounds(1, i, itp)
     j = limit_convolution_bounds(2, j, itp)
@@ -176,9 +261,23 @@ function (itp::CubicConvolutionalInterpolation{T,3})(x::Number, y::Number, z::Nu
     result = zero(T)
     for l = -1:2, m = -1:2, n = -1:2
         result += itp.coefs[i+l, j+m, k+n] * 
-                  itp.kernel((x - itp.knots[1][i+l]) / itp.h[1]) * 
-                  itp.kernel((y - itp.knots[2][j+m]) / itp.h[2]) *
-                  itp.kernel((z - itp.knots[3][k+n]) / itp.h[3])
+                  itp.kernel((x[1] - itp.knots[1][i+l]) / itp.h[1]) * 
+                  itp.kernel((x[2] - itp.knots[2][j+m]) / itp.h[2]) *
+                  itp.kernel((x[3] - itp.knots[3][k+n]) / itp.h[3])
+    end
+    
+    return result
+end
+
+# generalized dispatch for N > 3
+function (itp::CubicConvolutionalInterpolation{T,N,TCoefs,IT,Axs,HigherDimension{N}})(x::Vararg{T,N}) where {T,N,TCoefs,IT,Axs}
+
+    pos_ids = ntuple(d -> limit_convolution_bounds(d, ntuple(d -> searchsortedlast(itp.knots[d], x[d]), N)[d], itp), N)
+
+    result = zero(T)
+    for offsets in Iterators.product(ntuple(_ -> -1:2, N)...)
+        result += itp.coefs[(pos_ids .+ offsets)...] * 
+                  prod(itp.kernel((x[d] - itp.knots[d][pos_ids[d] + offsets[d]]) / itp.h[d]) for d in 1:N)
     end
     
     return result
