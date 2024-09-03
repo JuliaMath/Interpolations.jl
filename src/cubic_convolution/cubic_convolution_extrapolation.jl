@@ -46,6 +46,11 @@ function extrapolate_point(etp::CubicConvolutionalExtrapolation{T,N,ITPT,ET,O}, 
     itp = etp.itp
     knots = getknots(itp)
     
+    function reflect(y, l, u)
+        yr = mod(y - l, 2(u-l)) + l
+        return ifelse(yr > u, 2u-yr, yr)
+    end
+
     clamped_x = zeros(T, N)
     if O == Interpolations.OrderOfAccuracy{3}
         for d in 1:N
@@ -148,11 +153,6 @@ function calculate_component_gradient(etp::CubicConvolutionalExtrapolation{T,N,I
             return (eval_along_dim(2h) - 8 * eval_along_dim(h) + 8 * eval_along_dim(-h) - eval_along_dim(-2h)) / (12h)
         end
     end
-end
-
-function reflect(y, l, u)
-    yr = mod(y - l, 2(u-l)) + l
-    return ifelse(yr > u, 2u-yr, yr)
 end
 
 Interpolations.bounds(etp::CubicConvolutionalExtrapolation) = bounds(etp.itp)

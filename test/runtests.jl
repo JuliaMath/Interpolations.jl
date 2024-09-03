@@ -41,6 +41,9 @@ const isci = get(ENV, "CI", "") in ("true", "True")
     # gridded interpolation tests
     include("gridded/runtests.jl")
 
+    # convolution interpolation tests
+    include("cubic_convolution.jl")
+
     # test interpolation with specific types
     include("typing.jl")
 
