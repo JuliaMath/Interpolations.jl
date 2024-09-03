@@ -466,7 +466,7 @@ include("lanczos/lanczos_opencv.jl")
 include("iterate.jl")
 include("chainrules/chainrules.jl")
 include("hermite/cubic.jl")
-include("convolution.jl")
+include("cubic_convolution/cubic_convolution.jl")
 if VERSION >= v"1.6"
     include("gpu_support.jl")
 end
