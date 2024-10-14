@@ -65,7 +65,7 @@ composition of `interpolate`, `scale`, and `extrapolate`. You may not need all
 of the the scaling and extrapolation features.
 
 ```julia
-interp_linear = extrapolate(scale(interpolate(A, BSpline(Linear())), xs))
+interp_linear = extrapolate(scale(interpolate(A, BSpline(Linear())), xs), Line())
 ```
 
 If we know we do not need the extrapolation portion, we can use the following.
