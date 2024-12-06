@@ -60,7 +60,7 @@ interp_linear_extrap(0.9) # outside grid: linear extrapolation
 
 ## Performant Example Usage
 
-The above use of `LinearInterpolation` is actually a short hand for a
+The above use of `linear_interpolation` is actually a short hand for a
 composition of `interpolate`, `scale`, and `extrapolate`. You may not need all
 of the the scaling and extrapolation features.
 
