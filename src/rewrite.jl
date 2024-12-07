@@ -2,7 +2,7 @@ struct MyInterp{T,N,A<:AbstractArray{T,N}}
     data::A
 end
 
-@inline (itp::MyInterp{T,N})(i::Vararg{<:Number,N}) where {T,N} = expand(itp, i)
+@inline (itp::MyInterp{T,N})(i::Vararg{Number,N}) where {T,N} = expand(itp, i)
 
 @inline function expand(itp::MyInterp, ipre::Tuple{Vararg{Number,L}}, ipost::Vararg{Integer,M}) where {L,M}  # force specialization
     ifront, ilast = Base.front(ipre), ipre[end]
