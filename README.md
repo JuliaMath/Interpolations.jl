@@ -75,6 +75,7 @@ Other interpolation packages for Julia include:
 - [GeoStats.jl](https://github.com/JuliaEarth/GeoStats.jl) provides interpolation and simulation methods over complex 2D and 3D meshes.
 - [GridInterpolations.jl](https://github.com/sisl/GridInterpolations.jl) performs multivariate interpolation on a rectilinear grid.
 - [InterpolationKernels.jl](https://github.com/emmt/InterpolationKernels.jl) provides a library of interpolation kernels.
+- [KernelInterpolation.jl](https://github.com/JoshuaLampert/KernelInterpolation.jl) implements scattered data interpolations in arbitrary dimensions by radial basis functions with support for solving linear partial differential equations.
 - [KissSmoothing.jl](https://github.com/francescoalemanno/KissSmoothing.jl) implements denoising and a Radial Basis Function estimation procedure.
 - [LinearInterpolations.jl](https://github.com/jw3126/LinearInterpolations.jl) allows for interpolation using weighted averages allowing probability distributions, rotations, and other Lie groups to be interpolated.
 - [LinearInterpolators.jl](https://github.com/emmt/LinearInterpolators.jl) provides linear interpolation methods for Julia based on InterpolationKernels.jl, above.
