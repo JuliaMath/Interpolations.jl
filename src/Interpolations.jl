@@ -70,6 +70,9 @@ function Base.:(==)(itp1::AbstractInterpolation, itp2::AbstractInterpolation)
     return true
 end
 
+struct ConvolutionMethod <: InterpolationType end
+abstract type AbstractConvolutionInterpolation{T,N,TCoefs,IT<:Union{Tuple{Vararg{ConvolutionMethod}},ConvolutionMethod},Axs,KA,DT,DG,EQ} <: AbstractInterpolation{T,N,IT} end
+
 """
     BoundaryCondition
 
@@ -435,6 +438,9 @@ end
 _checkbounds(::CheckWillPass, itp, x) = true
 _checkbounds(::NeedsCheck, itp, x) = checklubounds(lbounds(itp), ubounds(itp), x)
 
+checkbounds(::Type{Bool}, itp::AbstractInterpolation, i::AbstractVector{Bool}) = 
+    throw(ArgumentError("Boolean indexing is not supported for interpolations"))
+
 checklubounds(ls, us, xs) = _checklubounds(true, ls, us, xs)
 _checklubounds(tf::Bool, ls::Tuple, us::Tuple, xs::Tuple) =
     _checklubounds(tf & allbetween(ls[1], xs[1], us[1]), Base.tail(ls), Base.tail(us), Base.tail(xs))
@@ -466,7 +472,7 @@ include("lanczos/lanczos_opencv.jl")
 include("iterate.jl")
 include("chainrules/chainrules.jl")
 include("hermite/cubic.jl")
-include("cubic_convolution/cubic_convolution.jl")
+include("convolution/convolution.jl")
 if VERSION >= v"1.6"
     include("gpu_support.jl")
 end

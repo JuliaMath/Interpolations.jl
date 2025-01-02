@@ -31,13 +31,18 @@ cubic_spline_interpolation(ranges::NTuple{N,AbstractRange}, vs::AbstractArray{T,
 
 # convolution interpolation
 function convolution_interpolation(knots::Union{AbstractVector,NTuple{N,AbstractVector}}, values::AbstractArray{T,N}; 
-    extrapolation_bc = Throw(), order::Int = 4) where {T,N}
+    degree::Int=3, fast::Bool=true, precompute::Int=1000, B=nothing, extrapolation_bc=Throw()) where {T,N}
     if knots isa AbstractVector
         knots = (knots,)
     end
-    itp = CubicConvolutionalInterpolation(knots, values, order=order)
-    return Interpolations.extrapolate(itp, extrapolation_bc)
+    if fast
+        itp = FastConvolutionInterpolation(knots, values; degree=degree, precompute=precompute, B=B)
+    else
+        itp = ConvolutionInterpolation(knots, values; degree=degree, B=B)
+    end
+    return extrapolate(itp, extrapolation_bc)
 end
+
 """
     etp = linear_interpolation(knots, A; extrapolation_bc=Throw())
 

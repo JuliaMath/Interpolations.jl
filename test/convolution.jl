@@ -1,6 +1,6 @@
 using Test
 
-function cubic_convolution_test()
+function convolution_test()
     N = 3
 
     ### 1D
