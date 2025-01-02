@@ -35,11 +35,10 @@ function linear_predict(r)
     end
 end
 
-function autocor_coefs(signal) # where T<:Number
+function autocor_coefs(signal)
     acf = autocorrelation(signal)
     coefs = linear_predict(acf)
     if occursin("NaN", string(coefs))
-        error("NaN in autocorrelation coefs")
         return [3.0, -3.0, 1.0] # fallback to quadratic
     end
     return coefs
