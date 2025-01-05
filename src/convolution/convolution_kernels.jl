@@ -1,30 +1,33 @@
 ### kernel functions
 
-# function (::ConvolutionKernel{3,2})(s) # original paper, 2 equation 3rd order accurate cubic
-#     s_abs = abs(s)
-#     if s_abs < 1.0
-#         return (3/2)*s_abs^3 - (5/2)*s_abs^2 + 1
-#     elseif s_abs < 2.0
-#         return -(1/2)*s_abs^3 + (5/2)*s_abs^2 - 4*s_abs + 2
-#     else
-#         return 0.0
-#     end
-# end
+function horner(x::T, coeffs::Dict{Symbol,Vector{S}}, poly::Symbol) where {T,S}
+    cs = coeffs[poly]
+    result = zero(promote_type(T,S))
+    for i in length(cs):-1:1
+        result = result * x + cs[i]
+    end
+    result
+end
 
-function (::ConvolutionKernel{3})(s) # original paper, 3 equation 4th order accurate cubic
+function (::ConvolutionKernel{3})(s::T) where {T} # original paper, 3 equation 4th order accurate cubic
     s_abs = abs(s)
+    coefs = Dict(
+        :eq1 => [1, 0, -7/3, 4/3],
+        :eq2 => [15/6, -59/12, 3, -7/12],
+        :eq3 => [-3/2, 21/12, -2/3, 1/12]
+    )
     if s_abs < 1.0
-        return (4/3)*s_abs^3 - (7/3)*s_abs^2 + 1
+        return horner(s_abs, coefs, :eq1)
     elseif s_abs < 2.0
-        return -(7/12)*s_abs^3 + 3*s_abs^2 - (59/12)*s_abs + 15/6
+        return horner(s_abs, coefs, :eq2)
     elseif s_abs < 3.0
-        return (1/12)*s_abs^3 - (2/3)*s_abs^2 + (21/12)*s_abs - 3/2
+        return horner(s_abs, coefs, :eq3)
     else
         return 0.0
     end
 end
 
-function (::ConvolutionKernel{5})(s) # 5 equations 7th order accurate quintic
+function (::ConvolutionKernel{5})(s::T) where {T} # 5 equations 7th order accurate quintic
     s_abs = abs(s)
     coef = Dict(
         # 5 equation quintic, 7th order accurate
@@ -35,22 +38,22 @@ function (::ConvolutionKernel{5})(s) # 5 equations 7th order accurate quintic
         :eq5 => [-3625/768, 5075/1024, -1595/768, 667/1536, -29/640, 29/15360]
     )
     if s_abs < 1.0
-        return sum([coef[:eq1][i]*s_abs^(i-1) for i in 1:6])
+        return horner(s_abs, coef, :eq1)
     elseif s_abs < 2.0
-        return sum([coef[:eq2][i]*s_abs^(i-1) for i in 1:6])
+        return horner(s_abs, coef, :eq2)
     elseif s_abs < 3.0
-        return sum([coef[:eq3][i]*s_abs^(i-1) for i in 1:6])
+        return horner(s_abs, coef, :eq3)
     elseif s_abs < 4.0
-        return sum([coef[:eq4][i]*s_abs^(i-1) for i in 1:6])
+        return horner(s_abs, coef, :eq4)
     elseif s_abs < 5.0
-        return sum([coef[:eq5][i]*s_abs^(i-1) for i in 1:6])
+        return horner(s_abs, coef, :eq5)
     else
         return 0.0
     end
 end
 
 
-function (::ConvolutionKernel{7})(s) # 7th order accurate 7th degree
+function (::ConvolutionKernel{7})(s::T) where {T} # 7th order accurate 7th degree
     s_abs = abs(s)
     coef = Dict(
         # 6 equation sextic, 7th order accurate
@@ -62,23 +65,23 @@ function (::ConvolutionKernel{7})(s) # 7th order accurate 7th degree
         :eq6 => [9711/1156, -29133/2890, 119769/23120, -20501/13872, 14027/55488, -1079/41616, 44239/29963520, -1079/29963520]
     )
     if s_abs < 1.0
-        return sum([coef[:eq1][i]*s_abs^(i-1) for i in 1:8])
+        return horner(s_abs, coef, :eq1)
     elseif s_abs < 2.0
-        return sum([coef[:eq2][i]*s_abs^(i-1) for i in 1:8])
+        return horner(s_abs, coef, :eq2)
     elseif s_abs < 3.0
-        return sum([coef[:eq3][i]*s_abs^(i-1) for i in 1:8])
+        return horner(s_abs, coef, :eq3)
     elseif s_abs < 4.0
-        return sum([coef[:eq4][i]*s_abs^(i-1) for i in 1:8])
+        return horner(s_abs, coef, :eq4)
     elseif s_abs < 5.0
-        return sum([coef[:eq5][i]*s_abs^(i-1) for i in 1:8])
+        return horner(s_abs, coef, :eq5)
     elseif s_abs < 6.0
-        return sum([coef[:eq6][i]*s_abs^(i-1) for i in 1:8])
+        return horner(s_abs, coef, :eq6)
     else
         return 0.0
     end
 end
 
-function (::ConvolutionKernel{9})(s) # 7 equation 7th order accurate 9th degree
+function (::ConvolutionKernel{9})(s::T) where {T} # 7 equation 7th order accurate 9th degree
     s_abs = abs(s)
     coef = Dict(
         # 7 equation nonic, 7th order accurate
@@ -91,26 +94,26 @@ function (::ConvolutionKernel{9})(s) # 7 equation 7th order accurate 9th degree
         :eq7 => [-230820161411/31529410560, 362717396503/37835292672, -32974308773/5911764480, 89501695241/47294115840, -19515407233/47294115840, 5671965649/94588231680, -13733573/2364705792, 17096897/47294115840, -280277/21358632960, 280277/1324235243520]
     )
     if s_abs < 1.0
-        return sum([coef[:eq1][i]*s_abs^(i-1) for i in 1:10])
+        return horner(s_abs, coef, :eq1)
     elseif s_abs < 2.0
-        return sum([coef[:eq2][i]*s_abs^(i-1) for i in 1:10])
+        return horner(s_abs, coef, :eq2)
     elseif s_abs < 3.0
-        return sum([coef[:eq3][i]*s_abs^(i-1) for i in 1:10])
+        return horner(s_abs, coef, :eq3)
     elseif s_abs < 4.0
-        return sum([coef[:eq4][i]*s_abs^(i-1) for i in 1:10])
+        return horner(s_abs, coef, :eq4)
     elseif s_abs < 5.0
-        return sum([coef[:eq5][i]*s_abs^(i-1) for i in 1:10])
+        return horner(s_abs, coef, :eq5)
     elseif s_abs < 6.0
-        return sum([coef[:eq6][i]*s_abs^(i-1) for i in 1:10])
+        return horner(s_abs, coef, :eq6)
     elseif s_abs < 7.0
-        return sum([coef[:eq7][i]*s_abs^(i-1) for i in 1:10])
+        return horner(s_abs, coef, :eq7)
     else
         return 0.0
     end
 end
 
 
-function (::ConvolutionKernel{11})(s) # 8 equation 7th order accurate 11th degree
+function (::ConvolutionKernel{11})(s::T) where {T} # 8 equation 7th order accurate 11th degree
     s_abs = abs(s)
     coef = Dict(
         # 8 equation 11th degree, 7th order accurate
@@ -124,27 +127,27 @@ function (::ConvolutionKernel{11})(s) # 8 equation 7th order accurate 11th degre
         :eq8 => [6324204691423232/1657844101365975, -20553665247125504/3868302903187275, 7806440165975552/2320981741912365, -197631396606976/154732116127491, 3087990571984/9551365193055, -31651903362836/552614700455325, 16018951092167/2210458801821300, -192999410749/294727840242840, 3280989982733/79222843457275392, -8298974662207/4753370607436523520, 5596982911721/126756549531640627200, -192999410749/380269648594921881600],
     )
     if s_abs < 1.0
-        return sum([coef[:eq1][i]*s_abs^(i-1) for i in 1:12])
+        return horner(s_abs, coef, :eq1)
     elseif s_abs < 2.0
-        return sum([coef[:eq2][i]*s_abs^(i-1) for i in 1:12])
+        return horner(s_abs, coef, :eq2)
     elseif s_abs < 3.0
-        return sum([coef[:eq3][i]*s_abs^(i-1) for i in 1:12])
+        return horner(s_abs, coef, :eq3)
     elseif s_abs < 4.0
-        return sum([coef[:eq4][i]*s_abs^(i-1) for i in 1:12])
+        return horner(s_abs, coef, :eq4)
     elseif s_abs < 5.0
-        return sum([coef[:eq5][i]*s_abs^(i-1) for i in 1:12])
+        return horner(s_abs, coef, :eq5)
     elseif s_abs < 6.0
-        return sum([coef[:eq6][i]*s_abs^(i-1) for i in 1:12])
+        return horner(s_abs, coef, :eq6)
     elseif s_abs < 7.0
-        return sum([coef[:eq7][i]*s_abs^(i-1) for i in 1:12])
+        return horner(s_abs, coef, :eq7)
     elseif s_abs < 8.0
-        return sum([coef[:eq8][i]*s_abs^(i-1) for i in 1:12])
+        return horner(s_abs, coef, :eq8)
     else
         return 0.0
     end
 end
 
-function (::ConvolutionKernel{13})(s) # 9 equation 7th order accurate 13th degree
+function (::ConvolutionKernel{13})(s::T) where {T} # 9 equation 7th order accurate 13th degree
     s_abs = abs(s)
     coef = Dict(
         # 9 equation 13th degree, 7th order accurate
@@ -159,23 +162,23 @@ function (::ConvolutionKernel{13})(s) # 9 equation 7th order accurate 13th degre
         :eq9 => [-7563393699495435136498419/5713725517701034037248000, 17647918632156015318496311/9141960828321654459596800, -14846661706416965267941341/11427451035402068074496000, 1110127744644734649664377/2077718370073103286272000, -31125076952656111672833/207771837007310328627200, 125653088438500598975511/4155436740146206572544000, -469651366912506486147/103885918503655164313600, 526578805326143635983/1038859185036551643136000, -11069224135985001357/259714796259137910784000, 6618107552202672769/2493262044087723943526400, -1112779145945582147/9349732665328964788224000, 1347048439828862599/370249413547027005613670400, -1698452380653783277/24991835414424322878922752000, 58567323470820113/99967341657697291515691008000]
     )
     if s_abs < 1.0
-        return sum([coef[:eq1][i]*s_abs^(i-1) for i in 1:14])
+        return horner(s_abs, coef, :eq1)
     elseif s_abs < 2.0
-        return sum([coef[:eq2][i]*s_abs^(i-1) for i in 1:14])
+        return horner(s_abs, coef, :eq2)
     elseif s_abs < 3.0
-        return sum([coef[:eq3][i]*s_abs^(i-1) for i in 1:14])
+        return horner(s_abs, coef, :eq3)
     elseif s_abs < 4.0
-        return sum([coef[:eq4][i]*s_abs^(i-1) for i in 1:14])
+        return horner(s_abs, coef, :eq4)
     elseif s_abs < 5.0
-        return sum([coef[:eq5][i]*s_abs^(i-1) for i in 1:14])
+        return horner(s_abs, coef, :eq5)
     elseif s_abs < 6.0
-        return sum([coef[:eq6][i]*s_abs^(i-1) for i in 1:14])
+        return horner(s_abs, coef, :eq6)
     elseif s_abs < 7.0
-        return sum([coef[:eq7][i]*s_abs^(i-1) for i in 1:14])
+        return horner(s_abs, coef, :eq7)
     elseif s_abs < 8.0
-        return sum([coef[:eq8][i]*s_abs^(i-1) for i in 1:14])
+        return horner(s_abs, coef, :eq8)
     elseif s_abs < 9.0
-        return sum([coef[:eq9][i]*s_abs^(i-1) for i in 1:14])
+        return horner(s_abs, coef, :eq9)
     else
         return 0.0
     end
