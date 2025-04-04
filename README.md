@@ -174,6 +174,6 @@ indicated by changes in minor versions.
 
 ## Contributing
 
-Work is very much in progress, but help is always welcome. If you want to help out but don't know where to start, take a look at issue [#5 - our feature wishlist](https://github.com/JuliaMath/Interpolations.jl/issues/5) =) There is also some [developer documentation](http://juliamath.github.io/Interpolations.jl/latest/devdocs/) that may help you understand how things work internally.
+Work is very much in progress, but help is always welcome. There is some [developer documentation](http://juliamath.github.io/Interpolations.jl/latest/devdocs/) that may help you understand how things work internally.
 
 Contributions in any form are appreciated, but the best pull requests come with tests!
