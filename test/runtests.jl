@@ -7,11 +7,12 @@ using Test, SharedArrays, Random, ColorVectorSpace
 using StaticArrays, WoodburyMatrices
 using Interpolations
 
-@test isempty(detect_ambiguities(Interpolations))
 
 const isci = get(ENV, "CI", "") in ("true", "True")
 
 @testset "Interpolations" begin
+    @test isempty(detect_ambiguities(Interpolations))
+
     include("core.jl")
     # Hermite interpolation tests
     include("cubic_hermite.jl")
