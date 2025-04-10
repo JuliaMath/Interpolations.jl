@@ -3,7 +3,7 @@
 itpinfo(itp) = (tcollect(itpflag, itp), axes(itp))
 
 @inline function (itp::BSplineInterpolation{T,N})(x::Vararg{Number,N}) where {T,N}
-    @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
+    @boundscheck (checkbounds(Bool, itp, ForwardDiff.value.(x)...) || Base.throw_boundserror(itp, x))
     wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
     InterpGetindex(itp)[wis...]
 end

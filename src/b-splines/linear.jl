@@ -1,3 +1,5 @@
+using ForwardDiff # TODO
+
 struct Linear{BC<:Union{Throw{OnGrid},Periodic{OnCell}}} <: DegreeBC{1}
     bc::BC
     function Linear{BC}(bc::BC=BC()) where BC<:Union{Throw{OnGrid},Periodic{OnCell}}
@@ -41,11 +43,13 @@ a piecewise linear function connecting each pair of neighboring data points.
 Linear
 
 function positions(deg::Linear, ax::AbstractUnitRange{<:Integer}, x)
-    f = floor(x)
+    x_value = ForwardDiff.value(x)
+    f = floor(x_value)
     # When x == last(ax) we want to use the x-1, x pair
-    f = ifelse(x == last(ax), f - oneunit(f), f)
+    f = ifelse(x_value == last(ax), f - oneunit(f), f)
     fi = fast_trunc(Int, f)
-    expand_index(deg, fi, ax), x-f
+
+    expand_index(deg, fi, ax), x - f # for this δ, we want x, not x_value
 end
 expand_index(::Linear{Throw{OnGrid}}, fi::Number, ax::AbstractUnitRange) = fi
 expand_index(::Linear{Periodic{OnCell}}, fi::Number, ax::AbstractUnitRange) =
