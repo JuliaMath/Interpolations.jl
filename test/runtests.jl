@@ -11,7 +11,9 @@ using Interpolations
 const isci = get(ENV, "CI", "") in ("true", "True")
 
 @testset "Interpolations" begin
-    @test isempty(detect_ambiguities(Interpolations))
+    @testset "method ambiguities" begin
+        @test isempty(detect_ambiguities(Interpolations))
+    end
 
     include("core.jl")
     # Hermite interpolation tests

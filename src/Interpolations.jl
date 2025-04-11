@@ -447,8 +447,28 @@ maybe_clamp(itp, xs) = maybe_clamp(BoundsCheckStyle(itp), itp, xs)
 maybe_clamp(::NeedsCheck, itp, xs) = map(clamp, xs, lbounds(itp), ubounds(itp))
 maybe_clamp(::CheckWillPass, itp, xs) = xs
 
+using ForwardDiff
+# TODO
+function maybe_clamp(::NeedsCheck, itp, xs::Tuple{Vararg{ForwardDiff.Dual}})
+    xs_values = just_dual_value.(xs)
+    clamped_vals = maybe_clamp(NeedsCheck(), itp, xs_values)
+    apply_partials.(xs, clamped_vals)
+end
+
 Base.hash(x::AbstractInterpolation, h::UInt) = Base.hash_uint(3h - objectid(x))
 Base.hash(x::AbstractExtrapolation, h::UInt) = Base.hash_uint(3h - objectid(x))
+
+# TODO use this, and define a method in a ForwardDiff package extension
+# stip off arbitrary layers of ForwardDiff.Dual, returning the innermost value
+just_dual_value(x::Number) = x
+just_dual_value(x::ForwardDiff.Dual) = just_dual_value(ForwardDiff.value(x))
+
+# apply partials from arbitrarily nested ForwardDiff.Dual to a value
+function apply_partials(x_dual::D, val::Number) where D <: ForwardDiff.Dual
+    ∂s = ForwardDiff.partials(x_dual)
+    apply_partials(ForwardDiff.value(x_dual), D(val, ∂s))
+end
+apply_partials(x_dual::Number, val::Number) = val
 
 include("nointerp/nointerp.jl")
 include("b-splines/b-splines.jl")
