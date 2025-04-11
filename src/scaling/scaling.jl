@@ -76,7 +76,8 @@ ubound(ax::AbstractRange, ::DegreeBC, ::OnGrid) = last(ax)
 
 # For (), we scale the evaluation point
 @propagate_inbounds function (sitp::ScaledInterpolation{T,N})(xs::Vararg{Number,N}) where {T,N}
-    @boundscheck (checkbounds(Bool, sitp, xs...) || Base.throw_boundserror(sitp, xs))
+    xs_values = just_dual_value.(xs)
+    @boundscheck (checkbounds(Bool, sitp, xs_values...) || Base.throw_boundserror(sitp, xs_values))
     xl = maybe_clamp(sitp.itp, coordslookup(itpflag(sitp.itp), sitp.ranges, xs))
     @inbounds sitp.itp(xl...)
 end

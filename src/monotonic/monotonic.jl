@@ -207,7 +207,7 @@ function interpolate(
 end
 
 function (itp::MonotonicInterpolation)(x::Number)
-    x_value = ForwardDiff.value(ForwardDiff.value(x))
+    x_value = just_dual_value.(x)
     @boundscheck (checkbounds(Bool, itp, x_value) || Base.throw_boundserror(itp, (x_value,)))
     k = searchsortedfirst(itp.knots, x_value)
     if k > 1
