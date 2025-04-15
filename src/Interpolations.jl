@@ -447,6 +447,10 @@ maybe_clamp(itp, xs) = maybe_clamp(BoundsCheckStyle(itp), itp, xs)
 maybe_clamp(::NeedsCheck, itp, xs) = map(clamp, xs, lbounds(itp), ubounds(itp))
 maybe_clamp(::CheckWillPass, itp, xs) = xs
 
+# this strips arbitrary layers of ForwardDiff.Dual, returning the innermost value
+# it's other methods are defined in InterpolationsForwardDiffExt.jl
+just_dual_value(x::Number) = x
+
 Base.hash(x::AbstractInterpolation, h::UInt) = Base.hash_uint(3h - objectid(x))
 Base.hash(x::AbstractExtrapolation, h::UInt) = Base.hash_uint(3h - objectid(x))
 
