@@ -424,6 +424,9 @@ end
 
 @inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::Vararg{ExpandedIndexTypes,N}) where N =
     _checkbounds(BoundsCheckStyle(itp), itp, x)
+# Explicitly handle boolean vectors to avoid ambiguity with Base.checkbounds
+@inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::AbstractVector{Bool}) =
+    _checkbounds(BoundsCheckStyle(itp), itp, x)
 
 @inline checkbounds(::Type{Bool}, itp::AbstractInterpolation, x::LogicalIndex) =
     _checkbounds(BoundsCheckStyle(itp), itp, x)
