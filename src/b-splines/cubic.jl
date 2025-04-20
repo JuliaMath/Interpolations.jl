@@ -232,16 +232,33 @@ end
 continuous derivative at the second-to-last cell boundary; this means
 `y_1'''(2) = y_2'''(2)`, yielding
 
-    1 cm -3 c + 3 cp -1 cpp = 0
+
+    -1 cm + 4 c - 6 cp + 4 cpp - 1 cppp = 0
+
+This enforces continuity of the third derivative, which is appropriate for cubic splines
+(in contrast to the quadratic case which enforces continuity of the second derivative).
+
 """
-function prefiltering_system(::Type{T}, ::Type{TC}, n::Int,
-                             degree::Cubic{<:Free}) where {T,TC}
-    dl, d, du = inner_system_diags(T,n,degree)
+function prefiltering_system(
+    ::Type{T},
+    ::Type{TC},
+    n::Int,
+    degree::Cubic{<:Free},
+) where {T,TC}
+    dl, d, du = inner_system_diags(T, n, degree)
+    d[1] = d[end] = -1
+    du[1] = dl[end] = 4
 
-    specs = WoodburyMatrices.sparse_factors(T, n,
-                                  (1, n, du[1]),
-                                  (n, 1, dl[end])
-                                  )
+    specs = WoodburyMatrices.sparse_factors(
+        T,
+        n,
+        (1, 3, -6),
+        (1, 4, 4),
+        (1, 5, -1),
+        (n, n - 2, -6),
+        (n, n - 3, 4),
+        (n, n - 4, -1),
+    )
 
-    Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
+    return Woodbury(lut!(dl, d, du), specs...), zeros(TC, n)
 end

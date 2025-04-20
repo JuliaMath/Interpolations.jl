@@ -90,4 +90,21 @@
     itp = interpolate(rand(5, 9), BSpline(Cubic(Flat(OnGrid()))))
     @test itp == Interpolations.BSplineInterpolation(itp.coefs, itp.it, itp.parentaxes)
     @test_throws ArgumentError Interpolations.BSplineInterpolation(itp.coefs, itp.it, (2:3, 2:10))
+
+    # Issue 594
+    @testset "Free BC" begin
+        # should be exact for polynomials of degree <= 3 (up to rounding error)
+        ix = 1:15
+        f = x -> x^3 - 2x^2 + 3x - 4
+        A = map(f, ix)
+        itp = interpolate(A, BSpline(Cubic(Free(OnGrid()))))
+        @test all(x -> itp(x) ≈ f(x), 1:0.1:15)
+
+        # also in 2d
+        f2(x, y) = x^3 - 2x^2 + 3x - 4 + 2y^3 - 2y^2 + 3y - 4
+        iy = 1:15
+        A = map(I -> f2(I[1], I[2]), Iterators.product(ix, iy))
+        itp = interpolate(A, BSpline(Cubic(Free(OnGrid()))))
+        @test all(x -> itp(x...) ≈ f2(x...), Iterators.product(1:0.1:15, 1:0.1:15))
+    end
 end
