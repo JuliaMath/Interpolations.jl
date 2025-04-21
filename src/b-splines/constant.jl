@@ -67,30 +67,36 @@ to `A[ceil(Int,x)]` without scaling.
 Constant
 
 function positions(c::Constant{Previous}, ax, x)  # discontinuity occurs at integer locations
-    xm = floorbounds(x, ax)
+    x_value = just_dual_value.(x)
+    xm = floorbounds(x_value, ax)
     δx = x - xm
     fast_trunc(Int, xm), δx
 end
 function positions(c::Constant{Next}, ax, x)  # discontinuity occurs at integer locations
-    xm = ceilbounds(x, ax)
+    x_value = just_dual_value.(x)
+    xm = ceilbounds(x_value, ax)
     δx = x - xm
     fast_trunc(Int, xm), δx
 end
 function positions(c::Constant{Nearest}, ax, x)  # discontinuity occurs at half-integer locations
-    xm = roundbounds(x, ax)
+    x_value = just_dual_value.(x)
+    xm = roundbounds(x_value, ax)
     δx = x - xm
-    fast_trunc(Int, xm), δx
+    i = fast_trunc(Int, xm)
+    i, δx
 end
 
 function positions(c::Constant{Previous,Periodic{OnCell}}, ax, x)
+    x_value = just_dual_value.(x)
     # We do not use floorbounds because we do not want to add a half at
     # the lowerbound to round up.
-    xm = floor(x)
+    xm = floor(x_value)
     δx = x - xm
     modrange(fast_trunc(Int, xm), ax), δx
 end
 function positions(c::Constant{Next,Periodic{OnCell}}, ax, x)  # discontinuity occurs at integer locations
-    xm = ceilbounds(x, ax)
+    x_value = just_dual_value.(x)
+    xm = ceilbounds(x_value, ax)
     δx = x - xm
     modrange(fast_trunc(Int, xm), ax), δx
 end

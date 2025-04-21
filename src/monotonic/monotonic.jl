@@ -207,8 +207,9 @@ function interpolate(
 end
 
 function (itp::MonotonicInterpolation)(x::Number)
-    @boundscheck (checkbounds(Bool, itp, x) || Base.throw_boundserror(itp, (x,)))
-    k = searchsortedfirst(itp.knots, x)
+    x_value = just_dual_value.(x)
+    @boundscheck (checkbounds(Bool, itp, x_value) || Base.throw_boundserror(itp, (x_value,)))
+    k = searchsortedfirst(itp.knots, x_value)
     if k > 1
         k -= 1
     end
