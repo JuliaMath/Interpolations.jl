@@ -7,7 +7,7 @@ ratio(num, denom) = num/denom
 modrange(x, r::AbstractUnitRange) = mod(x-first(r), length(r)) + first(r)
 modrange(x, (l, u)::Tuple{Real,Real}) = mod(x-l, u-l+1) + l
 
-fmap(fs, x...) = _fmap(x, fs...)
+fmap(fs, x::Vararg{Any, N}) where {N} = _fmap(x, fs...)
 @inline _fmap(x, f, fs...) = (f(x...), _fmap(x, fs...)...)
 @inline _fmap(x) = ()
 
