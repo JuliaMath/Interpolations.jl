@@ -1,14 +1,32 @@
-cff-version: 1.1.0
-message: "If you use this software, please cite it as below."
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Interpolations.jl
+message: 'If you use this software, please cite it as below.'
+type: software
 authors:
-  - family-names: "Kittisopikul"
-    given-names: "Mark"
-    orcid: "https://orcid.org/0000-0002-9558-6248"
-  - family-names: "Holy"
-    given-names: "Timothy E."
-    orcid: "https://orcid.org/0000-0002-2429-1071"
-  - family-names: "Aschan"
-    given-names: "Tomas"
-title: JuliaMath/Interpolations.jl: v0.14.7
-version: v0.14.7
-date-released: 2022-12-10
+  - family-names: Kittisopikul
+    given-names: Mark
+    orcid: 'https://orcid.org/0000-0002-9558-6248'
+  - family-names: Holy
+    given-names: Timothy E.
+    orcid: 'https://orcid.org/0000-0002-2429-1071'
+  - family-names: Aschan
+    given-names: Tomas
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.593143
+    description: DOI for all versions of Interpolations.jl
+repository-code: 'https://github.com/JuliaMath/Interpolations.jl'
+url: 'https://juliamath.github.io/Interpolations.jl/stable/'
+abstract: >-
+  Fast, continuous interpolation of discrete datasets in
+  Julia
+keywords:
+  - interpolation
+  - julia
+  - splines
+license: MIT
+version: 0.16.0
+date-released: '2025-05-14'
