@@ -1,3 +1,5 @@
+export CubicHermite
+
 """
     CubicHermite
 
@@ -148,8 +150,3 @@ function hessian(ch::CubicHermite, x::Float64)::Float64
     d2 = 2 * (3x - 2x1 - x2) / (h * h)
     c1 * (y1 - y2) + d1 * dydx1 + d2 * dydx2
 end
-
-
-export CubicHermite
-export gradient
-export hessian
