@@ -1,4 +1,4 @@
-using Zygote
+using Zygote: Zygote
 @testset "ChainRulesCore" begin
     # 1D example
     x = 1:10
