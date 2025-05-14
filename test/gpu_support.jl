@@ -9,18 +9,18 @@ JLArrays.allowscalar(false)
     idx = 2.0:0.17:19.0
     jlidx = jl(collect(idx))
     @test itp.(idx) == collect(jlitp.(idx)) == collect(jlitp.(jlidx))
-    @test gradient.(Ref(itp), idx) ==
-        collect(gradient.(Ref(jlitp), idx)) ==
-        collect(gradient.(Ref(jlitp), jlidx))
+    @test Interpolations.gradient.(Ref(itp), idx) ==
+        collect(Interpolations.gradient.(Ref(jlitp), idx)) ==
+        collect(Interpolations.gradient.(Ref(jlitp), jlidx))
 
     sitp = scale(itp, A_x)
     jlsitp = jl(sitp)
     idx = 1.0:0.4:39.0
     jlidx = jl(collect(idx))
     @test sitp.(idx) == collect(jlsitp.(idx)) == collect(jlsitp.(jlidx))
-    @test gradient.(Ref(sitp), idx) ==
-        collect(gradient.(Ref(jlsitp), idx)) ==
-        collect(gradient.(Ref(jlsitp), jlidx))
+    @test Interpolations.gradient.(Ref(sitp), idx) ==
+        collect(Interpolations.gradient.(Ref(jlsitp), idx)) ==
+        collect(Interpolations.gradient.(Ref(jlsitp), jlidx))
 
 
     esitp = extrapolate(sitp, Flat())
@@ -28,18 +28,18 @@ JLArrays.allowscalar(false)
     idx = -1.0:0.84:41.0
     jlidx = jl(collect(idx))
     @test esitp.(idx) == collect(jlesitp.(idx)) == collect(jlesitp.(jlidx))
-    @test gradient.(Ref(esitp), idx) ==
-        collect(gradient.(Ref(jlesitp), idx)) ==
-        collect(gradient.(Ref(jlesitp), jlidx))
+    @test Interpolations.gradient.(Ref(esitp), idx) ==
+        collect(Interpolations.gradient.(Ref(jlesitp), idx)) ==
+        collect(Interpolations.gradient.(Ref(jlesitp), jlidx))
 
     esitp = extrapolate(sitp, 0.0)
     jlesitp = jl(esitp)
     idx = -1.0:0.84:41.0
     jlidx = jl(collect(idx))
     @test esitp.(idx) == collect(jlesitp.(idx)) == collect(jlesitp.(jlidx))
-    @test gradient.(Ref(esitp), idx) ==
-        collect(gradient.(Ref(jlesitp), idx)) ==
-        collect(gradient.(Ref(jlesitp), jlidx))
+    @test Interpolations.gradient.(Ref(esitp), idx) ==
+        collect(Interpolations.gradient.(Ref(jlesitp), idx)) ==
+        collect(Interpolations.gradient.(Ref(jlesitp), jlidx))
 end
 
 @testset "2d GPU Interpolation" begin
@@ -50,44 +50,44 @@ end
     idx = 2.0:0.17:19.0
     jlidx = jl(collect(idx))
     @test itp.(idx, idx') == collect(jlitp.(idx, idx')) == collect(jlitp.(jlidx, jlidx'))
-    @test gradient.(Ref(itp), idx, idx') ==
-        collect(gradient.(Ref(jlitp), idx, idx')) ==
-        collect(gradient.(Ref(jlitp), jlidx, jlidx'))
-    @test hessian.(Ref(itp), idx, idx') ==
-        collect(hessian.(Ref(jlitp), idx, idx')) ==
-        collect(hessian.(Ref(jlitp), jlidx, jlidx'))
+    @test Interpolations.gradient.(Ref(itp), idx, idx') ==
+        collect(Interpolations.gradient.(Ref(jlitp), idx, idx')) ==
+        collect(Interpolations.gradient.(Ref(jlitp), jlidx, jlidx'))
+    @test Interpolations.hessian.(Ref(itp), idx, idx') ==
+        collect(Interpolations.hessian.(Ref(jlitp), idx, idx')) ==
+        collect(Interpolations.hessian.(Ref(jlitp), jlidx, jlidx'))
 
     sitp = scale(itp, A_x, A_x)
     jlsitp = jl(sitp)
     idx = 1.0:0.4:39.0
     jlidx = jl(collect(idx))
     @test sitp.(idx, idx') == collect(jlsitp.(idx, idx')) == collect(jlsitp.(jlidx, jlidx'))
-    @test gradient.(Ref(sitp), idx, idx') ==
-        collect(gradient.(Ref(jlsitp), idx, idx')) ==
-        collect(gradient.(Ref(jlsitp), jlidx, jlidx'))
-    @test hessian.(Ref(sitp), idx, idx') ==
-        collect(hessian.(Ref(jlsitp), idx, idx')) ==
-        collect(hessian.(Ref(jlsitp), jlidx, jlidx'))
+    @test Interpolations.gradient.(Ref(sitp), idx, idx') ==
+        collect(Interpolations.gradient.(Ref(jlsitp), idx, idx')) ==
+        collect(Interpolations.gradient.(Ref(jlsitp), jlidx, jlidx'))
+    @test Interpolations.hessian.(Ref(sitp), idx, idx') ==
+        collect(Interpolations.hessian.(Ref(jlsitp), idx, idx')) ==
+        collect(Interpolations.hessian.(Ref(jlsitp), jlidx, jlidx'))
 
     esitp = extrapolate(sitp, Flat())
     jlesitp = jl(esitp)
     idx = -1.0:0.84:41.0
     jlidx = jl(collect(idx))
     @test esitp.(idx, idx') == collect(jlesitp.(idx, idx')) == collect(jlesitp.(jlidx, jlidx'))
-    # gradient for `extrapolation` is currently broken under CUDA
-    @test gradient.(Ref(esitp), idx, idx') ==
-        collect(gradient.(Ref(jlesitp), idx, idx')) ==
-        collect(gradient.(Ref(jlesitp), jlidx, jlidx'))
+    # Interpolations.gradient for `extrapolation` is currently broken under CUDA
+    @test Interpolations.gradient.(Ref(esitp), idx, idx') ==
+        collect(Interpolations.gradient.(Ref(jlesitp), idx, idx')) ==
+        collect(Interpolations.gradient.(Ref(jlesitp), jlidx, jlidx'))
 
     esitp = extrapolate(sitp, 0.0)
     jlesitp = jl(esitp)
     idx = -1.0:0.84:41.0
     jlidx = jl(collect(idx))
     @test esitp.(idx, idx') == collect(jlesitp.(idx, idx')) == collect(jlesitp.(jlidx, jlidx'))
-    # gradient for `extrapolation` is currently broken under CUDA
-    @test gradient.(Ref(esitp), idx, idx') ==
-        collect(gradient.(Ref(jlesitp), idx, idx')) ==
-        collect(gradient.(Ref(jlesitp), jlidx, jlidx'))
+    # Interpolations.gradient for `extrapolation` is currently broken under CUDA
+    @test Interpolations.gradient.(Ref(esitp), idx, idx') ==
+        collect(Interpolations.gradient.(Ref(jlesitp), idx, idx')) ==
+        collect(Interpolations.gradient.(Ref(jlesitp), jlidx, jlidx'))
 end
 
 @testset "Lanczos on gpu" begin

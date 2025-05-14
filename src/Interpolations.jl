@@ -35,6 +35,7 @@ export
     # extrapolation/extrapolation.jl
     # monotonic/monotonic.jl
     # scaling/scaling.jl
+    # hermite/cubic.jl
 
 using LinearAlgebra, SparseArrays
 using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
