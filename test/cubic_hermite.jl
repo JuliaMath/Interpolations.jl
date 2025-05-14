@@ -25,25 +25,25 @@ function cubic_hermite_test()
     for i = 1:length(xs)-1
         x = Float64(i)
         @test ch(x) == 1.0
-        @test gradient(ch, x) == 0.0
-        @test hessian(ch, x) == 0.0
+        @test Interpolations.gradient(ch, x) == 0.0
+        @test Interpolations.hessian(ch, x) == 0.0
         x = x + 0.25
         @test ch(x) == 1.0
-        @test gradient(ch, x) == 0.0
-        @test hessian(ch, x) == 0.0
+        @test Interpolations.gradient(ch, x) == 0.0
+        @test Interpolations.hessian(ch, x) == 0.0
         x = x + 0.25
         @test ch(x) == 1.0
-        @test gradient(ch, x) == 0.0
-        @test hessian(ch, x) == 0.0
+        @test Interpolations.gradient(ch, x) == 0.0
+        @test Interpolations.hessian(ch, x) == 0.0
         x = x + 0.25
         @test ch(x) == 1.0
-        @test gradient(ch, x) == 0.0
-        @test hessian(ch, x) == 0.0
+        @test Interpolations.gradient(ch, x) == 0.0
+        @test Interpolations.hessian(ch, x) == 0.0
     end
     # Ensure that the ight endpoint query doesn't read past the end of the array:
     @test ch(5.0) == 1.0
-    @test gradient(ch, 5.0) == 0.0
-    @test hessian(ch, 5.0) == 0.0
+    @test Interpolations.gradient(ch, 5.0) == 0.0
+    @test Interpolations.hessian(ch, 5.0) == 0.0
 
     # Now linear functions:
     a = 7.2
@@ -56,24 +56,24 @@ function cubic_hermite_test()
     for i = 1:length(xs)-1
         x = Float64(i)
         @test ch(x) ≈ a * x + b
-        @test gradient(ch, x) ≈ a
-        @test abs(hessian(ch, x)) < 3e-14
+        @test Interpolations.gradient(ch, x) ≈ a
+        @test abs(Interpolations.hessian(ch, x)) < 3e-14
         x = x + 0.25
         @test ch(x) ≈ a * x + b
-        @test gradient(ch, x) ≈ a
-        @test abs(hessian(ch, x)) < 3e-14
+        @test Interpolations.gradient(ch, x) ≈ a
+        @test abs(Interpolations.hessian(ch, x)) < 3e-14
         x = x + 0.25
         @test ch(x) ≈ a * x + b
-        @test gradient(ch, x) ≈ a
-        @test abs(hessian(ch, x)) < 3e-14
+        @test Interpolations.gradient(ch, x) ≈ a
+        @test abs(Interpolations.hessian(ch, x)) < 3e-14
         x = x + 0.25
         @test ch(x) ≈ a * x + b
-        @test gradient(ch, x) ≈ a
-        @test abs(hessian(ch, x)) < 3e-14
+        @test Interpolations.gradient(ch, x) ≈ a
+        @test abs(Interpolations.hessian(ch, x)) < 3e-14
     end
     @test ch(last(xs)) ≈ a * last(xs) + b
-    @test gradient(ch, last(xs)) ≈ a
-    @test abs(hessian(ch, last(xs))) < 3e-14
+    @test Interpolations.gradient(ch, last(xs)) ≈ a
+    @test abs(Interpolations.hessian(ch, last(xs))) < 3e-14
 
     # Now the interpolation condition:
     xs = zeros(50)
@@ -92,7 +92,7 @@ function cubic_hermite_test()
 
     for i = 1:50
         @test ch(xs[i]) ≈ ys[i]
-        @test gradient(ch, xs[i]) ≈ dydxs[i]
+        @test Interpolations.gradient(ch, xs[i]) ≈ dydxs[i]
     end
 
     # Now quadratics:
@@ -107,13 +107,13 @@ function cubic_hermite_test()
     for i = 1:200
         x = rand() * last(xs)
         @test ch(x) ≈ a * x * x + b * x + c
-        @test gradient(ch, x) ≈ 2 * a * x + b
-        @test hessian(ch, x) ≈ 2 * a
+        @test Interpolations.gradient(ch, x) ≈ 2 * a * x + b
+        @test Interpolations.hessian(ch, x) ≈ 2 * a
     end
     x = last(xs)
     @test ch(x) ≈ a * x * x + b * x + c
-    @test gradient(ch, x) ≈ 2 * x * a + b
-    @test hessian(ch, x) ≈ 2 * a
+    @test Interpolations.gradient(ch, x) ≈ 2 * x * a + b
+    @test Interpolations.hessian(ch, x) ≈ 2 * a
     # Cannot extrapolate:
     @test_throws DomainError ch(x + 0.1)
     @test_throws DomainError ch(xs[1] - 0.1)
