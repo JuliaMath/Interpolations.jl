@@ -1,5 +1,18 @@
 For a comprehensive list of changes, see [Releases](https://github.com/JuliaMath/Interpolations.jl/releases).
 
+# v0.16
+
+Breaking changes:
+- `getindex` for AbstractInterpolations only accepts integers ([#579](https://github.com/JuliaMath/Interpolations.jl/pull/579)), deprecated since ([#226](https://github.com/JuliaMath/Interpolations.jl/pull/226))
+- `gradient` and `hessian` are once again no longer exported ([#623](https://github.com/JuliaMath/Interpolations.jl/pull/623))
+- Fix free boundary condition on `Cubic` ([#616](https://github.com/JuliaMath/Interpolations.jl/pull/616))
+- Compatible with Julia versions 1.9 and later
+
+# v0.15
+
+Breaking changes:
+- Compatible with Julia versions 1.6 and later
+
 # v0.14.0
 
 Breaking changes:
