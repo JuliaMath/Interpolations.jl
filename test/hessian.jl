@@ -72,4 +72,21 @@ using Test, Interpolations, LinearAlgebra, ForwardDiff
             end
         end
     end
+
+    @testset "scaled interpolators / convienience constructors (issue 627)" begin
+        N = 11
+        x = range(1.0, 3.0, N)
+        y = range(-3.0, 3.0, N)
+        u = rand(N, N)
+
+        for uitp in [
+            Interpolations.linear_interpolation((x, y), u),
+            Interpolations.cubic_spline_interpolation((x, y), u),
+        ]
+            f = x -> uitp(x[1], x[2])
+            x = [π/3, -π/2]
+
+            @test ForwardDiff.hessian(f, x) ≈ Interpolations.hessian(uitp, x[1], x[2])
+        end
+    end
 end
