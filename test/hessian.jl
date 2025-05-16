@@ -77,7 +77,7 @@ using Test, Interpolations, LinearAlgebra, ForwardDiff
         N = 11
         x = range(1.0, 3.0, N)
         y = range(-3.0, 3.0, N)
-        u = rand(N, N)
+        u = reshape(sin.(1 : (N^2)), N, N)
 
         for uitp in [
             Interpolations.linear_interpolation((x, y), u),
