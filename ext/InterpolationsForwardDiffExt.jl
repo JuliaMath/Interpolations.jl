@@ -14,10 +14,11 @@ end
 
 # apply partials from arbitrarily nested ForwardDiff.Dual to a value
 # used in maybe_clamp, above
-function apply_partials(x_dual::D, val::Number) where D <: ForwardDiff.Dual
-    ∂s = ForwardDiff.partials(x_dual)
-    apply_partials(ForwardDiff.value(x_dual), D(val, ∂s))
+function apply_partials(dual_number::D, x::Number) where D <: ForwardDiff.Dual
+    ∂s = ForwardDiff.partials(dual_number)
+    val = ForwardDiff.value(dual_number)
+    D(apply_partials(val, x) , ∂s)
 end
-apply_partials(_::Number, val::Number) = val
+apply_partials(_::Number, x::Number) = x
 
 end
