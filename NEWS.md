@@ -1,5 +1,10 @@
 For a comprehensive list of changes, see [Releases](https://github.com/JuliaMath/Interpolations.jl/releases).
 
+# v0.16.1
+
+Fixes:
+- Fix `hessian` with ForwardDiff.jl for scaled interpolants ([#628](https://github.com/JuliaMath/Interpolations.jl/pull/628))
+
 # v0.16
 
 Breaking changes:
