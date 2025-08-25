@@ -473,18 +473,6 @@ include("lanczos/lanczos_opencv.jl")
 include("iterate.jl")
 include("chainrules/chainrules.jl")
 include("hermite/cubic.jl")
-if VERSION >= v"1.6"
-    include("gpu_support.jl")
-end
-
-if !isdefined(Base, :get_extension)
-using Requires
-end
-
-@static if !isdefined(Base, :get_extension)
-function __init__()
-    @require Unitful="1986cc42-f94f-5a68-af5c-568840ba703d" include("../ext/InterpolationsUnitfulExt.jl")
-end
-end
+include("gpu_support.jl")
 
 end # module
