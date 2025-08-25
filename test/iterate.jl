@@ -44,23 +44,17 @@ macro test_knots(itersym, type, expect...)
         IterEqCheck = :( kiter ≈ kref )
     end
 
-    # Check Type-stability if v > 1.2
-    @static if VERSION >= v"1.2"
-        # Check Type-stability using inferred
-        type_stability_checks = quote
-            @testset "type stability" begin
-                iteratetype = Union{Nothing, knotType}
-                y = @inferred iteratetype iterate($itersym)
-                if y !== nothing
-                    @test_nowarn @inferred iteratetype iterate($itersym, y[2])
-                end
-                isBounded && @test_nowarn @inferred Integer length($itersym)
-                @test_nowarn @inferred Type eltype($itersym)
+    # Check Type-stability using inferred
+    type_stability_checks = quote
+        @testset "type stability" begin
+            iteratetype = Union{Nothing, knotType}
+            y = @inferred iteratetype iterate($itersym)
+            if y !== nothing
+                @test_nowarn @inferred iteratetype iterate($itersym, y[2])
             end
+            isBounded && @test_nowarn @inferred Integer length($itersym)
+            @test_nowarn @inferred Type eltype($itersym)
         end
-    else
-        # Skip Type-stability checks as @inferred AllowedTypes is Undefined
-        type_stability_checks = :()
     end
 
     # Build test_knots tests
@@ -159,28 +153,14 @@ knot_ref(seq, ::Interpolations.BoundaryCondition) = seq
 function knot_ref(seq, ::Periodic)
     Δ = diff(seq)
     iter = Iterators.flatten((first(seq), Iterators.cycle(Δ)))
-    @static if VERSION >= v"1.5"
-        Iterators.accumulate(+, iter)
-    else
-        # Generate 200 samples (2x factor on testing done by @test_knots)
-        # Then wrap with cycle to get IteratorSize === IsInfinite
-        # TODO: Remove when Julia v1 is no longer supported
-        ref = Iterators.take(iter, 200) |> collect |> cumsum |> Iterators.cycle
-    end
+    Iterators.accumulate(+, iter)
 end
 
 function knot_ref(seq, ::Reflect)
     Δ = diff(seq)
     Δ = vcat(Δ, reverse(Δ))
     iter = Iterators.flatten((first(seq), Iterators.cycle(Δ)))
-    @static if VERSION >= v"1.5"
-        Iterators.accumulate(+, iter)
-    else
-        # Generate 200 samples (2x factor on testing done by @test_knots)
-        # Then wrap with cycle to get IteratorSize === IsInfinite
-        # TODO: Remove when Julia v1 is no longer supported
-        ref = Iterators.take(iter, 200) |> collect |> cumsum |> Iterators.cycle
-    end
+    Iterators.accumulate(+, iter)
 end
 
 @testset "knot_ref" begin
