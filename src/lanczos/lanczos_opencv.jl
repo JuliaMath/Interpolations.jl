@@ -54,7 +54,8 @@ struct Lanczos4OpenCV <: AbstractLanczos end
 
 degree(::Lanczos4OpenCV) = 4
 
-value_weights(::Lanczos4OpenCV, δx) = _lanczos4_opencv(δx)
+value_weights(::Lanczos4OpenCV, δx::T) where {T} =
+        _lanczos4_opencv(float(T), float(T).(l4_2d_cs), δx)
 
 # s45 = sqrt(2)/2
 const s45 = 0.70710678118654752440084436210485
@@ -65,8 +66,7 @@ const s45 = 0.70710678118654752440084436210485
 const l4_2d_cs = SA[1 0; -s45 -s45; 0 1; s45 -s45; -1 0; s45 s45; 0 -1; -s45 s45]
 
 
-function _lanczos4_opencv(δx::T) where T
-    F = float(T)
+function _lanczos4_opencv(::Type{F}, l4_2d_cs, δx) where {F}
     p_4 = π / F(4)
     y0 = -(δx + 3) * p_4
     s0::F, c0::F = sincos(y0)
