@@ -68,19 +68,17 @@ const l4_2d_cs = SA[1 0; -s45 -s45; 0 1; s45 -s45; -1 0; s45 s45; 0 -1; -s45 s45
 
 
 function _lanczos4_opencv(::Type{F}, l4_2d_cs, δx) where {F}
-    p_4 = π / F(4)
-    y0 = -(δx + 3) * p_4
-    s0::F, c0::F = sincos(y0)
+    p_4 = π * F(0.25)
+    y0 = -(δx + F(3)) * p_4
+    s0, c0 = sincos(y0)
     cs = ntuple(8) do i
-        y = (δx + 4 - i) * p_4
-        # Improve precision of Lanczos OpenCV4 #451, avoid NaN
-        if iszero(y)
-            y = eps(oneunit(y))/F(8)
+        y = δx + 4 - i
+        if abs(y) >= F(1e-6)
+            y *= p_4
+            (F(l4_2d_cs[i, 1]) * s0 + F(l4_2d_cs[i, 2]) * c0) / y^2
+        else
+            F(1e30)
         end
-        # Numerator is the sin subtraction identity
-        # It is equivalent to the following
-        # f(δx,i) = sin( π/4*( 5*(i-1)-δx-3 ) )
-        (F(l4_2d_cs[i, 1]) * s0 + F(l4_2d_cs[i, 2]) * c0) / y^2
     end
     sum_cs = sum(cs)
     normed_cs = ntuple(i -> cs[i] / sum_cs, Val(8))
