@@ -50,11 +50,12 @@ export Lanczos4OpenCV
 Alternative implementation of Lanczos resampling using algorithm `lanczos4` function of OpenCV:
 https://github.com/opencv/opencv/blob/de15636724967faf62c2d1bce26f4335e4b359e5/modules/imgproc/src/resize.cpp#L917-L946
 """
-struct Lanczos4OpenCV <: AbstractLanczos end
+struct Lanczos4OpenCV{T} <: AbstractLanczos end
+Lanczos4OpenCV() = Lanczos4OpenCV{Float64}()
 
 degree(::Lanczos4OpenCV) = 4
 
-value_weights(::Lanczos4OpenCV, δx::T) where {T} =
+value_weights(::Lanczos4OpenCV{T}, δx) where {T} =
         _lanczos4_opencv(float(T), float(T).(l4_2d_cs), δx)
 
 # s45 = sqrt(2)/2
