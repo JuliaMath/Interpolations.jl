@@ -2,9 +2,6 @@ padded_axes(axs, it::InterpolationType) = (ax->padded_axis(ax, it)).(axs)
 padded_axes(axs::NTuple{N,AbstractUnitRange}, it::NTuple{N,InterpolationType}) where N =
     padded_axis.(axs, it)
 
-padded_similar(::Type{TC}, inds::Tuple{Vararg{Base.OneTo{Int}}}) where TC = Array{TC}(undef, length.(inds))
-padded_similar(::Type{TC}, inds) where TC = OffsetArray{TC}(undef, inds)
-
 # Narrow ax by the amount that axpad is larger
 padinset(ax::AbstractUnitRange, axpad) = 2*first(ax)-first(axpad):2*last(ax)-last(axpad)
 function padinset(ax::Base.OneTo, axpad::Base.OneTo)
@@ -20,7 +17,7 @@ copy_with_padding(A, it) = copy_with_padding(eltype(A), A, it)
 function copy_with_padding(::Type{TC}, A, it::DimSpec{InterpolationType}) where {TC}
     indsA = axes(A)
     indspad = padded_axes(indsA, it)
-    coefs = padded_similar(TC, indspad)
+    coefs = similar(Array{TC}, indspad)
     if indspad == indsA
         coefs = copyto!(coefs, A)
     else
