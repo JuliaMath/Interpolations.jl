@@ -66,10 +66,13 @@ Other interpolation packages for Julia include:
 - [BSplineKit.jl](https://github.com/jipolanco/BSplineKit.jl) offers tools for B-spline based Galerkin and collocation methods, including for interpolation and approximation.
 - [Curves.jl](https://github.com/lungben/Curves.jl) supports log-interpolation via immutable `Curve` objects.
 - [DataInterpolations.jl](https://github.com/SciML/DataInterpolations.jl) is a library for performing interpolations of one-dimensional data.
-- [Dierckx.jl](https://github.com/kbarbary/Dierckx.jl) is a wrapper for the dierckx Fortran library, which also underlies `scipy.interpolate`.
+- [Dierckx.jl](https://github.com/kbarbary/Dierckx.jl) is a wrapper for the [dierckx](https://www.netlib.org/dierckx) Fortran library,
+  which also underlies [scipy.interpolate](https://docs.scipy.org/doc/scipy/reference/interpolate.html).
 - [DIVAnd.jl](https://github.com/gher-ulg/DIVAnd.jl) for N-dimensional smoothing interpolation. 
 - [FastChebInterp.jl](https://github.com/stevengj/FastChebInterp.jl) does fast multidimensional Chebyshev interpolation on a hypercube using separable grid of interpolation points.
-- [FastInterpolations.jl](https://github.com/ProjectTorreyPines/FastInterpolations.jl) fast and includes adjoints
+- [FastInterpolations.jl](https://github.com/ProjectTorreyPines/FastInterpolations.jl)
+  has fast multi-dimensional 0th–3rd order splines on nonuniform Cartesian grids,
+  with optimized derivatives, integrals, Hessians, and adjoints/reverse-mode rules.
 - [FEMBasis.jl](https://github.com/JuliaFEM/FEMBasis.jl) contains interpolation routines for standard finite element function spaces.
 - [FineShift.jl](https://github.com/emmt/FineShift.jl) does fast sub-sample shifting of multidimensional arrays.
 - [FourierTools.jl](https://github.com/bionanoimaging/FourierTools.jl) includes sinc interpolation for up and down sampling.
