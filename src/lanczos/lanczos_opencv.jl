@@ -42,21 +42,7 @@ the use of this software, even if advised of the possibility of such damage.
 =#
 using StaticArrays
 
-export Lanczos4OpenCV
-
-"""
-    Lanczos4OpenCV()
-
-Alternative implementation of Lanczos resampling using algorithm `lanczos4` function of OpenCV:
-https://github.com/opencv/opencv/blob/de15636724967faf62c2d1bce26f4335e4b359e5/modules/imgproc/src/resize.cpp#L917-L946
-"""
-struct Lanczos4OpenCV{T} <: AbstractLanczos end
-Lanczos4OpenCV() = Lanczos4OpenCV{Float64}()
-
-degree(::Lanczos4OpenCV) = 4
-
-value_weights(::Lanczos4OpenCV{T}, δx) where {T} =
-        _lanczos4_opencv(float(T), float(T).(l4_2d_cs), δx)
+export Lanczos4OpenCV, Lanczos4OpenCVFaithful
 
 # s45 = sqrt(2)/2
 const s45 = 0.70710678118654752440084436210485
@@ -67,7 +53,68 @@ const s45 = 0.70710678118654752440084436210485
 const l4_2d_cs = SA[1 0; -s45 -s45; 0 1; s45 -s45; -1 0; s45 s45; 0 -1; -s45 s45]
 
 
-function _lanczos4_opencv(::Type{F}, l4_2d_cs, δx) where {F}
+"""
+    Lanczos4OpenCV()
+
+Alternative implementation of Lanczos resampling using algorithm `lanczos4`
+function of OpenCV:
+
+https://github.com/opencv/opencv/blob/de15636724967faf62c2d1bce26f4335e4b359e5/modules/imgproc/src/resize.cpp#L917-L946
+
+If your data are Float32, consider using `Lanczos4OpenCVFaithful` instead.
+"""
+struct Lanczos4OpenCV <: AbstractLanczos end
+
+degree(::Lanczos4OpenCV) = 4
+
+value_weights(::Lanczos4OpenCV, δx) = _lanczos4_opencv(δx)
+
+# a simple refactoring of `_lanczos4_opencv` to use Float32 throughout results
+# in s0 == c0 and so the numerator of cs[4] is 0 as is normed_cs[4] (when it
+# should be 1)
+
+function _lanczos4_opencv(δx)
+    p_4 = π / 4
+    y0 = -(δx + 3) * p_4
+    s0, c0 = sincos(y0)
+    cs = ntuple(8) do i
+        y = (δx + 4 - i) * p_4
+        # Improve precision of Lanczos OpenCV4 #451, avoid NaN
+        if iszero(y)
+            y = eps(oneunit(y))/8
+        end
+        # Numerator is the sin subtraction identity
+        # It is equivalent to the following
+        # f(δx,i) = sin( π/4*( 5*(i-1)-δx-3 ) )
+        (l4_2d_cs[i, 1] * s0 + l4_2d_cs[i, 2] * c0) / y^2
+    end
+    sum_cs = sum(cs)
+    normed_cs = ntuple(i -> cs[i] / sum_cs, Val(8))
+    return normed_cs
+end
+
+
+"""
+    Lanczos4OpenCVFaithful{T}()
+
+Similar to Lanczos4OpenCV(), but mirrors the calculations more closely to
+reduce numerical discrepancies with the OpenCV implementation, and supports
+reduced precision (e.g. Float32, the default).
+"""
+struct Lanczos4OpenCVFaithful{T} <: AbstractLanczos end
+Lanczos4OpenCVFaithful() = Lanczos4OpenCVFaithful{Float32}()
+
+degree(::Lanczos4OpenCVFaithful) = 4
+
+value_weights(::Lanczos4OpenCVFaithful{T}, δx) where {T} =
+        _lanczos4_opencv_faithful(float(T), float(T).(l4_2d_cs), δx)
+
+# main differences with `_lanczos4_opencv` are (1) the criterion for preventing a
+# division by zero is `< pi/4 * 1e-6` (instead of `iszero`) and (2) the resulting
+# coefficient is replaced with `1e30` (instead of using `(eps()/8)^2` in the
+# denominator)
+
+function _lanczos4_opencv_faithful(::Type{F}, l4_2d_cs, δx) where {F}
     p_4 = π * F(0.25)
     y0 = -(δx + F(3)) * p_4
     s0, c0 = sincos(y0)
