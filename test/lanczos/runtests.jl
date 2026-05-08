@@ -61,9 +61,12 @@ end
 end
 
 @testset "Lanczos OpenCV4 Faithful" begin
-    @test 1f0 == Interpolations._lanczos4_opencv_faithful(Float32, Interpolations.l4_2d_cs, 0.0f0)[4]
-    @test 1.0 == Interpolations._lanczos4_opencv_faithful(Float64, Interpolations.l4_2d_cs, 0.0)[4]
-    @test 1.0 == Interpolations._lanczos4_opencv(0.0)[4]
+    idx = Interpolations.degree(Lanczos4OpenCVFaithful{Float32}())
+    @test 1f0 == Interpolations.value_weights(Lanczos4OpenCVFaithful{Float32}(), 0.0f0)[idx]
+    idx = Interpolations.degree(Lanczos4OpenCVFaithful{Float64}())
+    @test 1.0 == Interpolations.value_weights(Lanczos4OpenCVFaithful{Float64}(), 0.0)[idx]
+    idx = Interpolations.degree(Lanczos4OpenCV())
+    @test 1.0 == Interpolations.value_weights(Lanczos4OpenCV(), 0.0)[idx]
     # were _lanczos4_opencv to be refactored to use Float32 throughout,
     # the 4th element returned would be 0.0
 end
