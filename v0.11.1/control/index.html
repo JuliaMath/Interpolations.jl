@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Interpolation algorithms · Interpolations.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Interpolations.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Home</a></li><li><a class="toctext" href="../interpolations/">General usage</a></li><li class="current"><a class="toctext" href>Interpolation algorithms</a><ul class="internal"><li><a class="toctext" href="#Control-of-interpolation-algorithm-1">Control of interpolation algorithm</a></li><li><a class="toctext" href="#Parametric-splines-1">Parametric splines</a></li></ul></li><li><a class="toctext" href="../extrapolation/">Extrapolation</a></li><li><a class="toctext" href="../convenience-construction/">Convenience Construcors</a></li><li><a class="toctext" href="../api/">Library</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Interpolation algorithms</a></li></ul><a class="edit-page" href="https://github.com/JuliaMath/Interpolations.jl/blob/master/docs/src/control.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Interpolation algorithms</span><a class="fa fa-bars" href="#"></a></div></header><h2><a class="nav-anchor" id="Control-of-interpolation-algorithm-1" href="#Control-of-interpolation-algorithm-1">Control of interpolation algorithm</a></h2><h3><a class="nav-anchor" id="BSplines-1" href="#BSplines-1">BSplines</a></h3><p>The interpolation type is described in terms of <em>degree</em> and, if necessary, <em>boundary conditions</em>. There are currently four degrees available: <code>Constant</code>, <code>Linear</code>, <code>Quadratic</code>,  and <code>Cubic</code> corresponding to B-splines of degree 0, 1, 2, and 3 respectively.</p><p>B-splines of quadratic or higher degree require solving an equation system to obtain the interpolation coefficients, and for that you must specify a <em>boundary condition</em> that is applied to close the system. The following boundary conditions are implemented: <code>Flat</code>, <code>Line</code> (alternatively, <code>Natural</code>), <code>Free</code>, <code>Periodic</code> and <code>Reflect</code>; their mathematical implications are described in detail in the pdf document under <code>/doc/latex</code>. When specifying these boundary conditions you also have to specify whether they apply at the edge grid point (<code>OnGrid()</code>) or beyond the edge point halfway to the next (fictitious) grid point (<code>OnCell()</code>).</p><p>Some examples:</p><pre><code class="language-julia"># Nearest-neighbor interpolation
+itp = interpolate(a, BSpline(Constant()))
+v = itp(5.4)   # returns a[5]
+
+# (Multi)linear interpolation
+itp = interpolate(A, BSpline(Linear()))
+v = itp(3.2, 4.1)  # returns 0.9*(0.8*A[3,4]+0.2*A[4,4]) + 0.1*(0.8*A[3,5]+0.2*A[4,5])
+
+# Quadratic interpolation with reflecting boundary conditions
+# Quadratic is the lowest order that has continuous gradient
+itp = interpolate(A, BSpline(Quadratic(Reflect(OnCell()))))
+
+# Linear interpolation in the first dimension, and no interpolation (just lookup) in the second
+itp = interpolate(A, (BSpline(Linear()), NoInterp()))
+v = itp(3.65, 5)  # returns  0.35*A[3,5] + 0.65*A[4,5]</code></pre><p>There are more options available, for example:</p><pre><code class="language-julia"># In-place interpolation
+itp = interpolate!(A, BSpline(Quadratic(InPlace(OnCell()))))</code></pre><p>which destroys the input <code>A</code> but also does not need to allocate as much memory.</p><h3><a class="nav-anchor" id="Scaled-BSplines-1" href="#Scaled-BSplines-1">Scaled BSplines</a></h3><p>BSplines assume your data is uniformly spaced on the grid <code>1:N</code>, or its multidimensional equivalent. If you have data of the form <code>[f(x) for x in A]</code>, you need to tell Interpolations about the grid <code>A</code>. If <code>A</code> is not uniformly spaced, you must use gridded interpolation described below. However, if <code>A</code> is a collection of ranges or linspaces, you can use scaled BSplines. This is more efficient because the gridded algorithm does not exploit the uniform spacing. Scaled BSplines can also be used with any spline degree available for BSplines, while gridded interpolation does not currently support quadratic or cubic splines.</p><p>Some examples,</p><pre><code class="language-julia">A_x = 1.:2.:40.
+A = [log(x) for x in A_x]
+itp = interpolate(A, BSpline(Cubic(Line(OnGrid()))))
+sitp = scale(itp, A_x)
+sitp(3.) # exactly log(3.)
+sitp(3.5) # approximately log(3.5)</code></pre><p>For multidimensional uniformly spaced grids</p><pre><code class="language-julia">A_x1 = 1:.1:10
+A_x2 = 1:.5:20
+f(x1, x2) = log(x1+x2)
+A = [f(x1,x2) for x1 in A_x1, x2 in A_x2]
+itp = interpolate(A, BSpline(Cubic(Line(OnGrid()))))
+sitp = scale(itp, A_x1, A_x2)
+sitp(5., 10.) # exactly log(5 + 10)
+sitp(5.6, 7.1) # approximately log(5.6 + 7.1)</code></pre><h3><a class="nav-anchor" id="Gridded-interpolation-1" href="#Gridded-interpolation-1">Gridded interpolation</a></h3><p>These use a very similar syntax to BSplines, with the major exception being that one does not get to choose the grid representation (they are all <code>OnGrid</code>). As such one must specify a set of coordinate arrays defining the knots of the array.</p><p>In 1D</p><pre><code class="language-julia">A = rand(20)
+A_x = collect(1.0:2.0:40.0)
+knots = (A_x,)
+itp = interpolate(knots, A, Gridded(Linear()))
+itp(2.0)</code></pre><p>The spacing between adjacent samples need not be constant, you can use the syntax</p><pre><code class="language-julia">itp = interpolate(knots, A, options...)</code></pre><p>where <code>knots = (xknots, yknots, ...)</code> to specify the positions along each axis at which the array <code>A</code> is sampled for arbitrary (&quot;rectangular&quot;) samplings.</p><p>For example:</p><pre><code class="language-julia">A = rand(8,20)
+knots = ([x^2 for x = 1:8], [0.2y for y = 1:20])
+itp = interpolate(knots, A, Gridded(Linear()))
+itp(4,1.2)  # approximately A[2,6]</code></pre><p>One may also mix modes, by specifying a mode vector in the form of an explicit tuple:</p><pre><code class="language-julia">itp = interpolate(knots, A, (Gridded(Linear()),Gridded(Constant())))</code></pre><p>Presently there are only three modes for gridded:</p><pre><code class="language-julia">Gridded(Linear())</code></pre><p>whereby a linear interpolation is applied between knots,</p><pre><code class="language-julia">Gridded(Constant())</code></pre><p>whereby nearest neighbor interpolation is used on the applied axis,</p><pre><code class="language-julia">NoInterp</code></pre><p>whereby the coordinate of the selected input vector MUST be located on a grid point. Requests for off grid coordinates results in the throwing of an error.</p><p><code>missing</code> data will naturally propagate through the interpolation, where some values will become missing. To avoid that, one can filter out the missing data points and use a gridded interpolation. For example:</p><pre><code class="language-julia">x = 1:6
+A = [i == 3 ? missing : i for i in x]
+xf = [xi for (xi,a) in zip(x, A) if !ismissing(a)]
+Af = [a for a in A if !ismissing(a)]
+itp = interpolate((xf, ), Af, Gridded(Linear()))</code></pre><h2><a class="nav-anchor" id="Parametric-splines-1" href="#Parametric-splines-1">Parametric splines</a></h2><p>Given a set a knots with coordinates <code>x(t)</code> and <code>y(t)</code>, a parametric spline <code>S(t) = (x(t),y(t))</code> parametrized by <code>t in [0,1]</code> can be constructed with the following code adapted from a <a href="http://julia-programming-language.2336112.n4.nabble.com/Parametric-splines-td37794.html#a37818">post</a> by Tomas Lycken:</p><pre><code class="language-julia">using Interpolations
+
+t = 0:.1:1
+x = sin.(2π*t)
+y = cos.(2π*t)
+A = hcat(x,y)
+
+itp = scale(interpolate(A, (BSpline(Cubic(Natural(OnGrid()))), NoInterp())), t, 1:2)
+
+tfine = 0:.01:1
+xs, ys = [itp(t,1) for t in tfine], [itp(t,2) for t in tfine]</code></pre><p>We can then plot the spline with:</p><pre><code class="language-julia">using Plots
+
+scatter(x, y, label=&quot;knots&quot;)
+plot!(xs, ys, label=&quot;spline&quot;)</code></pre><p><img src="doc/images/parametric_spline.png" alt="parametric spline"/></p><footer><hr/><a class="previous" href="../interpolations/"><span class="direction">Previous</span><span class="title">General usage</span></a><a class="next" href="../extrapolation/"><span class="direction">Next</span><span class="title">Extrapolation</span></a></footer></article></body></html>
