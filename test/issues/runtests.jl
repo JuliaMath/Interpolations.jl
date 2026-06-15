@@ -177,4 +177,10 @@ using Interpolations, Test, ForwardDiff
         t = -3.0:0.01:3.0
         @test itp_cdf.(t) isa Vector{Float64}
     end
+    @testset "issue 630" begin
+        itp = interpolate(ones(100,100), BSpline(Linear()));
+        # Indexing by non-integers should not result in a StackOverflow due to `Base.to_index(::AbstractInterpolation, x::Number) = x`
+        @test_throws "Indexing an AbstractInterpolation by non-integers is no longer supported" itp[2.2, 33.3]
+        @test_throws "Indexing an AbstractInterpolation by non-integers is no longer supported" itp[2.2, 2.0:5.0]
+    end
 end
