@@ -93,7 +93,7 @@ end
     sitp(xis...)
 end
 
-(sitp::ScaledInterpolation{T,1}, x::Number, y::Int) where {T} = y == 1 ? sitp(x) : Base.throw_boundserror(sitp, (x, y))
+(sitp::ScaledInterpolation{T,1})(x::Number, y::Int) where {T} = y == 1 ? sitp(x) : Base.throw_boundserror(sitp, (x, y))
 
 @inline function (itp::ScaledInterpolation{T,N})(x::Vararg{Union{Number,AbstractVector},N}) where {T,N}
     [itp(i...) for i in Iterators.product(x...)]
