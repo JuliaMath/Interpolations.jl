@@ -18,10 +18,12 @@ WoodburyMatrices = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
 [weakdeps]
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [extensions]
 InterpolationsUnitfulExt = "Unitful"
 InterpolationsForwardDiffExt = "ForwardDiff"
+InterpolationsSciMLBaseExt = "SciMLBase"
 
 [compat]
 Adapt = "2, 3, 4.0"
@@ -31,6 +33,7 @@ ForwardDiff = "0.10, 1.0"
 JLArrays = "0.2"
 OffsetArrays = "0.10, 0.11, 1.0.1"
 Ratios = "0.3, 0.4"
+SciMLBase = "1.9, 2, 3"
 StaticArrays = "0.12, 1"
 Unitful = "1"
 WoodburyMatrices = "0.4, 0.5, 1.0"
@@ -41,9 +44,10 @@ ColorVectorSpace = "c3611d14-8923-5661-9e6a-0046d554d3a4"
 DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["ColorVectorSpace", "DualNumbers", "JLArrays", "ForwardDiff", "Test", "Unitful", "Zygote"]
+test = ["ColorVectorSpace", "DualNumbers", "JLArrays", "ForwardDiff", "Test", "SciMLBase", "Unitful", "Zygote"]
