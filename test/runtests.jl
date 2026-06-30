@@ -58,5 +58,8 @@ const isci = get(ENV, "CI", "") in ("true", "True")
     # Chain rules interaction
     include("chainrules.jl")
 
+    # SciMLBase interaction
+    include("scimlbase.jl")
+
     include("gpu_support.jl")
 end
