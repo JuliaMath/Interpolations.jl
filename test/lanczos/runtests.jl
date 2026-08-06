@@ -28,11 +28,9 @@ using Interpolations: degree,
     @test 1 < itp(1.5) < 2
     @test 99 < itp(99.5) < 100
 
-
     # symmetry check
     interpolant = itp.(X)
     @test interpolant ≈ reverse(interpolant)
-
 end
 
 @testset "Lanczos OpenCV4" begin
@@ -60,7 +58,17 @@ end
     # symmetry check
     interpolant = itp.(X)
     @test interpolant ≈ reverse(interpolant)
+end
 
+@testset "Lanczos OpenCV4 Faithful" begin
+    idx = Interpolations.degree(Lanczos4OpenCVFaithful{Float32}())
+    @test 1f0 == Interpolations.value_weights(Lanczos4OpenCVFaithful{Float32}(), 0.0f0)[idx]
+    idx = Interpolations.degree(Lanczos4OpenCVFaithful{Float64}())
+    @test 1.0 == Interpolations.value_weights(Lanczos4OpenCVFaithful{Float64}(), 0.0)[idx]
+    idx = Interpolations.degree(Lanczos4OpenCV())
+    @test 1.0 == Interpolations.value_weights(Lanczos4OpenCV(), 0.0)[idx]
+    # were _lanczos4_opencv to be refactored to use Float32 throughout,
+    # the 4th element returned would be 0.0
 end
 
 end
