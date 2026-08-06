@@ -1,4 +1,8 @@
 # Removed with 0.16, indexing via non-integers
+getindex(itp::AbstractInterpolation{T,N}, i::Vararg{Number,N}) where {T,N} =
+    error("Indexing an AbstractInterpolation by non-integers is no longer supported in Interpolations.jl since v0.16. Use the function calling interface instead: `itp(i...)`.")
+getindex(itp::AbstractInterpolation{T,N}, i::Vararg{ExpandedIndexTypes,N}) where {T,N} =
+    error("Indexing an AbstractInterpolation by non-integers is no longer supported in Interpolations.jl since v0.16. Use the function calling interface instead: `itp(i...)`.")
 
 for T in (:Throw, :Flat, :Line, :Free, :Periodic, :Reflect, :InPlace, :InPlaceQ)
     @eval begin
