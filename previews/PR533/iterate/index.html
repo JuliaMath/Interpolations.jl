@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Knot Iteration · Interpolations.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Interpolations.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../convenience-construction/">Convenience Constructors</a></li><li><a class="tocitem" href="../interpolations/">General usage</a></li><li><a class="tocitem" href="../control/">Interpolation algorithms</a></li><li><a class="tocitem" href="../extrapolation/">Extrapolation</a></li><li class="is-active"><a class="tocitem" href>Knot Iteration</a><ul class="internal"><li><a class="tocitem" href="#Extrapolated-Knots"><span>Extrapolated Knots</span></a></li><li><a class="tocitem" href="#knotsbetween"><span><code>knotsbetween</code></span></a></li></ul></li><li><a class="tocitem" href="../devdocs/">Developer documentation</a></li><li><a class="tocitem" href="../api/">Library</a></li><li><a class="tocitem" href="../NEWS/">News and Changes</a></li><li><a class="tocitem" href="../other_packages/">Other Interpolation Packages</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Knot Iteration</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Knot Iteration</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaMath/Interpolations.jl/blob/master/docs/src/iterate.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Knot-Iteration"><a class="docs-heading-anchor" href="#Knot-Iteration">Knot Iteration</a><a id="Knot-Iteration-1"></a><a class="docs-heading-anchor-permalink" href="#Knot-Iteration" title="Permalink"></a></h1><p>Given an <code>AbstractInterpolation</code> <code>itp</code> get an iterator over its knots using <code>knots(itp)</code></p><pre><code class="language-julia hljs">using Interpolations
+itp = interpolate(rand(4), options...)
+kiter = knots(itp) # Iterator over knots
+collect(kiter) # Array of knots [1, 2, 3, 4]
+</code></pre><p>For multiple dimensions, the iterator will return tuples of positions (ie. <code>(x, y, ...)</code>),  with the first coordinate changing the fastest.</p><pre><code class="language-julia-repl hljs">julia&gt; itp = interpolate(ones(3,3), BSpline(Linear()));
+
+julia&gt; kiter = knots(itp);
+
+julia&gt; collect(kiter)
+3×3 Matrix{Tuple{Int64, Int64}}:
+ (1, 1)  (1, 2)  (1, 3)
+ (2, 1)  (2, 2)  (2, 3)
+ (3, 1)  (3, 2)  (3, 3)</code></pre><p>The number of elements and size of the iterator can be found as shown:</p><pre><code class="language-julia-repl hljs">julia&gt; length(kiter)
+9
+
+julia&gt; size(kiter)
+(3, 3)
+</code></pre><h2 id="Extrapolated-Knots"><a class="docs-heading-anchor" href="#Extrapolated-Knots">Extrapolated Knots</a><a id="Extrapolated-Knots-1"></a><a class="docs-heading-anchor-permalink" href="#Extrapolated-Knots" title="Permalink"></a></h2><p>Given an <code>AbstractExtrapolation</code> <code>etp</code>, <code>knots(etp)</code> will also iterate over the knots with the following behavior.</p><ul><li>For <code>Throw</code>, <code>Flat</code>, <code>Line</code> iterate the knots once</li><li>For <code>Periodic</code> and <code>Reflect</code> generate an infinite sequence of knots starting at the first knot.</li></ul><p>As <code>Periodic</code> and <code>Reflect</code> generate infinite sequences of knots, <code>length</code> and <code>size</code> are undefined. For <code>Throw</code>, <code>Flat</code>, <code>Line</code>, <code>length</code> and <code>size</code> behave as expected.</p><h3 id="Periodic"><a class="docs-heading-anchor" href="#Periodic">Periodic</a><a id="Periodic-1"></a><a class="docs-heading-anchor-permalink" href="#Periodic" title="Permalink"></a></h3><p>With Periodic boundary condition, knots repeat indefinitely with the first and last knot being co-located. (ie. in the example below <code>etp(2.0) = 1.0</code> not <code>4.0</code>).</p><pre><code class="language-julia-repl hljs">julia&gt; x = [1.0, 1.5, 1.75, 2.0];
+
+julia&gt; etp = linear_interpolation(x, x.^2, extrapolation_bc=Periodic());
+
+julia&gt; kiter = knots(etp);
+
+julia&gt; k = Iterators.take(kiter, 6) |&gt; collect
+6-element Vector{Float64}:
+ 1.0
+ 1.5
+ 1.75
+ 2.0
+ 2.5
+ 2.75
+</code></pre><p>Extrapolating to the generated knots <code>etp.(k)</code>, confirms that the extrapolated knots do map back to the correct inbound knots (ie. <code>etp(k[1]) == etp(k[4])</code>).</p><pre><code class="language-julia-repl hljs">julia&gt; etp.(k)
+6-element Vector{Float64}:
+ 1.0
+ 2.25
+ 3.0625
+ 1.0
+ 2.25
+ 3.0625
+</code></pre><h3 id="Reflect"><a class="docs-heading-anchor" href="#Reflect">Reflect</a><a id="Reflect-1"></a><a class="docs-heading-anchor-permalink" href="#Reflect" title="Permalink"></a></h3><p>With the <code>Reflect</code> boundary condition knots repeat indefinitely, following the pattern shown below (Offset terms are not shown for brevity).</p><pre><code class="nohighlight hljs">k[1], k[2], ..., k[end-1], k[end], k[end+1], ... k[2], k[1], k[2], ...</code></pre><pre><code class="language-julia-repl hljs">julia&gt; x = [1.0, 1.5, 1.75, 2.0];
+
+julia&gt; etp = linear_interpolation(x, x.^2, extrapolation_bc=Reflect());
+
+julia&gt; kiter = knots(etp);
+
+julia&gt; k = Iterators.take(kiter, 6) |&gt; collect
+6-element Vector{Float64}:
+ 1.0
+ 1.5
+ 1.75
+ 2.0
+ 2.25
+ 2.5
+</code></pre><p>Evaluating the extrapolation at <code>etp.(k)</code> confirms that the extrapolated knots correspond to the correct inbound knots.</p><pre><code class="language-julia-repl hljs">julia&gt; etp.(k)
+6-element Vector{Float64}:
+ 1.0
+ 2.25
+ 3.0625
+ 4.0
+ 3.0625
+ 2.25
+</code></pre><h3 id="Multiple-Dimensions"><a class="docs-heading-anchor" href="#Multiple-Dimensions">Multiple Dimensions</a><a id="Multiple-Dimensions-1"></a><a class="docs-heading-anchor-permalink" href="#Multiple-Dimensions" title="Permalink"></a></h3><p>As with an <code>AbstractInterpolation</code>, iterating over knots for a multi-dimensional extrapolation also supported.</p><pre><code class="language-julia-repl hljs">julia&gt; x = [1.0, 1.5, 1.75, 2.0];
+
+julia&gt; etp = linear_interpolation((x, x), x.*x&#39;);
+
+julia&gt; knots(etp) |&gt; collect
+4×4 Matrix{Tuple{Float64, Float64}}:
+ (1.0, 1.0)   (1.0, 1.5)   (1.0, 1.75)   (1.0, 2.0)
+ (1.5, 1.0)   (1.5, 1.5)   (1.5, 1.75)   (1.5, 2.0)
+ (1.75, 1.0)  (1.75, 1.5)  (1.75, 1.75)  (1.75, 2.0)
+ (2.0, 1.0)   (2.0, 1.5)   (2.0, 1.75)   (2.0, 2.0)
+</code></pre><p>Because some boundary conditions generate an infinite sequence of knots, iteration over knots can end up &quot;stuck&quot; iterating along a single axis:</p><pre><code class="language-julia-repl hljs">julia&gt; x = [1.0, 1.5, 1.75, 2.0];
+
+julia&gt; etp = linear_interpolation((x, x), x.*x&#39;, extrapolation_bc=(Periodic(), Throw()));
+
+julia&gt; knots(etp) |&gt; k -&gt; Iterators.take(k, 6) |&gt; collect
+6-element Vector{Tuple{Float64, Float64}}:
+ (1.0, 1.0)
+ (1.5, 1.0)
+ (1.75, 1.0)
+ (2.0, 1.0)
+ (2.5, 1.0)
+ (2.75, 1.0)
+</code></pre><p>Rearranging the axes so non-repeating knots are first can address this issue:</p><pre><code class="language-julia-repl hljs">julia&gt; x = [1.0, 1.5, 1.75, 2.0];
+
+julia&gt; etp = linear_interpolation((x, x), x.*x&#39;, extrapolation_bc=(Throw(), Periodic()));
+
+julia&gt; knots(etp) |&gt; k -&gt; Iterators.take(k, 6) |&gt; collect
+6-element Vector{Tuple{Float64, Float64}}:
+ (1.0, 1.0)
+ (1.5, 1.0)
+ (1.75, 1.0)
+ (2.0, 1.0)
+ (1.0, 1.5)
+ (1.5, 1.5)
+</code></pre><h3 id="Directional-Boundary-Conditions"><a class="docs-heading-anchor" href="#Directional-Boundary-Conditions">Directional Boundary Conditions</a><a id="Directional-Boundary-Conditions-1"></a><a class="docs-heading-anchor-permalink" href="#Directional-Boundary-Conditions" title="Permalink"></a></h3><p>If the boundary conditions are directional, the forward boundary condition is used to determine if the iterator will generate an infinite sequence of knots.</p><p>For example the following extrapolation <code>etp</code>, will throw an error for values less than <code>1.0</code>, but will use <code>Periodic</code> extrapolation for values above <code>2.0</code>. As a result, the iterator will generate an infinite sequence of knots starting at <code>1.0</code>.</p><pre><code class="language-julia-repl hljs">julia&gt; x = [1.0, 1.2, 1.3, 2.0];
+
+julia&gt; etp = linear_interpolation(x, x.^2, extrapolation_bc=((Throw(), Periodic()),));
+
+julia&gt; kiter = knots(etp);
+
+julia&gt; kiter |&gt; k -&gt; Iterators.take(k, 5) |&gt; collect
+5-element Vector{Float64}:
+ 1.0
+ 1.2
+ 1.3
+ 2.0
+ 2.2
+</code></pre><p>We can also check if the iterator has a length using: <code>Base.IteratorSize</code></p><pre><code class="language-julia-repl hljs">julia&gt; Base.IteratorSize(kiter)
+Base.IsInfinite()
+</code></pre><p>Swapping the boundary conditions, results in a finite sequence of knots from <code>1.0</code> to <code>2.0</code>.</p><pre><code class="language-julia-repl hljs">julia&gt; x = [1.0, 1.2, 1.3, 2.0];
+
+julia&gt; etp = linear_interpolation(x, x.^2, extrapolation_bc=((Periodic(), Throw()),));
+
+julia&gt; kiter = knots(etp);
+
+julia&gt; collect(kiter)
+4-element Vector{Float64}:
+ 1.0
+ 1.2
+ 1.3
+ 2.0
+</code></pre><p>As expected the iterator now has a defined length:</p><pre><code class="language-julia-repl hljs">julia&gt; Base.IteratorSize(kiter)
+Base.HasLength()
+
+julia&gt; length(kiter)
+4
+
+julia&gt; size(kiter)
+(4,)
+</code></pre><h2 id="knotsbetween"><a class="docs-heading-anchor" href="#knotsbetween"><code>knotsbetween</code></a><a id="knotsbetween-1"></a><a class="docs-heading-anchor-permalink" href="#knotsbetween" title="Permalink"></a></h2><p>Given an <code>AbstractInterpolation</code> <code>itp</code> or results of <code>knots(itp)</code> get an iterator over knots between <code>start</code> and <code>stop</code>.</p><pre><code class="language-julia hljs">using Interpolations
+itp = interpolate(rand(4), options...)
+krange = knotsbetween(itp; start=1.2, stop=3.0)
+collect(kiter) # Array of knots between 1.2 and 3.0
+</code></pre><p>We can iterate over all knots greater than <code>start</code> by omitting <code>stop</code></p><pre><code class="language-julia-repl hljs">julia&gt; x = [1.0, 1.5, 1.75, 2.0];
+
+julia&gt; etp = linear_interpolation(x, x.^2, extrapolation_bc=Periodic());
+
+julia&gt; krange = knotsbetween(etp; start=4.0);
+
+julia&gt; Iterators.take(krange, 5) |&gt; collect
+5-element Vector{Float64}:
+ 4.5
+ 4.75
+ 5.0
+ 5.5
+ 5.75
+</code></pre><p>If we omit <code>start</code>, iteration will range from the first knot to <code>stop</code></p><pre><code class="language-julia-repl hljs">julia&gt; krange = knotsbetween(etp; stop=4.0);
+
+julia&gt; collect(krange)
+9-element Vector{Float64}:
+ 1.0
+ 1.5
+ 1.75
+ 2.0
+ 2.5
+ 2.75
+ 3.0
+ 3.5
+ 3.75
+</code></pre><p>It is an error to not provided <code>start</code> and <code>stop</code></p><pre><code class="language-julia-repl hljs">julia&gt; knotsbetween(etp)
+ERROR: ArgumentError: At least one of `start` or `stop` must be specified
+[...]</code></pre><h3 id="Multiple-Dimensions-2"><a class="docs-heading-anchor" href="#Multiple-Dimensions-2">Multiple Dimensions</a><a class="docs-heading-anchor-permalink" href="#Multiple-Dimensions-2" title="Permalink"></a></h3><p>When used with a multi-dimensional interpolant, <code>knotsbetween</code> can be used to iterate overall knots such that: <code>start[i] &lt; k[i] stop[i]</code> where <code>i</code> indexes dimensions.</p><pre><code class="language-julia-repl hljs">julia&gt; x = [1.0, 1.5, 1.75, 2.0];
+
+julia&gt; etp = linear_interpolation((x, x), x.*x&#39;);
+
+julia&gt; knotsbetween(etp; start=(1.2, 1.5), stop=(1.8, 3.0)) |&gt; collect
+2×2 Matrix{Tuple{Float64, Float64}}:
+ (1.5, 1.75)   (1.5, 2.0)
+ (1.75, 1.75)  (1.75, 2.0)
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../extrapolation/">« Extrapolation</a><a class="docs-footer-nextpage" href="../devdocs/">Developer documentation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 2 December 2022 22:02">Friday 2 December 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
