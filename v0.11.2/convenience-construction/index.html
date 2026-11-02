@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Convenience Construcors · Interpolations.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Interpolations.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Home</a></li><li><a class="toctext" href="../interpolations/">General usage</a></li><li><a class="toctext" href="../control/">Interpolation algorithms</a></li><li><a class="toctext" href="../extrapolation/">Extrapolation</a></li><li class="current"><a class="toctext" href>Convenience Construcors</a><ul class="internal"><li><a class="toctext" href="#Convenience-notation-1">Convenience notation</a></li></ul></li><li><a class="toctext" href="../api/">Library</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Convenience Construcors</a></li></ul><a class="edit-page" href="https://github.com/JuliaMath/Interpolations.jl/blob/master/docs/src/convenience-construction.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Convenience Construcors</span><a class="fa fa-bars" href="#"></a></div></header><h2><a class="nav-anchor" id="Convenience-notation-1" href="#Convenience-notation-1">Convenience notation</a></h2><p>For linear and cubic spline interpolations, <code>LinearInterpolation</code> and <code>CubicSplineInterpolation</code> can be used to create interpolating and extrapolating objects handily:</p><pre><code class="language-julia">f(x) = log(x)
+xs = 1:0.2:5
+A = [f(x) for x in xs]
+
+# linear interpolation
+interp_linear = LinearInterpolation(xs, A)
+interp_linear(3) # exactly log(3)
+interp_linear(3.1) # approximately log(3.1)
+
+# cubic spline interpolation
+interp_cubic = CubicSplineInterpolation(xs, A)
+interp_cubic(3) # exactly log(3)
+interp_cubic(3.1) # approximately log(3.1)</code></pre><p>which support multidimensional data as well:</p><pre><code class="language-julia">f(x,y) = log(x+y)
+xs = 1:0.2:5
+ys = 2:0.1:5
+A = [f(x,y) for x in xs, y in ys]
+
+# linear interpolation
+interp_linear = LinearInterpolation((xs, ys), A)
+interp_linear(3, 2) # exactly log(3 + 2)
+interp_linear(3.1, 2.1) # approximately log(3.1 + 2.1)
+
+# cubic spline interpolation
+interp_cubic = CubicSplineInterpolation((xs, ys), A)
+interp_cubic(3, 2) # exactly log(3 + 2)
+interp_cubic(3.1, 2.1) # approximately log(3.1 + 2.1)</code></pre><p>For extrapolation, i.e., when interpolation objects are evaluated in coordinates outside the range provided in constructors, the default option for a boundary condition is <code>Throw</code> so that they will return an error. Interested users can specify boundary conditions by providing an extra parameter for <code>extrapolation_bc</code>:</p><pre><code class="language-julia">f(x) = log(x)
+xs = 1:0.2:5
+A = [f(x) for x in xs]
+
+# extrapolation with linear boundary conditions
+extrap = LinearInterpolation(xs, A, extrapolation_bc = Line())
+
+@test extrap(1 - 0.2) # ≈ f(1) - (f(1.2) - f(1))
+@test extrap(5 + 0.2) # ≈ f(5) + (f(5) - f(4.8))</code></pre><p>You can also use a &quot;fill&quot; value, which gets returned whenever you ask for out-of-range values:</p><pre><code class="language-julia">extrap = LinearInterpolation(xs, A, extrapolation_bc = NaN)
+@test isnan(extrap(5.2))</code></pre><p>Irregular grids are supported as well; note that presently only <code>LinearInterpolation</code> supports irregular grids.</p><pre><code class="language-julia">xs = [x^2 for x = 1:0.2:5]
+A = [f(x) for x in xs]
+
+# linear interpolation
+interp_linear = LinearInterpolation(xs, A)
+interp_linear(1) # exactly log(1)
+interp_linear(1.05) # approximately log(1.05)</code></pre><footer><hr/><a class="previous" href="../extrapolation/"><span class="direction">Previous</span><span class="title">Extrapolation</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">Library</span></a></footer></article></body></html>
