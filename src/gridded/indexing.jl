@@ -36,7 +36,7 @@ end
 floorbounds(x::Integer, knotvec::AbstractVector) = gridded_floorbounds(x, knotvec)
 floorbounds(x, knotvec::AbstractVector) = gridded_floorbounds(x, knotvec)
 function gridded_floorbounds(x, knotvec::AbstractVector)
-    i = searchsortedlast(knotvec, x, Base.Order.ForwardOrdering())
+    i = find_knot_index(knotvec, x)
     max(i, first(axes1(knotvec)))
 end
 
@@ -62,6 +62,12 @@ end
     weightedindex(fs, degree(mode), knotvec, x, iclamp)
 end
 
+function weightedindex(fs::F, deg::Constant{Previous,Throw{OnGrid}}, knotvec, x, iclamp) where F
+    # iclamp is the left index of the enclosing interval. At its right knot,
+    # Previous takes the value at the knot itself.
+    pos = ifelse(knotvec[iclamp+1] <= just_dual_value.(x), iclamp+1, iclamp)
+    (position=pos, coefs=fmap(fs, deg, x - knotvec[pos]))
+end
 function weightedindex(fs::F, deg::Constant, knotvec, x, iclamp) where F
     pos, δx = positions(deg, knotvec,  x)
     (position=pos, coefs=fmap(fs, deg, δx))

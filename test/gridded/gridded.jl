@@ -63,6 +63,13 @@ using OffsetArrays: OffsetArray
     @test mixed(2.0, 1.5) == 21.5
     @test mixed(4.0, 1.5) == 31.5
 
+    mixed_knots = interpolate((2:4, [0, 1]), values, Gridded(Constant{Previous}()))
+    @test mixed_knots(2, 0) == values[1, 1]
+    @test mixed_knots(3, 1) == values[2, 2]
+    @test mixed_knots(4, 1) == values[3, 2]
+    @test mixed_knots(2.5, 1) == values[1, 2]
+    @test mixed_knots(2:4, [0, 1]) == values
+
     offset_knots = OffsetArray([1.0, 2.0, 4.0], -1:1)
     offset_values = OffsetArray([10.0, 20.0, 40.0], -1:1)
     offset_itp = interpolate((offset_knots,), offset_values, Gridded(Constant{Previous}()))
