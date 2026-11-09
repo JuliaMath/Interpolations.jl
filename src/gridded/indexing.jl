@@ -1,6 +1,6 @@
 # Indexing at a point
 @inline function (itp::GriddedInterpolation{T,N})(x::Vararg{Number,N}) where {T,N}
-    @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
+    @boundscheck (checkbounds(Bool, itp, just_dual_value.(x)...) || Base.throw_boundserror(itp, x))
     wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
     InterpGetindex(itp)[wis...]
 end
