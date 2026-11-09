@@ -167,6 +167,65 @@ using Interpolations, Test, ForwardDiff
         @test_throws ErrorException Interpolations.symsize(Val(2))
         @test_throws ErrorException Interpolations.symsize(Val(33))
     end
+    @testset "issue 645: primal gridded bounds" begin
+        knots = [-3.0, -1.0, 0.0]
+        values = 3 .* knots .+ 7
+        itp = interpolate((knots,), values, Gridded(Linear()))
+        for x in (first(knots), -2.0, last(knots))
+            @test itp(x) ≈ 3x + 7
+            @test ForwardDiff.derivative(itp, x) ≈ 3
+            @test ForwardDiff.derivative(y -> ForwardDiff.derivative(itp, y), x) ≈ 0
+            for partial in (-1.0, 1.0)
+                dual = ForwardDiff.Dual(x, partial)
+                result = itp(dual)
+                @test ForwardDiff.value(result) ≈ 3x + 7
+                @test ForwardDiff.partials(result)[1] ≈ 3partial
+            end
+        end
+
+        # Recursive stripping is needed when the coordinate is a nested Dual.
+        for x in (first(knots), last(knots))
+            nested = ForwardDiff.Dual(ForwardDiff.Dual(x, 1.0), ForwardDiff.Dual(1.0, 0.0))
+            result = itp(nested)
+            @test ForwardDiff.value(ForwardDiff.value(result)) ≈ 3x + 7
+            @test ForwardDiff.value(ForwardDiff.partials(result)[1]) ≈ 3
+            @test ForwardDiff.partials(ForwardDiff.value(result))[1] ≈ 3
+        end
+
+        for x in (prevfloat(first(knots)), nextfloat(last(knots)))
+            for partial in (-1.0, 0.0, 1.0)
+                dual = ForwardDiff.Dual(x, partial)
+                failure = try
+                    itp(dual)
+                    nothing
+                catch exception
+                    exception
+                end
+                @test failure isa BoundsError
+                @test failure.a === itp
+                @test failure.i === (dual,)
+            end
+        end
+
+        # The reported Flat wrapper must not fail with forced bounds checking.
+        # Its endpoint derivative convention is left to the existing wrapper.
+        flat = linear_interpolation(knots, values; extrapolation_bc=Flat())
+        for x in (first(knots), last(knots))
+            @test flat(x) ≈ 3x + 7
+            @test isfinite(ForwardDiff.derivative(flat, x))
+        end
+        @test ForwardDiff.derivative(flat, -2.0) ≈ 3
+        @test ForwardDiff.derivative(flat, -4.0) ≈ 0
+        @test ForwardDiff.derivative(flat, 1.0) ≈ 0
+
+        second = [2.0, 5.0, 10.0]
+        table = [3x - 2y + 7 for x in knots, y in second]
+        surface = interpolate((knots, second), table, Gridded(Linear()))
+        for point in ([-3.0, 2.0], [0.0, 10.0], [-2.0, 4.0])
+            @test ForwardDiff.gradient(x -> surface(x...), point) ≈ [3.0, -2.0]
+            @test ForwardDiff.hessian(x -> surface(x...), point) ≈ zeros(2, 2)
+        end
+    end
     @testset "issue 509" begin
         @eval struct CPUITP{T,N} <: AbstractInterpolation{T,N,NTuple{N,NoInterp}} end
         @test Broadcast.BroadcastStyle(CPUITP{Int,2}) == Broadcast.BroadcastStyle(Matrix{Int})
