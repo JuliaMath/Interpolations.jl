@@ -36,7 +36,7 @@ end
 floorbounds(x::Integer, knotvec::AbstractVector) = gridded_floorbounds(x, knotvec)
 floorbounds(x, knotvec::AbstractVector) = gridded_floorbounds(x, knotvec)
 function gridded_floorbounds(x, knotvec::AbstractVector)
-    i = find_knot_index(knotvec, x)
+    i = searchsortedlast(knotvec, x, Base.Order.ForwardOrdering())
     max(i, first(axes1(knotvec)))
 end
 
