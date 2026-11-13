@@ -39,7 +39,6 @@ export
 
 using LinearAlgebra, SparseArrays
 using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
-using ChainRulesCore
 
 using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
     SizeUnknown, Indices

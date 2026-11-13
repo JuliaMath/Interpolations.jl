@@ -1,4 +1,8 @@
-export rrule
+
+module InterpolationsChainRulesCoreExt
+using Interpolations
+using ChainRulesCore
+# export rrule
 """
     ChainRulesCore.rrule(itp::AbstractInterpolation, x...)
 
@@ -13,4 +17,5 @@ function ChainRulesCore.rrule(itp::AbstractInterpolation, x...)
         (nope, (sum(Δy .* g) for g in Interpolations.gradient(itp, x...))...)
     end
     y, interpolate_pullback
+end
 end
