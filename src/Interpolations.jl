@@ -470,7 +470,6 @@ include("deprecations.jl")
 include("lanczos/lanczos.jl")
 include("lanczos/lanczos_opencv.jl")
 include("iterate.jl")
-include("chainrules/chainrules.jl")
 include("hermite/cubic.jl")
 include("gpu_support.jl")
 
