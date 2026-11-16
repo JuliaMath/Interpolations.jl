@@ -39,7 +39,6 @@ export
 
 using LinearAlgebra, SparseArrays
 using StaticArrays, WoodburyMatrices, Ratios, AxisAlgorithms, OffsetArrays
-using ChainRulesCore
 
 using Base: @propagate_inbounds, HasEltype, EltypeUnknown, HasLength, IsInfinite,
     SizeUnknown, Indices
@@ -471,7 +470,6 @@ include("deprecations.jl")
 include("lanczos/lanczos.jl")
 include("lanczos/lanczos_opencv.jl")
 include("iterate.jl")
-include("chainrules/chainrules.jl")
 include("hermite/cubic.jl")
 include("gpu_support.jl")
 
