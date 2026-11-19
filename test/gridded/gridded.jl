@@ -81,7 +81,7 @@ using Interpolations, Test
 
     # issue #248
     itp = interpolate((1001:1005,), 1:5, Gridded(Linear()))
-    @test itp(1002) ≈ 2
+    @test itp(1002) == 2
 
     # issue #255
     itp = interpolate(([1,2,3],), [1.0f0, 2.0f0, 1.0f0], Gridded(Linear()))
