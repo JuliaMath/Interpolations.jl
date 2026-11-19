@@ -46,6 +46,8 @@ size(itp::LanczosInterpolation) = map(length, itp.parentaxes)
 axes(itp::LanczosInterpolation) = itp.parentaxes
 lbounds(itp::LanczosInterpolation) = map(first, itp.parentaxes)
 ubounds(itp::LanczosInterpolation) = map(last, itp.parentaxes)
+lbound(ax::AbstractRange, ::AbstractLanczos) = first(ax)
+ubound(ax::AbstractRange, ::AbstractLanczos) = last(ax)
 
 function interpolate(A::AbstractArray{T}, it::AbstractLanczos) where T
     Apad = copy_with_padding(float(T), A, it)
