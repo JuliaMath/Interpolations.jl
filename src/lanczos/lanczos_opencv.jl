@@ -1,7 +1,8 @@
 #=
-Portion of the source code below, the _lanczos4_opencv method in particular,
-are copyrights of the below and are licensed under the terms below with the following
-disclaimers. The source code has been significantly modified and ported to Julia.
+Portion of the source code below, the _lanczos4_opencv and Lanczos4OpenCVFaithful
+methods in particular, are copyrights of the below and are licensed under the terms
+below with the following disclaimers. The source code has been significantly modified
+and ported to Julia.
 
 By downloading, copying, installing or using the software you agree to this license.
 If you do not agree to this license, do not download, install,
@@ -44,6 +45,18 @@ using StaticArrays
 
 export Lanczos4OpenCV, Lanczos4OpenCVFaithful
 
+"""
+    Lanczos4OpenCV()
+
+Alternative implementation of Lanczos resampling using algorithm `lanczos4` function of OpenCV:
+https://github.com/opencv/opencv/blob/de15636724967faf62c2d1bce26f4335e4b359e5/modules/imgproc/src/resize.cpp#L917-L946
+"""
+struct Lanczos4OpenCV <: AbstractLanczos end
+
+degree(::Lanczos4OpenCV) = 4
+
+value_weights(::Lanczos4OpenCV, δx) = _lanczos4_opencv(δx)
+
 # s45 = sqrt(2)/2
 const s45 = 0.70710678118654752440084436210485
 
@@ -52,26 +65,6 @@ const s45 = 0.70710678118654752440084436210485
 # l4_2d_cs = [cosd.(x) sind.(x)]'
 const l4_2d_cs = SA[1 0; -s45 -s45; 0 1; s45 -s45; -1 0; s45 s45; 0 -1; -s45 s45]
 
-
-"""
-    Lanczos4OpenCV()
-
-Alternative implementation of Lanczos resampling using algorithm `lanczos4`
-function of OpenCV:
-
-https://github.com/opencv/opencv/blob/de15636724967faf62c2d1bce26f4335e4b359e5/modules/imgproc/src/resize.cpp#L917-L946
-
-If your data are Float32, consider using `Lanczos4OpenCVFaithful` instead.
-"""
-struct Lanczos4OpenCV <: AbstractLanczos end
-
-degree(::Lanczos4OpenCV) = 4
-
-value_weights(::Lanczos4OpenCV, δx) = _lanczos4_opencv(δx)
-
-# a simple refactoring of `_lanczos4_opencv` to use Float32 throughout results
-# in s0 == c0 and so the numerator of cs[4] is 0 as is normed_cs[4] (when it
-# should be 1)
 
 function _lanczos4_opencv(δx)
     p_4 = π / 4
@@ -93,41 +86,333 @@ function _lanczos4_opencv(δx)
     return normed_cs
 end
 
-
 """
-    Lanczos4OpenCVFaithful{T}()
+    Lanczos4OpenCVFaithful(; simd::Bool=false)
+    Lanczos4OpenCVFaithful{SIMD}()
 
-Similar to Lanczos4OpenCV(), but mirrors the calculations more closely to
-reduce numerical discrepancies with the OpenCV implementation, and supports
-reduced precision (e.g. Float32, the default).
+Lanczos resampling reproducing OpenCV's `cv::remap(..., INTER_LANCZOS4)` on `UInt8`
+and `Float32` arrays.
+
+Matches OpenCV's `modules/imgproc/src/imgwarp.cpp` implementation:
+- Evaluation coordinates are quantized onto OpenCV's `1/32`-pixel grid
+  (`INTER_TAB_SIZE = 32`, round-to-nearest-even).
+- `UInt8` inputs keep a `UInt8` padded coefficient buffer and use OpenCV's Q15 `Int16`
+  lookup table (`Lanczos4Tab_i`, `INTER_REMAP_COEF_SCALE = 32768`) with `(sum + 16384) >> 15`.
+- `Float32` inputs keep a `Float32` padded coefficient buffer and use OpenCV's `Float32`
+  lookup table (`Lanczos4Tab_f`):
+  - `simd = false` (default): preserves OpenCV's exact non-fused left-to-right summation
+    order for 0-ULP bit-identity with `cv::remap`.
+  - `simd = true`: relaxes floating-point associativity to use 8-wide SIMD FMA (`muladd`)
+    accumulation with pairwise reduction (`O(eps(Float32))` rounding difference from
+    `cv::remap`, ~2× faster).
 """
-struct Lanczos4OpenCVFaithful{T} <: AbstractLanczos end
-Lanczos4OpenCVFaithful() = Lanczos4OpenCVFaithful{Float32}()
+struct Lanczos4OpenCVFaithful{SIMD} <: AbstractLanczos
+    function Lanczos4OpenCVFaithful{SIMD}() where {SIMD}
+        SIMD isa Bool || throw(ArgumentError("Lanczos4OpenCVFaithful type parameter must be a Bool, got $SIMD"))
+        return new{SIMD}()
+    end
+end
+Base.@constprop :aggressive Lanczos4OpenCVFaithful(; simd::Bool=false) = Lanczos4OpenCVFaithful{simd}()
 
 degree(::Lanczos4OpenCVFaithful) = 4
+lbound(ax::AbstractRange, ::Lanczos4OpenCVFaithful) = first(ax)
+ubound(ax::AbstractRange, ::Lanczos4OpenCVFaithful) = last(ax)
 
-value_weights(::Lanczos4OpenCVFaithful{T}, δx) where {T} =
-        _lanczos4_opencv_faithful(float(T), float(T).(l4_2d_cs), δx)
+function interpolate(A::AbstractArray{T}, it::Lanczos4OpenCVFaithful) where {T<:Union{UInt8,Float32}}
+    Apad = copy_with_padding(T, A, it)
+    return LanczosInterpolation(Apad, axes(A), it)
+end
 
-# main differences with `_lanczos4_opencv` are (1) the criterion for preventing a
-# division by zero is `< pi/4 * 1e-6` (instead of `iszero`) and (2) the resulting
-# coefficient is replaced with `1e30` (instead of using `(eps()/8)^2` in the
-# denominator)
+function interpolate(::AbstractArray{T}, ::Lanczos4OpenCVFaithful) where {T}
+    throw(ArgumentError("Lanczos4OpenCVFaithful only supports UInt8 and Float32 arrays, got eltype $T"))
+end
 
-function _lanczos4_opencv_faithful(::Type{F}, l4_2d_cs, δx) where {F}
-    p_4 = π * F(0.25)
-    y0 = -(δx + F(3)) * p_4
+const _OCV_INTER_TAB_SIZE = 32
+const _OCV_REMAP_COEF_BITS = 15
+const _OCV_REMAP_COEF_SCALE = 1 << _OCV_REMAP_COEF_BITS # 32768
+
+# Exact port of interpolateLanczos4(float x, float* coeffs) in OpenCV imgwarp.cpp
+function _lanczos4_opencv_imgwarp(x::Float32)
+    if x < eps(Float32)
+        return (0.0f0, 0.0f0, 0.0f0, 1.0f0, 0.0f0, 0.0f0, 0.0f0, 0.0f0)
+    end
+    p_4 = Float64(π) * 0.25
+    y0 = -(Float64(x) + 3.0) * p_4
     s0, c0 = sincos(y0)
-    cs = ntuple(8) do i
-        y = δx + 4 - i
-        if abs(y) >= F(1e-6)
-            y *= p_4
-            (F(l4_2d_cs[i, 1]) * s0 + F(l4_2d_cs[i, 2]) * c0) / y^2
-        else
-            F(1e30)
+    raw = ntuple(Val(8)) do i
+        y = -(Float64(x) + Float64(4 - i)) * p_4
+        Float32((l4_2d_cs[i, 1] * s0 + l4_2d_cs[i, 2] * c0) / (y * y))
+    end
+    s = foldl(+, raw)
+    inv_s = 1.0f0 / s
+    return ntuple(i -> raw[i] * inv_s, Val(8))
+end
+
+@inline _ocv_sat_short(v::Float32) =
+    Int16(clamp(round(Int, Float64(v), RoundNearest), Int(typemin(Int16)), Int(typemax(Int16))))
+
+function _build_lanczos4_ocv_tables()
+    tab1d = Matrix{Float32}(undef, 8, _OCV_INTER_TAB_SIZE)
+    tab1d_i = Matrix{Int16}(undef, 8, _OCV_INTER_TAB_SIZE)
+    scale = 1.0f0 / Float32(_OCV_INTER_TAB_SIZE)
+    for b in 0:(_OCV_INTER_TAB_SIZE - 1)
+        w = _lanczos4_opencv_imgwarp(Float32(b) * scale)
+        isum1 = 0
+        for k in 1:8
+            tab1d[k, b + 1] = w[k]
+            iv = _ocv_sat_short(w[k] * Float32(_OCV_REMAP_COEF_SCALE))
+            tab1d_i[k, b + 1] = iv
+            isum1 += Int(iv)
+        end
+        if isum1 != _OCV_REMAP_COEF_SCALE
+            diff1 = isum1 - _OCV_REMAP_COEF_SCALE
+            Mk = 5
+            mk = 5
+            for k in 5:6
+                if tab1d_i[k, b + 1] < tab1d_i[mk, b + 1]
+                    mk = k
+                elseif tab1d_i[k, b + 1] > tab1d_i[Mk, b + 1]
+                    Mk = k
+                end
+            end
+            if diff1 < 0
+                tab1d_i[Mk, b + 1] = Int16(Int(tab1d_i[Mk, b + 1]) - diff1)
+            else
+                tab1d_i[mk, b + 1] = Int16(Int(tab1d_i[mk, b + 1]) - diff1)
+            end
         end
     end
-    sum_cs = sum(cs)
-    normed_cs = ntuple(i -> cs[i] / sum_cs, Val(8))
-    return normed_cs
+
+    # Indexed as [tap_idx (1..64), fx + 1 (dim 1), fy + 1 (dim 2)]
+    # matching initInterTab2D(INTER_LANCZOS4) in OpenCV imgwarp.cpp
+    tab2d_f = Array{Float32,3}(undef, 64, _OCV_INTER_TAB_SIZE, _OCV_INTER_TAB_SIZE)
+    tab2d_i = Array{Int16,3}(undef, 64, _OCV_INTER_TAB_SIZE, _OCV_INTER_TAB_SIZE)
+    for i in 0:(_OCV_INTER_TAB_SIZE - 1)     # fy (dim 2 / row in OpenCV)
+        for j in 0:(_OCV_INTER_TAB_SIZE - 1) # fx (dim 1 / col in OpenCV)
+            isum = 0
+            for k1 in 0:7
+                vy = tab1d[k1 + 1, i + 1]
+                for k2 in 0:7
+                    idx = k1 * 8 + k2 + 1
+                    v = vy * tab1d[k2 + 1, j + 1]
+                    tab2d_f[idx, j + 1, i + 1] = v
+                    iv = _ocv_sat_short(v * Float32(_OCV_REMAP_COEF_SCALE))
+                    tab2d_i[idx, j + 1, i + 1] = iv
+                    isum += Int(iv)
+                end
+            end
+            if isum != _OCV_REMAP_COEF_SCALE
+                diff = isum - _OCV_REMAP_COEF_SCALE
+                Mk1 = 4; Mk2 = 4; mk1 = 4; mk2 = 4
+                for k1 in 4:5
+                    for k2 in 4:5
+                        cur = tab2d_i[k1 * 8 + k2 + 1, j + 1, i + 1]
+                        if cur < tab2d_i[mk1 * 8 + mk2 + 1, j + 1, i + 1]
+                            mk1 = k1; mk2 = k2
+                        elseif cur > tab2d_i[Mk1 * 8 + Mk2 + 1, j + 1, i + 1]
+                            Mk1 = k1; Mk2 = k2
+                        end
+                    end
+                end
+                if diff < 0
+                    m_idx = Mk1 * 8 + Mk2 + 1
+                    tab2d_i[m_idx, j + 1, i + 1] = Int16(Int(tab2d_i[m_idx, j + 1, i + 1]) - diff)
+                else
+                    m_idx = mk1 * 8 + mk2 + 1
+                    tab2d_i[m_idx, j + 1, i + 1] = Int16(Int(tab2d_i[m_idx, j + 1, i + 1]) - diff)
+                end
+            end
+        end
+    end
+    return tab1d, tab1d_i, tab2d_f, tab2d_i
+end
+
+const (_LANCZOS4_OCV_TAB1D, _LANCZOS4_OCV_TAB1D_I, _LANCZOS4_OCV_TAB_F, _LANCZOS4_OCV_TAB_I) =
+    _build_lanczos4_ocv_tables()
+
+struct _Lanczos4OCVBin
+    bin::Int
+end
+
+@inline function _lanczos4_ocv_quantize(::AbstractUnitRange{<:Integer}, x::Integer)
+    return Int(x) - 3, 0
+end
+
+@inline function _lanczos4_ocv_quantize(::AbstractUnitRange{<:Integer}, x::Float32)
+    xf = floor(x)
+    xi = unsafe_trunc(Int, xf)
+    δx = x - xf
+    ibin = unsafe_trunc(Int, round(δx * Float32(_OCV_INTER_TAB_SIZE), RoundNearest))
+    return xi + (ibin >> 5) - 3, ibin & (_OCV_INTER_TAB_SIZE - 1)
+end
+
+@inline function _lanczos4_ocv_quantize(::AbstractUnitRange{<:Integer}, x::Number)
+    xv = Float64(just_dual_value(x))
+    xf = floor(xv)
+    xi = unsafe_trunc(Int, xf)
+    δx = Float32(xv - xf)
+    ibin = unsafe_trunc(Int, round(δx * Float32(_OCV_INTER_TAB_SIZE), RoundNearest))
+    return xi + (ibin >> 5) - 3, ibin & (_OCV_INTER_TAB_SIZE - 1)
+end
+
+@inline function positions(::Lanczos4OpenCVFaithful, ax::AbstractUnitRange{<:Integer}, x)
+    istart, fbin = _lanczos4_ocv_quantize(ax, x)
+    return istart, _Lanczos4OCVBin(fbin)
+end
+
+@inline value_weights(::Lanczos4OpenCVFaithful, b::_Lanczos4OCVBin) =
+    ntuple(k -> @inbounds(_LANCZOS4_OCV_TAB1D[k, b.bin + 1]), Val(8))
+
+@inline function value_weights(::Lanczos4OpenCVFaithful, δx::Real)
+    ix = round(Int, Float32(δx) * Float32(_OCV_INTER_TAB_SIZE), RoundNearest)
+    fbin = ix & (_OCV_INTER_TAB_SIZE - 1)
+    return ntuple(k -> @inbounds(_LANCZOS4_OCV_TAB1D[k, fbin + 1]), Val(8))
+end
+
+Base.@propagate_inbounds function (itp::LanczosInterpolation{UInt8,1,<:Lanczos4OpenCVFaithful})(x1::Number)
+    @boundscheck (checkbounds(Bool, itp, x1) || Base.throw_boundserror(itp, (x1,)))
+    ax1 = itp.parentaxes[1]
+    ix0, fx = _lanczos4_ocv_quantize(ax1, x1)
+    A = itp.coefs
+    P = popwrapper(A)
+    px0 = ix0 - first(axes(A, 1)) + first(axes(P, 1))
+    wcol = fx + 1
+    s::Int32 = Int32(0)
+    @inbounds @simd for k in 0:7
+        s += Int32(P[px0 + k]) * Int32(_LANCZOS4_OCV_TAB1D_I[k + 1, wcol])
+    end
+    return UInt8(clamp((s + Int32(16384)) >> 15, Int32(0), Int32(255)))
+end
+
+Base.@propagate_inbounds function (itp::LanczosInterpolation{Float32,1,Lanczos4OpenCVFaithful{false}})(x1::Number)
+    @boundscheck (checkbounds(Bool, itp, x1) || Base.throw_boundserror(itp, (x1,)))
+    ax1 = itp.parentaxes[1]
+    ix0, fx = _lanczos4_ocv_quantize(ax1, x1)
+    A = itp.coefs
+    P = popwrapper(A)
+    px0 = ix0 - first(axes(A, 1)) + first(axes(P, 1))
+    wcol = fx + 1
+    return foldl(+, ntuple(k -> @inbounds(P[px0 + k - 1] * _LANCZOS4_OCV_TAB1D[k, wcol]), Val(8)))
+end
+
+@inline _pairwise_sum((x,)::Tuple{Any}) = x
+@inline function _pairwise_sum(t::NTuple{N,Any}) where {N}
+    lo, hi = Base.IteratorsMD.split(t, Val(N >> 1))
+    return _pairwise_sum(lo) + _pairwise_sum(hi)
+end
+
+@inline _ocv_load8(A::AbstractMatrix{Float32}, i0::Int, j::Int) =
+    SVector{8,Float32}(ntuple(k -> @inbounds(A[i0 + k - 1, j]), Val(8)))
+@inline _ocv_load8(W::Array{Float32,3}, base::Int, j::Int, l::Int) =
+    SVector{8,Float32}(ntuple(k -> @inbounds(W[base + k, j, l]), Val(8)))
+
+Base.@propagate_inbounds function (itp::LanczosInterpolation{Float32,1,Lanczos4OpenCVFaithful{true}})(x1::Number)
+    @boundscheck (checkbounds(Bool, itp, x1) || Base.throw_boundserror(itp, (x1,)))
+    ax1 = itp.parentaxes[1]
+    ix0, fx = _lanczos4_ocv_quantize(ax1, x1)
+    A = itp.coefs
+    P = popwrapper(A)
+    px0 = ix0 - first(axes(A, 1)) + first(axes(P, 1))
+    wcol = fx + 1
+    s = ntuple(Val(4)) do j
+        @inbounds muladd(P[px0 + 2j - 1], _LANCZOS4_OCV_TAB1D[2j, wcol],
+                         P[px0 + 2j - 2] * _LANCZOS4_OCV_TAB1D[2j - 1, wcol])
+    end
+    return _pairwise_sum(s)
+end
+
+Base.@propagate_inbounds function (itp::LanczosInterpolation{UInt8,2,<:Lanczos4OpenCVFaithful})(x1::Number, x2::Number)
+    @boundscheck (checkbounds(Bool, itp, x1, x2) || Base.throw_boundserror(itp, (x1, x2)))
+    ax1, ax2 = itp.parentaxes
+    ix0, fx = _lanczos4_ocv_quantize(ax1, x1)
+    iy0, fy = _lanczos4_ocv_quantize(ax2, x2)
+    A = itp.coefs
+    P = popwrapper(A)
+    px0 = ix0 - first(axes(A, 1)) + first(axes(P, 1))
+    py0 = iy0 - first(axes(A, 2)) + first(axes(P, 2))
+    wcol = fx + 1
+    wrow = fy + 1
+    s::Int32 = Int32(0)
+    @inbounds for k1 in 0:7
+        py = py0 + k1
+        base = k1 * 8
+        @simd for k2 in 0:7
+            s += Int32(P[px0 + k2, py]) * Int32(_LANCZOS4_OCV_TAB_I[base + k2 + 1, wcol, wrow])
+        end
+    end
+    return UInt8(clamp((s + Int32(16384)) >> 15, Int32(0), Int32(255)))
+end
+
+Base.@propagate_inbounds function (itp::LanczosInterpolation{Float32,2,Lanczos4OpenCVFaithful{false}})(x1::Number, x2::Number)
+    @boundscheck (checkbounds(Bool, itp, x1, x2) || Base.throw_boundserror(itp, (x1, x2)))
+    ax1, ax2 = itp.parentaxes
+    ix0, fx = _lanczos4_ocv_quantize(ax1, x1)
+    iy0, fy = _lanczos4_ocv_quantize(ax2, x2)
+    A = itp.coefs
+    P = popwrapper(A)
+    px0 = ix0 - first(axes(A, 1)) + first(axes(P, 1))
+    py0 = iy0 - first(axes(A, 2)) + first(axes(P, 2))
+    wcol = fx + 1
+    wrow = fy + 1
+    tot::Float32 = 0.0f0
+    if (ix0 >= first(ax1)) & (ix0 + 7 <= last(ax1)) & (iy0 >= first(ax2)) & (iy0 + 7 <= last(ax2))
+        for k1 in 0:7
+            py = py0 + k1
+            base = k1 * 8
+            tot += foldl(+, ntuple(k -> @inbounds(P[px0 + k - 1, py] * _LANCZOS4_OCV_TAB_F[base + k, wcol, wrow]), Val(8)))
+        end
+    else
+        @inbounds for k1 in 0:7
+            py = py0 + k1
+            base = k1 * 8
+            for k2 in 0:7
+                tot += P[px0 + k2, py] * _LANCZOS4_OCV_TAB_F[base + k2 + 1, wcol, wrow]
+            end
+        end
+    end
+    return tot
+end
+
+Base.@propagate_inbounds function (itp::LanczosInterpolation{Float32,2,Lanczos4OpenCVFaithful{true}})(x1::Number, x2::Number)
+    @boundscheck (checkbounds(Bool, itp, x1, x2) || Base.throw_boundserror(itp, (x1, x2)))
+    ax1, ax2 = itp.parentaxes
+    ix0, fx = _lanczos4_ocv_quantize(ax1, x1)
+    iy0, fy = _lanczos4_ocv_quantize(ax2, x2)
+    A = itp.coefs
+    P = popwrapper(A)
+    px0 = ix0 - first(axes(A, 1)) + first(axes(P, 1))
+    py0 = iy0 - first(axes(A, 2)) + first(axes(P, 2))
+    wcol = fx + 1
+    wrow = fy + 1
+    s = _ocv_load8(P, px0, py0) .* _ocv_load8(_LANCZOS4_OCV_TAB_F, 0, wcol, wrow)
+    for k1 in 1:7
+        s = muladd.(_ocv_load8(P, px0, py0 + k1), _ocv_load8(_LANCZOS4_OCV_TAB_F, k1 * 8, wcol, wrow), s)
+    end
+    return _pairwise_sum(Tuple(s))
+end
+
+Base.@propagate_inbounds function (itp::LanczosInterpolation{UInt8,N,<:Lanczos4OpenCVFaithful})(
+    x1::Number, x2::Number, x3::Number, xs::Vararg{Number}
+) where {N}
+    x = (x1, x2, x3, xs...)
+    @boundscheck (checkbounds(Bool, itp, x...) || Base.throw_boundserror(itp, x))
+    wis = weightedindexes((value_weights,), itpinfo(itp)..., x)
+    val = InterpGetindex(itp)[wis...]
+    return round(UInt8, clamp(val, 0.0f0, 255.0f0))
+end
+
+const _LanczosOCVFInterpOrScaled{N} = Union{
+    LanczosInterpolation{<:Any,N,<:Lanczos4OpenCVFaithful},
+    ScaledInterpolation{<:Any,N,<:LanczosInterpolation{<:Any,N,<:Lanczos4OpenCVFaithful}},
+}
+
+@inline function (etp::FilledExtrapolation{T,N,<:_LanczosOCVFInterpOrScaled{N}})(
+    x::Vararg{Number,N}
+) where {T,N}
+    itp = parent(etp)
+    if checkbounds(Bool, itp, x...)
+        return convert(T, @inbounds itp(x...))
+    else
+        return convert(T, etp.fillvalue)
+    end
 end
