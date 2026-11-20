@@ -76,10 +76,18 @@ end
     @test_throws ArgumentError interpolate(zeros(Int, 8, 8), Lanczos4OpenCVFaithful())
     @test_throws ArgumentError interpolate(zeros(UInt16, 8, 8), Lanczos4OpenCVFaithful())
 
+    # Verify LUT builder matches precompiled const tables
+    t1d, t1d_i, t2d_f, t2d_i = Interpolations._build_lanczos4_ocv_tables()
+    @test t1d == Interpolations._LANCZOS4_OCV_TAB1D
+    @test t1d_i == Interpolations._LANCZOS4_OCV_TAB1D_I
+    @test t2d_f == Interpolations._LANCZOS4_OCV_TAB_F
+    @test t2d_i == Interpolations._LANCZOS4_OCV_TAB_I
+
     for T in (UInt8, Float32)
         v = T.(collect(1:100))
         X1 = [v; reverse(v)[2:end]]
         itp1 = interpolate(X1, Lanczos4OpenCVFaithful())
+        itp1_simd = interpolate(X1, Lanczos4OpenCVFaithful(simd=true))
         @test eltype(itp1) === T
         @test eltype(coefficients(itp1)) === T
         @test getknots(itp1) == axes(itp1) == axes(X1)
@@ -90,7 +98,18 @@ end
         @test lbounds(itp1) == (firstindex(X1),)
         @test ubounds(itp1) == (lastindex(X1),)
         @test [itp1(i) for i in eachindex(X1)] == X1
+        @test [itp1_simd(i) for i in eachindex(X1)] == X1
+        @test isapprox(itp1_simd(10.25f0), itp1(10.25f0); atol=1e-3)
+        @test itp1(10.25f0) === itp1(10.25)
     end
+
+    # 3D fallback path (positions / value_weights / N >= 3 UInt8 rounding)
+    a3_u8 = reshape(UInt8[(i * 17) % 256 for i in 1:512], 8, 8, 8)
+    itp3_u8 = interpolate(a3_u8, Lanczos4OpenCVFaithful())
+    itp3_f32 = interpolate(Float32.(a3_u8), Lanczos4OpenCVFaithful())
+    @test itp3_u8(4, 4, 4) === a3_u8[4, 4, 4]
+    @test itp3_u8(4.25f0, 4.5f0, 4.125) isa UInt8
+    @test isapprox(Float32(itp3_u8(4.25f0, 4.5f0, 4.125)), itp3_f32(4.25f0, 4.5f0, 4.125); atol=1.0f0)
 
     # 2D exact knot recovery & symmetry for both UInt8 and Float32
     p_u8 = UInt8[(c * 73 + r * 37 + r * c * 11) % 256 for c in 0:11, r in 0:11]
@@ -142,6 +161,7 @@ end
     end
 
     # Type stability & zero-allocation checks across direct, scaled, and filled-extrapolation calls
+    _alloc2(f::F, x, y) where {F} = (f(x, y); @allocated f(x, y))
     for (itp2, z) in ((itp_u8, 0x00), (itp_f32, 0.0f0), (itp_f32_simd, 0.0f0))
         T = eltype(itp2)
         etp2 = @inferred extrapolate(itp2, z)
@@ -153,10 +173,10 @@ end
             @test (@inferred etp2(-3.0, 99.0)) === z
             @test (@inferred sitp2(x, y)) isa T
             @test (@inferred estp2(x, y)) isa T
-            @test (@allocated itp2(x, y)) == 0
-            @test (@allocated etp2(x, y)) == 0
-            @test (@allocated sitp2(x, y)) == 0
-            @test (@allocated estp2(x, y)) == 0
+            @test _alloc2(itp2, x, y) == 0
+            @test _alloc2(etp2, x, y) == 0
+            @test _alloc2(sitp2, x, y) == 0
+            @test _alloc2(estp2, x, y) == 0
         end
     end
 end
